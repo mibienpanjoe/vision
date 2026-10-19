@@ -4,7 +4,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from app.api.v1.auth import router as auth_router
+from app.core.errors import install_errors
+from app.core.security import LoginLimiter
 from app.db.session import configured_engine
 
 
@@ -12,6 +16,7 @@ from app.db.session import configured_engine
 async def lifespan(app: FastAPI):
     # https://fastapi.tiangolo.com/advanced/events/
     app.state.engine = configured_engine()
+    app.state.login_limiter = LoginLimiter()
     try:
         yield
     finally:
@@ -20,7 +25,10 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Vision API", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Vision API", version="0.1.0", lifespan=lifespan, docs_url=None, redoc_url=None)
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
+    install_errors(app)
+    app.include_router(auth_router)
 
     @app.get("/health/live")
     def live() -> dict[str, str]:
