@@ -97,7 +97,7 @@ state, not a blanket retry of every POST or provider error.
   `412 / REVISION_CONFLICT`. Wildcard/weak/multiple tokens are invalid requests.
   Incompatible-input generation failures use `409`; successful updates issue a new token.
   Authorization is checked before revision comparisons to avoid disclosure.
-- Effectful POSTs use a bounded opaque `Idempotency-Key` (1–128 ASCII characters
+- Effectful business-operation POSTs use a bounded opaque `Idempotency-Key` (1–128 ASCII characters
   from letters, digits, `-`, `_`). Scope keys by authenticated actor, method,
   route and work; fingerprint the validated request, source upload bytes and
   referenced revisions. Same key/same request returns the existing operation;
@@ -199,3 +199,7 @@ Verified with two real PostgreSQL-backed principals, expiry/logout, invalid
 credentials/origins/fields, login limits and local CLI provisioning. An actual
 Chromium navigation through the web proxy saw the authenticated principal and
 then `401` after logout. This is session transport proof, not a completed login UI.
+
+Authentication login/logout use the rotation/revocation semantics above rather
+than business-operation idempotency keys; retries do not create works, jobs or
+paid provider effects. This qualifies the general POST convention for sessions.

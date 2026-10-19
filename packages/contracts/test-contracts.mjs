@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import Ajv2020 from "ajv/dist/2020.js";
+import addFormats from "ajv-formats";
 import { sourceSlice, validateSpan } from "./source-span.ts";
 
 const schema = JSON.parse(readFileSync(new URL("schema.json", import.meta.url)));
 const cases = JSON.parse(readFileSync(new URL("conformance.json", import.meta.url)));
 const ajv = new Ajv2020({ strict: false, allErrors: true });
+addFormats(ajv);
 ajv.addSchema(schema);
 for (const [index, item] of cases.entries()) {
   test(`shared conformance ${index}: ${item.model}`, () => {

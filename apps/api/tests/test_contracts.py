@@ -4,11 +4,12 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from app.schemas import common, scope
+from app.schemas import access, common, scope
 
 CASES = json.loads((Path(__file__).parents[3] / "packages/contracts/conformance.json").read_text())
 MODELS = {
     "SourceSpan": scope.SourceSpan,
+    "PrincipalView": access.PrincipalView,
     "RequestScope": scope.RequestScope,
     "ErrorEnvelope": common.ErrorEnvelope,
     "SpanResolution": common.SpanResolution,
@@ -19,11 +20,11 @@ MODELS = {
 def test_shared_conformance(case):
     model = MODELS[case["model"]]
     if case["valid"]:
-        result = model.model_validate(case["value"])
+        result = model.model_validate_json(json.dumps(case["value"]))
         assert model.model_validate_json(result.model_dump_json()) == result
     else:
         with pytest.raises(ValidationError):
-            model.model_validate(case["value"])
+            model.model_validate_json(json.dumps(case["value"]))
 
 
 def test_exact_span_checks_preserve_codepoints_and_revision_text():
