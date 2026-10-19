@@ -87,7 +87,8 @@ infrastructure/docker/       container definitions
 docs/                        working specifications
 ```
 
-Only documentation and brand assets exist in this increment. The overview and
+Documentation, brand assets and synthetic fixture integrity tests exist. The
+application modules remain planned. The overview and
 detailed retrieval strategy are classified under `docs/product/` and
 `docs/architecture/`, respectively; the application paths above remain planned.
 

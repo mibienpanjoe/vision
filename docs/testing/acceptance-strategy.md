@@ -1,12 +1,13 @@
 # Acceptance and verification strategy
 
-**Status:** planned scenarios, no application tests executed or CI configured.
+**Status:** T03 corpus integrity tests pass; application/provider scenarios and CI remain pending.
 The [requirements](../product/requirements-and-acceptance.md) own product promises;
 this page owns how to demonstrate them without relying on attractive output.
 
 ## Synthetic narrative fixture
 
-Prepare a short annotated story with Arthur as a child, an injury during a war,
+The [versioned synthetic story](../../apps/api/tests/fixtures/narrative/story.md)
+and [annotations](../../apps/api/tests/fixtures/narrative/expected.json) provide a short narrative with Arthur as a child, an injury during a war,
 armor removed before a home scene, a later chapter flashing back to childhood,
 two people called captain, an object attributed to another person, a rumor,
 a metaphor, and a damaged/rebuilt building. Include explicit unknown traits,
@@ -16,6 +17,28 @@ The annotations identify entities, exact spans, admissible temporal relations,
 scope, support type, expected inclusions/exclusions, and unresolved ambiguity.
 Add accents and supplementary Unicode characters to exercise source offsets.
 Keep this corpus synthetic; do not commit private books as convenient fixtures.
+
+Run the corpus checks from the repository root using the selected Python:
+
+```sh
+python3.12 -m unittest discover -s apps/api/tests -p 'test_fixture_annotations.py' -v
+```
+
+The standard-library tests require no package installation. They check the source
+SHA-256, exact code-point slices, paragraph and chapter mapping, reference integrity,
+disjoint expected outcomes, scope/owner compatibility and cutoff eligibility of
+selected facts. The corpus contains 14 passages, 33 spans, eight entities,
+eight events, 25 facts, one dinner scene and 17 outcome cases. Versions and
+synthetic provenance are embedded in the annotation file. Review changes to the
+story and annotations together; never regenerate an oracle from model predictions.
+
+T03 ran three passing integrity tests, a Node code-point probe for all 33 spans,
+and temporary mutation probes that rejected quote corruption, unknown entities,
+late cutoff evidence, wrong ownership and stale source identity. These establish
+fixture consistency. The expected temporal states, ambiguity and support labels
+were reviewed against the story; automated narrative extraction and reconstructed
+outputs have not been evaluated. T06/T36 must still prove executable client
+contracts and DOM highlighting.
 
 ## Scenario matrix
 
@@ -62,7 +85,7 @@ invent target percentages or claim exhaustive recall from one synthetic story.
 
 ## Current verification boundary
 
-This documentation increment can check documents and brand images. It cannot
+Phase 0 establishes decisions and a checked fixture oracle. It cannot
 establish application behavior, compatibility of copied components, provider
 quality for book extraction, or runtime security. Future checks must run against
 the current artifact, not only a previously recorded pass.

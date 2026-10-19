@@ -1,12 +1,13 @@
 # Development and operations
 
-**Status:** T01 toolchain selected; no executable application setup or deployment.
+**Status:** Phase 0 foundation decisions and corpus checks complete; application setup and deployment pending.
 
 ## Current repository
 
-The repository contains source briefs, working documentation, and brand assets.
-There are no dependency manifests, environment template, database migrations,
-Compose services, application commands, tests, or CI workflows. Reading the
+The repository contains source briefs, working documentation, brand assets and
+a synthetic acceptance corpus with deterministic integrity tests. There are no
+dependency manifests, environment template, database migrations, Compose services,
+application startup commands or CI workflows. Reading the
 [documentation map](../documentation-map.md) is the current starting action.
 Do not run invented `npm`, `uv`, migration, or Compose commands from the brief's
 planned directory tree.
@@ -15,9 +16,9 @@ planned directory tree.
 
 | Component | Selected technology | Setup still required |
 |---|---|---|
-| Web | Next.js, TypeScript, Tailwind, shadcn/ui | Runtime/package versions, manifests, app shell |
-| API | Python, FastAPI, Pydantic | Runtime/dependency versions, app and configuration |
-| Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Image/version, schema, search configuration, migrations |
+| Web | Next.js, TypeScript, Tailwind, shadcn/ui | Manifests, app shell; runtime/package tools selected below |
+| API | Python, FastAPI, Pydantic | Dependency locks, app and configuration; runtime selected below |
+| Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Schema, search configuration, migrations; image selected below |
 | Jobs | Redis, Dramatiq | Broker/worker settings, durable attempts, cancellation and recovery |
 | Sources/assets | Private local filesystem | Storage root, permissions, quota and retention |
 | Models | Role-specific provider adapters | Provider/model selection, credentials, data handling, budgets |
@@ -68,8 +69,8 @@ The parser candidate is Docling 2.140.0 (Python metadata `>=3.10,<4.0`).
 A binary-only Linux x86_64/Python 3.12 dependency-resolution probe includes
 FastAPI 0.147.0, SQLAlchemy 2.1.5, Alembic 1.20.0 and Dramatiq/Redis 2.2.1.
 The probe passed with binary distributions for the selected target; this is
-metadata resolution, not an API lock, installation or parser execution. Resolve and commit actual dependencies with their first
-consumer. Keep Docling's heavy conversion dependencies out of the API bootstrap
+metadata resolution, not an API lock, installation or parser execution.
+Resolve and commit actual dependencies with their first consumer. Keep Docling's heavy conversion dependencies out of the API bootstrap
 until its parser task requires them. PDF extraction/OCR and EPUB mapping still
 need T14/T15 format fixtures; no OCR engine or model assets are approved here.
 Embedding dimension/model, ANN tuning, provider choices and resource budgets
