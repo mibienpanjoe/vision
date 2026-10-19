@@ -99,3 +99,18 @@ def test_login_attempts_have_a_process_bound(setup):
         for _ in range(10):
             assert login(client, "unknown").status_code == 401
         assert login(client, "unknown").status_code == 429
+
+def test_local_cli_provisions_an_account_without_public_registration(database):
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    command = [sys.executable, "-m", "app.cli", "create-user", "reader", "--password-stdin"]
+    result = subprocess.run(command, input=PASSWORD + "\n", text=True, capture_output=True,
+                            cwd=Path(__file__).parents[1], check=False)
+    assert result.returncode == 0
+    assert PASSWORD not in result.stdout + result.stderr
+    with TestClient(create_app(), base_url="http://127.0.0.1") as client:
+        assert login(client, "reader").status_code == 200
+        assert client.get("/v1/auth/me").json()["username"] == "reader"
+        assert client.post("/v1/auth/register", json={}).status_code == 404
