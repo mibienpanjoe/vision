@@ -158,3 +158,44 @@ is not a request payload. No speculative full visualization model is shipped.
 Sources: [Pydantic discriminated unions](https://docs.pydantic.dev/latest/concepts/unions/#discriminated-unions-with-str-discriminators),
 [Pydantic JSON Schema](https://docs.pydantic.dev/latest/concepts/json_schema/), and
 [json-schema-to-typescript](https://github.com/bcherny/json-schema-to-typescript).
+
+## Local authentication — T07
+
+| Endpoint | Implemented behavior |
+|---|---|
+| `POST /v1/auth/login` | Bounded username/passphrase, generic failure, fresh opaque session, public principal view |
+| `GET /v1/auth/me` | Principal resolved from a nonexpired database session; no client owner ID |
+| `POST /v1/auth/logout` | Authenticated, origin-checked session revocation; `204` and cookie removal |
+
+Accounts are provisioned only by the local administrative CLI. There is no
+registration endpoint, external identity provider or development-principal
+bypass. Usernames are 3–32 lowercase ASCII identifier characters; passphrases
+are 12–128 code points. Passwords use versioned, randomly salted scrypt
+(N=131072, r=8, p=1); only SHA-256 digests of 256-bit random session tokens are
+stored. Existing browser sessions rotate on login; sessions expire after 12 hours.
+
+The browser calls `/api/v1/*` on the Next.js origin, which forwards to the local
+API. Cookie `vision_session` is host-only, HttpOnly, SameSite Strict, path `/`.
+It deliberately uses HTTP on loopback without Secure under DEC-25; external
+network exposure/HTTPS deployment is outside this supported configuration.
+API trusted hosts are localhost/127.0.0.1. Mutations require an exact allowed
+Origin (`http://127.0.0.1:3000` or `http://localhost:3000` by default). Private
+`VISION_WEB_ORIGINS` can select another local test origin. No CORS grant is needed.
+
+A fixed-memory limiter allows ten login attempts per minute per local API process,
+including unknown users; it resets on process restart. Five failed passwords for
+an existing account lock it for five minutes in PostgreSQL. These are initial
+local protections, not a distributed rate-limit claim. Errors use the safe common
+envelope and generated correlation IDs; validation does not echo input.
+Authenticated responses use `Cache-Control: no-store`.
+
+`ActorScope` comes only from the authenticated session and principal lookup.
+The reusable owned-object query binds both object ID and authenticated owner,
+returning the same `404` for missing/inaccessible objects. Integration tests
+prove it with isolated synthetic records; T08/T10 apply it to real product jobs
+and works. Client-supplied owner headers/fields never establish authority.
+
+Verified with two real PostgreSQL-backed principals, expiry/logout, invalid
+credentials/origins/fields, login limits and local CLI provisioning. An actual
+Chromium navigation through the web proxy saw the authenticated principal and
+then `401` after logout. This is session transport proof, not a completed login UI.

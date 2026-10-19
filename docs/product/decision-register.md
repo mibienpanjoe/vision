@@ -31,6 +31,7 @@
 | DEC-23 | Adopt PROP-03 shared outcomes/errors; exact ETag/If-Match, scoped durable idempotency and explicit request conflict resolution | T02; [API conventions](../api/api-contract.md#selected-first-slice-wire-conventions) |
 | DEC-24 | Use the installed FreeLLM API for LLM calls; verify role/model capabilities and source handling before live integration | Maintainer decision, 2026-10-19; [operations](../operations/development-and-operations.md#local-model-gateway) |
 | DEC-25 | Local-only application; external hosting/deployment is outside delivery scope; private local storage is the active baseline | Maintainer decision, 2026-10-19; [operations](../operations/development-and-operations.md#delivery-scope) |
+| DEC-26 | Local CLI-provisioned accounts, scrypt passwords and 12-hour opaque DB sessions; same-origin loopback web proxy, HttpOnly/SameSite Strict cookie and explicit mutation Origin checks | T07 implementation choice under local-only scope; [API authentication](../api/api-contract.md#local-authentication--t07) |
 
 ## Proposed elaborations
 
@@ -46,7 +47,7 @@ documents fixed all details.
 
 | ID | Question | Needed before |
 |---|---|---|
-| OPEN-01 | Authentication/session mechanism and ownership representation | Any network-accessible real upload flow |
+| OPEN-01 | Resolved by DEC-26; later work consumes the validated ActorScope | Any network-accessible real upload flow |
 | OPEN-02 | Gateway selected by DEC-24; role/model capabilities, credentials, budgets and source handling remain to verify | Live model integration |
 | OPEN-03 | First language resolved by DEC-22 (English); broader languages/configurations remain open | Lexical indexing and multilingual claims |
 | OPEN-04 | Resolved for the first slice by DEC-22; revisit only with an explicit changed decision | Temporal reconstruction implementation |

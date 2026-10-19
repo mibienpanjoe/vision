@@ -190,3 +190,20 @@ T04 verified PostgreSQL 17.11 and vector 0.8.7, migration 0001 on a fresh local
 database, actual HTTP liveness/readiness 200/200, and DB-down liveness/readiness
 200/503 with safe responses. The isolated probe restarted Vision's database and
 shut down its temporary API process. Domain tables and integration CI follow.
+
+## Local account administration
+
+After database migration, provision a local account from the API directory:
+
+```sh
+cd apps/api
+uv run --locked --env-file ../../.env python -m app.cli create-user reader
+```
+
+The CLI prompts for a passphrase without echo. `--password-stdin` is available
+for isolated test automation; never put credentials in command arguments or
+commit them. Duplicate usernames fail safely. API session transport and current
+limits are owned by the [authentication contract](../api/api-contract.md#local-authentication--t07).
+The web proxy defaults to `http://127.0.0.1:8000`; set `VISION_API_ORIGIN` before
+building when selecting a different loopback API port. It accepts loopback HTTP
+origins only. T09 consolidates clean-checkout and integration/browser commands.

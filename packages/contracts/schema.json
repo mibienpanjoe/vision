@@ -96,6 +96,28 @@
       "title": "InsufficientEvidence",
       "type": "object"
     },
+    "LoginRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "password": {
+          "maxLength": 128,
+          "minLength": 12,
+          "title": "Password",
+          "type": "string"
+        },
+        "username": {
+          "pattern": "^[a-z][a-z0-9_-]{2,31}$",
+          "title": "Username",
+          "type": "string"
+        }
+      },
+      "required": [
+        "username",
+        "password"
+      ],
+      "title": "LoginRequest",
+      "type": "object"
+    },
     "NeedsContext": {
       "additionalProperties": false,
       "properties": {
@@ -124,6 +146,26 @@
         "choices"
       ],
       "title": "NeedsContext",
+      "type": "object"
+    },
+    "PrincipalView": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "username": {
+          "title": "Username",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "username"
+      ],
+      "title": "PrincipalView",
       "type": "object"
     },
     "RequestScope": {
@@ -384,6 +426,12 @@
     "error": {
       "$ref": "#/$defs/ErrorEnvelope"
     },
+    "login_request": {
+      "$ref": "#/$defs/LoginRequest"
+    },
+    "principal": {
+      "$ref": "#/$defs/PrincipalView"
+    },
     "scope": {
       "$ref": "#/$defs/RequestScope"
     },
@@ -395,6 +443,8 @@
     }
   },
   "required": [
+    "login_request",
+    "principal",
     "source_span",
     "scope",
     "error",
