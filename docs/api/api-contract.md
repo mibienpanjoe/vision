@@ -1,8 +1,9 @@
 # HTTP API contract draft
 
 **Status:** T02 selects shared outcomes and mutation conventions (DEC-23); resource routes remain illustrative.
-There are no implemented endpoints or generated OpenAPI schemas yet. Do not
-build clients against these shapes as if they were frozen.
+The health endpoints exist; resource routes below remain planned. T06 implements
+strict shared Pydantic models and generated JSON Schema/TypeScript, independently
+of the illustrative resource payloads below.
 
 ## Shared requirements
 
@@ -127,3 +128,33 @@ authorized source-span retrieval, resource-specific refinement
 and deletion, streaming if needed, and version evolution. T07 owns auth, T08 job
 routes, T10 upload/pagination, T12 evidence reads, T38 refinement, and T46 deletion. The overview's endpoint
 list alone does not cover the complete library/evidence/job product flow.
+
+## Executable shared foundation — T06
+
+`apps/api/app/schemas/` owns strict scope, source-span, safe-error and outcome
+primitives. Extra fields, invalid tags and missing required variant payloads are
+rejected. `packages/contracts/schema.json` and `index.ts` are generated from those
+models; do not hand-edit them. Run:
+
+```sh
+pnpm --dir packages/contracts generate
+pnpm --dir packages/contracts test
+pnpm --dir packages/contracts typecheck
+```
+
+Python and Node consume the same `conformance.json` cases. The generated schema
+handles structural validation; Python validators and the TypeScript source-span
+helper additionally enforce code-point length, interval ordering and exact quote
+matching. JSON Schema alone cannot compare two fields or query stored source text.
+Ownership, actual source-revision lookup and reading eligibility are enforced at
+their authoritative operation boundaries, not established by a valid scope shape.
+
+`Resolved[Payload]` is a generic envelope with required typed `data`; the concrete
+`SpanResolution` export is a conformance binding to SourceSpan, not the visual
+specification or a visualization endpoint. T31 binds the actual validated visual
+specification and extends generated contracts then. The build-time SchemaCatalog
+is not a request payload. No speculative full visualization model is shipped.
+
+Sources: [Pydantic discriminated unions](https://docs.pydantic.dev/latest/concepts/unions/#discriminated-unions-with-str-discriminators),
+[Pydantic JSON Schema](https://docs.pydantic.dev/latest/concepts/json_schema/), and
+[json-schema-to-typescript](https://github.com/bcherny/json-schema-to-typescript).

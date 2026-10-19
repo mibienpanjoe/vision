@@ -1,0 +1,405 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:vision:contracts:1.0",
+  "$defs": {
+    "ContextChoice": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label"
+      ],
+      "title": "ContextChoice",
+      "type": "object"
+    },
+    "ErrorEnvelope": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "$ref": "#/$defs/SafeError"
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "title": "ErrorEnvelope",
+      "type": "object"
+    },
+    "Failed": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "$ref": "#/$defs/SafeError"
+        },
+        "outcome": {
+          "const": "failed",
+          "title": "Outcome",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "outcome",
+        "schema_version",
+        "error"
+      ],
+      "title": "Failed",
+      "type": "object"
+    },
+    "InsufficientEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "missing": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Missing",
+          "type": "array"
+        },
+        "outcome": {
+          "const": "insufficient_evidence",
+          "title": "Outcome",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "outcome",
+        "schema_version",
+        "missing"
+      ],
+      "title": "InsufficientEvidence",
+      "type": "object"
+    },
+    "NeedsContext": {
+      "additionalProperties": false,
+      "properties": {
+        "choices": {
+          "items": {
+            "$ref": "#/$defs/ContextChoice"
+          },
+          "minItems": 1,
+          "title": "Choices",
+          "type": "array"
+        },
+        "outcome": {
+          "const": "needs_context",
+          "title": "Outcome",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "outcome",
+        "schema_version",
+        "choices"
+      ],
+      "title": "NeedsContext",
+      "type": "object"
+    },
+    "RequestScope": {
+      "additionalProperties": false,
+      "properties": {
+        "creative_mode": {
+          "enum": [
+            "canon_first",
+            "interpretation"
+          ],
+          "title": "Creative Mode",
+          "type": "string"
+        },
+        "document_revision_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Document Revision Id",
+          "type": "string"
+        },
+        "generation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Generation Id",
+          "type": "string"
+        },
+        "reading_boundary": {
+          "discriminator": {
+            "mapping": {
+              "through_chapter": "#/$defs/ThroughChapter",
+              "whole_book": "#/$defs/WholeBook"
+            },
+            "propertyName": "mode"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/WholeBook"
+            },
+            {
+              "$ref": "#/$defs/ThroughChapter"
+            }
+          ],
+          "title": "Reading Boundary"
+        },
+        "story_event_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Story Event Id"
+        },
+        "work_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Work Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "work_id",
+        "document_revision_id",
+        "generation_id",
+        "reading_boundary",
+        "creative_mode"
+      ],
+      "title": "RequestScope",
+      "type": "object"
+    },
+    "Resolved_SourceSpan_": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "$ref": "#/$defs/SourceSpan"
+        },
+        "outcome": {
+          "const": "resolved",
+          "title": "Outcome",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "outcome",
+        "schema_version",
+        "data"
+      ],
+      "title": "Resolved[SourceSpan]",
+      "type": "object"
+    },
+    "SafeError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "title": "Code",
+          "type": "string"
+        },
+        "correlation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Correlation Id",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable": {
+          "title": "Retryable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retryable",
+        "correlation_id"
+      ],
+      "title": "SafeError",
+      "type": "object"
+    },
+    "SourceSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "document_revision_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Document Revision Id",
+          "type": "string"
+        },
+        "end": {
+          "exclusiveMinimum": 0,
+          "title": "End",
+          "type": "integer"
+        },
+        "offset_unit": {
+          "const": "unicode_code_point",
+          "default": "unicode_code_point",
+          "title": "Offset Unit",
+          "type": "string"
+        },
+        "passage_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Passage Id",
+          "type": "string"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "document_revision_id",
+        "passage_id",
+        "start",
+        "end",
+        "quote"
+      ],
+      "title": "SourceSpan",
+      "type": "object"
+    },
+    "SpanResolution": {
+      "discriminator": {
+        "mapping": {
+          "failed": "#/$defs/Failed",
+          "insufficient_evidence": "#/$defs/InsufficientEvidence",
+          "needs_context": "#/$defs/NeedsContext",
+          "resolved": "#/$defs/Resolved_SourceSpan_"
+        },
+        "propertyName": "outcome"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Resolved_SourceSpan_"
+        },
+        {
+          "$ref": "#/$defs/NeedsContext"
+        },
+        {
+          "$ref": "#/$defs/InsufficientEvidence"
+        },
+        {
+          "$ref": "#/$defs/Failed"
+        }
+      ],
+      "title": "SpanResolution"
+    },
+    "ThroughChapter": {
+      "additionalProperties": false,
+      "properties": {
+        "chapter_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Chapter Id",
+          "type": "string"
+        },
+        "mode": {
+          "const": "through_chapter",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "chapter_id"
+      ],
+      "title": "ThroughChapter",
+      "type": "object"
+    },
+    "WholeBook": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "whole_book",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "WholeBook",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Build-time export root only; this is not an HTTP request/response.",
+  "properties": {
+    "error": {
+      "$ref": "#/$defs/ErrorEnvelope"
+    },
+    "scope": {
+      "$ref": "#/$defs/RequestScope"
+    },
+    "source_span": {
+      "$ref": "#/$defs/SourceSpan"
+    },
+    "span_outcome": {
+      "$ref": "#/$defs/SpanResolution"
+    }
+  },
+  "required": [
+    "source_span",
+    "scope",
+    "error",
+    "span_outcome"
+  ],
+  "title": "SchemaCatalog",
+  "type": "object"
+}
