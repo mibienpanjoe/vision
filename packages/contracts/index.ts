@@ -4,10 +4,19 @@ export type Code = string;
 export type CorrelationId = string;
 export type Message = string;
 export type Retryable = boolean;
+export type Attempts = number;
+export type CorrelationId1 = string;
+export type DispatchPending = boolean;
+export type Id = string;
+export type Result = number | null;
+export type Stage = "queued" | "complete";
+export type Status = "queued" | "succeeded";
 export type Password = string;
 export type Username = string;
-export type Id = string;
+export type Id1 = string;
 export type Username1 = string;
+export type Kind = "probe";
+export type Value = number;
 export type CreativeMode = "canon_first" | "interpretation";
 export type DocumentRevisionId = string;
 export type GenerationId = string;
@@ -30,7 +39,7 @@ export type SchemaVersion = "1.0";
  * @minItems 1
  */
 export type Choices = [ContextChoice, ...ContextChoice[]];
-export type Id1 = string;
+export type Id2 = string;
 export type Label = string;
 export type Outcome1 = "needs_context";
 export type SchemaVersion1 = "1.0";
@@ -48,8 +57,10 @@ export type SchemaVersion3 = "1.0";
  */
 export interface SchemaCatalog {
   error: ErrorEnvelope;
+  job: JobView;
   login_request: LoginRequest;
   principal: PrincipalView;
+  probe_request: ProbeRequest;
   scope: RequestScope;
   source_span: SourceSpan;
   span_outcome: SpanResolution;
@@ -63,13 +74,26 @@ export interface SafeError {
   message: Message;
   retryable: Retryable;
 }
+export interface JobView {
+  attempts: Attempts;
+  correlation_id: CorrelationId1;
+  dispatch_pending: DispatchPending;
+  id: Id;
+  result: Result;
+  stage: Stage;
+  status: Status;
+}
 export interface LoginRequest {
   password: Password;
   username: Username;
 }
 export interface PrincipalView {
-  id: Id;
+  id: Id1;
   username: Username1;
+}
+export interface ProbeRequest {
+  kind?: Kind;
+  value?: Value;
 }
 export interface RequestScope {
   creative_mode: CreativeMode;
@@ -105,7 +129,7 @@ export interface NeedsContext {
   schema_version: SchemaVersion1;
 }
 export interface ContextChoice {
-  id: Id1;
+  id: Id2;
   label: Label;
 }
 export interface InsufficientEvidence {

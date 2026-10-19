@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 from app.schemas.access import LoginRequest, PrincipalView
 from app.schemas.base import ContractModel, OpaqueId
+from app.schemas.jobs import JobView, ProbeRequest
 from app.schemas.scope import RequestScope, SourceSpan
 
 
@@ -63,6 +64,8 @@ class SchemaCatalog(ContractModel):
     """Build-time export root only; this is not an HTTP request/response."""
     login_request: LoginRequest
     principal: PrincipalView
+    probe_request: ProbeRequest
+    job: JobView
     source_span: SourceSpan
     scope: RequestScope
     error: ErrorEnvelope

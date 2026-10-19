@@ -207,3 +207,29 @@ limits are owned by the [authentication contract](../api/api-contract.md#local-a
 The web proxy defaults to `http://127.0.0.1:8000`; set `VISION_API_ORIGIN` before
 building when selecting a different loopback API port. It accepts loopback HTTP
 origins only. T09 consolidates clean-checkout and integration/browser commands.
+
+## Probe worker — T08
+
+Redis is a dedicated, password-protected, digest-pinned service on loopback 56379
+with persistent queue data. Private `.env` now includes `REDIS_PASSWORD`,
+`REDIS_PORT` and matching `REDIS_URL`. Start it with:
+
+```sh
+docker compose up -d --wait redis
+cd apps/api
+uv run --locked --env-file ../../.env python -m app.workers.dispatch
+uv run --locked --env-file ../../.env dramatiq app.workers.bootstrap --processes 1 --threads 1
+```
+
+The dispatch command publishes up to 50 pending jobs per transaction until none
+are sent; rerun after a broker outage. Worker retries are bounded (two, with
+1–5 second backoff); database and Redis calls have two-second connection bounds.
+No extra metrics server is started. Broker messages contain job IDs only; source,
+credentials and client-selected owners are not payloads. Queue namespace defaults
+to `vision`; tests use a unique namespace and disposable PostgreSQL database.
+
+T08 proved an actual Redis→Dramatiq→PostgreSQL result, stopped-worker pending state,
+restart, scoped polling, request replay/conflict and failed-publication recovery.
+The small probe commits atomically; it does not establish long-running ingestion
+crash/cancellation recovery. The [job API](../api/api-contract.md#bounded-worker-probe--t08)
+owns response semantics. T09 establishes consolidated commands and actual CI.

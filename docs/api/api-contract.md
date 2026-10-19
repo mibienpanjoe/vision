@@ -203,3 +203,25 @@ then `401` after logout. This is session transport proof, not a completed login 
 Authentication login/logout use the rotation/revocation semantics above rather
 than business-operation idempotency keys; retries do not create works, jobs or
 paid provider effects. This qualifies the general POST convention for sessions.
+
+## Bounded worker probe — T08
+
+`POST /v1/jobs` accepts an authenticated, origin-checked probe request with
+`kind: "probe"` (default) and integer `value` from 0 to 1,000,000. It requires
+`Idempotency-Key`. `202` returns a persisted job reference/state, not completion.
+Keys are scoped by owner and this resource; same request replays the same job,
+different input returns `409 / IDEMPOTENCY_CONFLICT`. Keys are retained without
+expiry at this foundation stage, satisfying the minimum replay window.
+
+`GET /v1/jobs/{id}` applies the authoritative owned-object query. Responses carry
+stage, attempts, nullable result, correlation ID and `dispatch_pending`. With no
+worker, published jobs remain queued; with an unreachable broker, publication
+intent remains in PostgreSQL and pending stays visible. The dispatch command
+reconciles unpublished jobs. Broker acceptance alone never means success.
+
+The only implemented task increments the bounded integer. A real worker loads
+the job's persisted principal/scope and writes one result/attempt under a SQL row
+lock and transaction. Duplicate delivery cannot duplicate its committed result.
+The instantaneous probe exposes queued/succeeded, not a simulated long-running
+stage. Its attempt record retains stage, outcome and timestamps. T13 introduces
+long-running ingestion stages, failures/cancellation and broader recovery.

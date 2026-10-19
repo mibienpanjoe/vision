@@ -96,6 +96,70 @@
       "title": "InsufficientEvidence",
       "type": "object"
     },
+    "JobView": {
+      "additionalProperties": false,
+      "properties": {
+        "attempts": {
+          "minimum": 0,
+          "title": "Attempts",
+          "type": "integer"
+        },
+        "correlation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Correlation Id",
+          "type": "string"
+        },
+        "dispatch_pending": {
+          "title": "Dispatch Pending",
+          "type": "boolean"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Result"
+        },
+        "stage": {
+          "enum": [
+            "queued",
+            "complete"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "succeeded"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "stage",
+        "attempts",
+        "result",
+        "correlation_id",
+        "dispatch_pending"
+      ],
+      "title": "JobView",
+      "type": "object"
+    },
     "LoginRequest": {
       "additionalProperties": false,
       "properties": {
@@ -166,6 +230,26 @@
         "username"
       ],
       "title": "PrincipalView",
+      "type": "object"
+    },
+    "ProbeRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "probe",
+          "default": "probe",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "default": 0,
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "title": "ProbeRequest",
       "type": "object"
     },
     "RequestScope": {
@@ -426,11 +510,17 @@
     "error": {
       "$ref": "#/$defs/ErrorEnvelope"
     },
+    "job": {
+      "$ref": "#/$defs/JobView"
+    },
     "login_request": {
       "$ref": "#/$defs/LoginRequest"
     },
     "principal": {
       "$ref": "#/$defs/PrincipalView"
+    },
+    "probe_request": {
+      "$ref": "#/$defs/ProbeRequest"
     },
     "scope": {
       "$ref": "#/$defs/RequestScope"
@@ -445,6 +535,8 @@
   "required": [
     "login_request",
     "principal",
+    "probe_request",
+    "job",
     "source_span",
     "scope",
     "error",
