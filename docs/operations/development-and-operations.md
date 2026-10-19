@@ -260,7 +260,8 @@ binds loopback 8000, PostgreSQL 55432 and Redis 56379. The command is local-only
 |---|---|
 | `make services migrate` | Start/check PostgreSQL/Redis and apply migrations |
 | `make api`, `make worker`, `make web` | Run one service separately in its own terminal |
-| `make dispatch` | Reconcile pending queue publication after a broker outage |
+| `make dispatch` | Reconcile pending probe queue publication after a broker outage |
+| `make reconcile-sources` | Remove old, unreferenced interrupted originals; preserve active/linked sources |
 | `make browsers` | Install the isolated Chromium browser; OS browser prerequisites may be required |
 | `make check` | Repository lint, non-infrastructure tests, deterministic contract regeneration, Node/type checks, web build and shell browser checks, documentation checks |
 | `make integration` | Real authenticated PostgreSQL/Redis/worker tests in disposable databases and unique queue namespaces |
@@ -283,3 +284,20 @@ are absent. Only its own ephemeral CI volumes are removed at job end. A separate
 local clone with distinct ports/service project passed the documented clean-setup
 sequence; exact run evidence remains in the task/PR record. No external deployment,
 provider quality or book reconstruction follows from these foundation checks.
+
+
+## Private original storage — T10
+
+Originals default to ignored `storage/originals/` outside public web roots.
+`VISION_SOURCE_ROOT` can select another private local directory for API and
+future ingestion workers; use the same path for both roles. The directory must
+have no group/other permissions (0700); files are created 0600. Generated random
+references never include uploaded filenames. Do not point this root at a web
+server's public directory or a shared/private-book directory owned by another app.
+
+`make reconcile-sources` scans only generated source names, skips symlinks and
+active leases, and checks PostgreSQL before removing unreferenced files at least
+one hour old. Run it after interrupted uploads or uncertain database commits.
+It is interrupted-upload cleanup, not reader-requested deletion or retention.
+Those lifecycles remain with their later tasks. Queued text-ingestion intents
+await T11's parser consumer and are not published as probe work by `make dispatch`.

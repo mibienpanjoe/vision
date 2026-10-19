@@ -1,6 +1,8 @@
 # Security and source privacy
 
-**Status:** requirements for implementation; no deployed security controls exist.
+**Status:** local authentication, owned text uploads/library and private source
+storage are implemented. Broader pipeline controls remain requirements; no
+external deployment is in scope.
 
 ## Trust boundaries
 
@@ -12,8 +14,8 @@ at their respective boundaries.
 Every work and derived object is private to its authorized owner by default.
 Authorization applies to library results, jobs, passages, entities, indexes,
 cached states, visualization history, downloads, and image assets. A work ID is
-not permission to read it. The authentication mechanism remains an
-[open decision](docs/product/decision-register.md).
+not permission to read it. Local CLI-provisioned sessions and authoritative ActorScope are selected in
+[DEC-26](docs/product/decision-register.md).
 
 ## Uploads and evidence
 

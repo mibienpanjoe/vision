@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from app.api.v1.auth import router as auth_router
 from app.api.v1.jobs import router as jobs_router
+from app.api.v1.works import router as works_router
 from app.core.errors import install_errors
 from app.core.security import LoginLimiter
 from app.db.session import configured_engine
@@ -30,6 +31,7 @@ def create_app() -> FastAPI:
     install_errors(app)
     app.include_router(auth_router)
     app.include_router(jobs_router)
+    app.include_router(works_router)
 
     @app.get("/health/live")
     def live() -> dict[str, str]:

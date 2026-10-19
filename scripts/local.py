@@ -99,6 +99,8 @@ def main():
             ],
             cwd=API,
         )
+    elif command == "reconcile-sources":
+        run(["uv", "run", "--locked", "python", "-m", "app.services.ingestion.reconcile"], cwd=API)
     elif command in {"worker", "dispatch"}:
         run(["uv", "run", "--locked", "python", "-m", "app.workers.dispatch"], cwd=API)
         if command == "worker":

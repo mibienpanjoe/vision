@@ -1,8 +1,8 @@
 # HTTP API contract draft
 
 **Status:** shared outcomes and mutation conventions selected in DEC-23.
-Health, authentication and probe-job routes exist as detailed below; the
-book and reconstruction resource surface remains illustrative. T06 implements
+Health, authentication, probe jobs and the private text-upload/library routes
+exist as detailed below; reconstruction resources remain illustrative. T06 implements
 strict shared Pydantic models and generated JSON Schema/TypeScript, independently
 of the illustrative resource payloads below.
 
@@ -123,9 +123,9 @@ prior ETag; If-Match applies only where an existing resource revision is mutated
 
 ## Unresolved wire details
 
-Authentication and probe-job submission/polling are implemented below. Before
-each remaining consumer, define multipart/upload encoding and pagination (T10),
-authorized source-span retrieval (T12), ingestion retry/cancellation (T13),
+Authentication, probe jobs and multipart uploads/library pagination are
+implemented below. Before each remaining consumer, define authorized source-span
+retrieval (T12), ingestion retry/cancellation (T13),
 refinement (T38), deletion (T46), and streaming/version evolution where needed.
 The overview's endpoint list alone does not cover the complete
 library/evidence/job product flow.
@@ -226,3 +226,32 @@ lock and transaction. Duplicate delivery cannot duplicate its committed result.
 The instantaneous probe exposes queued/succeeded, not a simulated long-running
 stage. Its attempt record retains stage, outcome and timestamps. T13 introduces
 long-running ingestion stages, failures/cancellation and broader recovery.
+
+
+## Private uploads and library — T10
+
+| Endpoint | Implemented behavior |
+|---|---|
+| `POST /v1/works` | Authenticated multipart `title`, `format` (`txt`/`md`), and one `file`; required `Idempotency-Key`; `202` with work and queued ingestion reference |
+| `GET /v1/works` | Owner-scoped UUID-ascending keyset page; `limit` 1–100 (default 20), optional UUID `after`; `items` and nullable `next_cursor` |
+| `GET /v1/works/{id}` | Owned work metadata and its first immutable document revision |
+| `GET /v1/works/{id}/original` | Owned original bytes as a nosniff attachment with a fixed safe filename; no public storage URL |
+| `GET /v1/works/{id}/ingestions/{job_id}` | Job resolved through the owned work/document; current state queued/awaiting_parser, with publication pending |
+
+Upload authentication and Origin checks precede body consumption. The boundary
+counts actual received bytes, permits at most 64 KiB of multipart overhead,
+limits fields/files and enforces the [input policy](../ingestion/ingestion-contract.md#first-upload-input-boundary--t10).
+Names, MIME claims and caller-supplied ownership never establish source type,
+storage path or authority. Metadata belongs in multipart fields, not URL queries;
+unknown/duplicate fields and extra files fail safely. Errors use the common
+safe envelope: invalid content/metadata `422`, malformed multipart `400`, size
+`413`, media type `415`, transfer timeout `408`, unavailable storage `503`.
+
+Creation keys are scoped to authenticated owner and work creation. Exact title,
+format and original SHA-256 define request identity; replay returns the same
+work/document/job, while changed input gives `409`. Keys currently persist with
+the work without expiry. A lost acknowledgement can return `503` after SQL
+committed: replay recovers the persisted reference without deleting its source.
+Pagination cursors are positions, not authority; every page reapplies owner scope.
+Response models are generated from `schemas/works.py`; storage references,
+private filesystem paths, owner identifiers and original filenames are excluded.

@@ -10,6 +10,7 @@ dependencies = [
   "psycopg[binary]>=3.2,<4",
   "alembic==1.20.0",
   "dramatiq[redis]==2.2.1",
+  "python-multipart==0.0.32",
 ]
 
 [dependency-groups]

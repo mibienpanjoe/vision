@@ -4,6 +4,13 @@ from app.schemas.access import LoginRequest, PrincipalView
 from app.schemas.base import ContractModel, OpaqueId
 from app.schemas.jobs import JobView, ProbeRequest
 from app.schemas.scope import RequestScope, SourceSpan
+from app.schemas.works import (
+    IngestionView,
+    LibraryPage,
+    UploadAccepted,
+    UploadMetadata,
+    WorkView,
+)
 from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 
@@ -65,6 +72,11 @@ class SchemaCatalog(ContractModel):
     principal: PrincipalView
     probe_request: ProbeRequest
     job: JobView
+    upload_metadata: UploadMetadata
+    upload_accepted: UploadAccepted
+    work: WorkView
+    library_page: LibraryPage
+    ingestion: IngestionView
     source_span: SourceSpan
     scope: RequestScope
     error: ErrorEnvelope

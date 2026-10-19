@@ -1,7 +1,9 @@
 # Ingestion and source-mapping contract
 
-**Status:** first-slice source/generation semantics selected by T02; job wire details remain draft.
-**Scope:** upload through a usable derived index; no parser or worker exists yet.
+**Status:** private TXT/Markdown upload and library boundary implemented;
+source/generation semantics selected by T02.
+**Scope:** upload through a usable derived index; parser execution and the broader
+ingestion lifecycle remain pending. The foundation probe worker is implemented.
 
 ## Input and output
 
@@ -100,7 +102,8 @@ encrypted/unreadable files, parser failures, missing structure, ambiguous
 extraction, provider outages, budget exhaustion, and cancellation produce
 distinct safe outcomes. Do not leak paths or source text in errors.
 
-Resource ceilings and retry policy are configurable but not numerically chosen.
+Initial upload ceilings are selected below; parser/provider limits and retry
+policy are settled at their respective consumers.
 Follow [SECURITY.md](../../SECURITY.md) for untrusted content, EPUB expansion,
 private storage, and provider disclosure. Operations and restoration procedures
 belong to [development and operations](../operations/development-and-operations.md).
@@ -123,5 +126,17 @@ Originals live under ignored `storage/originals/` (or a private
 `VISION_SOURCE_ROOT`) using random opaque references, directory mode 0700 and
 file mode 0600. Original names and paths never form storage keys or public URLs.
 File leases protect in-flight writes from reconciliation; fsync precedes SQL
-publication. The upload/library API and interrupted-upload reconciliation are
-the next T10 increment.
+publication. One transaction publishes the work, immutable document revision and
+queued ingestion intent. A failed write or rolled-back flush discards its file.
+An uncertain COMMIT keeps the file because SQL may already reference it. The
+reconciliation command removes only unreferenced originals older than one hour
+after acquiring a nonblocking exclusive lease; linked or active files survive.
+A database failure prevents cleanup rather than guessing source availability.
+
+Ingestion jobs currently expose queued/awaiting_parser and pending publication.
+They are separate from the harmless T08 probe jobs, and no parser success or
+broker delivery is claimed by upload acceptance. T11 supplies the text consumer;
+T13 adds broader retry/cancellation and interrupted-stage recovery.
+
+Implementation sources: [Starlette request forms](https://starlette.dev/requests/)
+and [SQLAlchemy transaction management](https://docs.sqlalchemy.org/en/21/orm/session_transaction.html).
