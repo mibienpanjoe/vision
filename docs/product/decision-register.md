@@ -29,6 +29,9 @@
 | DEC-21 | Adopt PROP-02: compatible stage generations, atomic conditional publication, retained old citations | T02; [ingestion](../ingestion/ingestion-contract.md#reprocessing-proposal--prop-02) |
 | DEC-22 | First slice uses English synthetic text; explicit temporal support is required for canonical carry-forward; cutoff follows dependency closure | T02; [narrative contract](../narrative/narrative-contract.md) |
 | DEC-23 | Adopt PROP-03 shared outcomes/errors; exact ETag/If-Match, scoped durable idempotency and explicit request conflict resolution | T02; [API conventions](../api/api-contract.md#selected-first-slice-wire-conventions) |
+| DEC-24 | Use the installed FreeLLM API for LLM calls; verify role/model capabilities and source handling before live integration | Maintainer decision, 2026-10-19; [operations](../operations/development-and-operations.md#local-model-gateway) |
+| DEC-25 | Local-only application; external hosting/deployment is outside delivery scope; private local storage is the active baseline | Maintainer decision, 2026-10-19; [operations](../operations/development-and-operations.md#delivery-scope) |
+| DEC-26 | Local CLI-provisioned accounts, scrypt passwords and 12-hour opaque DB sessions; same-origin loopback web proxy, HttpOnly/SameSite Strict cookie and explicit mutation Origin checks | T07 implementation choice under local-only scope; [API authentication](../api/api-contract.md#local-authentication--t07) |
 
 ## Proposed elaborations
 
@@ -44,14 +47,14 @@ documents fixed all details.
 
 | ID | Question | Needed before |
 |---|---|---|
-| OPEN-01 | Authentication/session mechanism and ownership representation | Any network-accessible real upload flow |
-| OPEN-02 | Model providers, model IDs, credentials, costs, and source-text handling | Live model integration |
+| OPEN-01 | Resolved by DEC-26; later work consumes the validated ActorScope | Any network-accessible real upload flow |
+| OPEN-02 | Gateway selected by DEC-24; role/model capabilities, credentials, budgets and source handling remain to verify | Live model integration |
 | OPEN-03 | First language resolved by DEC-22 (English); broader languages/configurations remain open | Lexical indexing and multilingual claims |
 | OPEN-04 | Resolved for the first slice by DEC-22; revisit only with an explicit changed decision | Temporal reconstruction implementation |
 | OPEN-05 | Concrete upload/expansion/time/token/cost/candidate limits and performance targets | Accepting untrusted workloads; then calibrate with measurements |
 | OPEN-06 | Runtime/package choices resolved by DEC-19; parser execution/OCR coverage, embedding dimension and ANN settings remain open | Reproducible development environment |
 | OPEN-07 | Shared revision/idempotency resolved by DEC-23; route payloads, pagination, deletion and retention remain open | Executable API and persistent lifecycle |
-| OPEN-08 | Deployment host, backups, recovery targets, provider retention, and data deletion procedure | External deployment |
+| OPEN-08 | External deployment excluded by DEC-25; local recovery, retention and deletion remain required | External deployment |
 | OPEN-09 | Project license, exact component selections, final wordmark/vector assets, and any future optically simplified favicon | Redistribution or relevant implementation increment |
 
 OPEN-04 is resolved conservatively by DEC-22. PROP-01/02/03 were promoted to

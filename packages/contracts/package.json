@@ -1,0 +1,19 @@
+{
+  "name": "@vision/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "types": "index.ts",
+  "scripts": {
+    "generate": "node generate.mjs",
+    "test": "node --test test-contracts.mjs",
+    "typecheck": "tsc --noEmit --strict --target ES2022 --module NodeNext index.ts source-span.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "json-schema-to-typescript": "16.0.0",
+    "typescript": "^5.9.3"
+  }
+}

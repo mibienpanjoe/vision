@@ -1,28 +1,27 @@
 # Development and operations
 
-**Status:** Phase 0 foundation decisions and corpus checks complete; application setup and deployment pending.
+**Status:** executable local foundation verified; book ingestion/reconstruction pending.
+The CI workflow checks the same foundation commands without deployment or model calls.
 
 ## Current repository
 
-The repository contains source briefs, working documentation, brand assets and
-a synthetic acceptance corpus with deterministic integrity tests. There are no
-dependency manifests, environment template, database migrations, Compose services,
-application startup commands or CI workflows. Reading the
-[documentation map](../documentation-map.md) is the current starting action.
-Do not run invented `npm`, `uv`, migration, or Compose commands from the brief's
-planned directory tree.
+The repository contains working specifications, brand assets, a synthetic corpus,
+a locked API, generated contracts, local accounts/sessions, a themed web shell,
+and a durable probe worker. PostgreSQL/pgvector and Redis use dedicated loopback
+services. The [documentation map](../documentation-map.md) remains the entrypoint
+for the product contracts; the commands below own the executable setup.
 
 ## Intended local baseline
 
-| Component | Selected technology | Setup still required |
+| Component | Selected technology | Current boundary |
 |---|---|---|
-| Web | Next.js, TypeScript, Tailwind, shadcn/ui | Manifests, app shell; runtime/package tools selected below |
-| API | Python, FastAPI, Pydantic | Dependency locks, app and configuration; runtime selected below |
-| Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Schema, search configuration, migrations; image selected below |
-| Jobs | Redis, Dramatiq | Broker/worker settings, durable attempts, cancellation and recovery |
+| Web | Next.js, TypeScript, Tailwind, shadcn/ui | Themed shell implemented; library/reconstruction screens pending |
+| API | Python, FastAPI, Pydantic | Locked health/auth/job API implemented; domain endpoints pending |
+| Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Principals, sessions, jobs/attempts and vector extension; narrative tables pending |
+| Jobs | Redis, Dramatiq | Actual bounded probe; long-running ingestion/recovery remains T13 |
 | Sources/assets | Private local filesystem | Storage root, permissions, quota and retention |
-| Models | Role-specific provider adapters | Provider/model selection, credentials, data handling, budgets |
-| Integration | Docker Compose | Service definitions, health checks, ports, volumes |
+| Models | Role-specific provider adapters | Installed FreeLLM selected; role/model checks remain before first live consumer |
+| Integration | Docker Compose | Pinned private local services and verification commands below |
 
 The first executable setup change must document actual prerequisites, pinned
 versions, environment variables, startup/stop/reset commands, migration order,
@@ -115,9 +114,172 @@ real users depend on persisted evidence.
 
 ## Deployment gate
 
+**Outside current scope:** DEC-25 selects local-only operation. The original
+external-deployment considerations below are retained for a future scope change.
+
 The selected deployment storage is S3-compatible, but no host/provider has been
 chosen. Before external deployment resolve authorization, TLS/network exposure,
 upload and model budgets, secret management, worker shutdown/recovery, backup
 restoration, source/provider retention, and monitoring. Exercise the real
 browser/API/database/worker path in that environment. Local documentation checks
 and fixture tests are not evidence of deployment readiness.
+
+## Local model gateway
+
+The maintainer selected the installed **FreeLLM API** for LLM calls (DEC-24).
+The existing gateway was observed healthy on loopback port 3001 during Phase 1
+prerequisite inspection. Its role/model capabilities, structured outputs,
+embeddings, authentication, upstream source-text handling and limits still need
+verification before their first consumer. Reuse this installation; no replacement
+gateway or external provider account is required. No model call is needed for
+Phase 1. Keep configuration/secrets private and record safe model/gateway lineage.
+
+## Delivery scope
+
+The application will run locally, per DEC-25. Bind services to loopback and use
+private local file storage. External hosting, domains, deployment and active
+S3-compatible storage integration are outside the current delivery. The earlier
+deployment direction is retained above for context. Local ownership, untrusted
+input safeguards, bounded model work, backup/restore, retention/deletion and
+worker recovery remain required. Later packaging and acceptance tasks target a
+reproducible local environment. Rendering is optional and needs its own capability
+check; selecting FreeLLM does not establish image support. No existing data or
+schema migration is required by these decisions.
+
+## API and database bootstrap — T04
+
+Use the selected Python/uv versions above. Backend dependency installation and
+health tests now exist:
+
+```sh
+uv sync --project apps/api --locked
+uv run --project apps/api pytest apps/api/tests -q
+```
+
+The local private `.env` contains `POSTGRES_PASSWORD` (a random hex secret),
+`POSTGRES_PORT=55432`, and `DATABASE_URL` using the same credentials with the
+`postgresql+psycopg` driver and `127.0.0.1:55432/vision`. The database user and
+name are `vision`. Never commit this file. Use `make setup` below and the secret-free environment field reference.
+
+With that private environment prepared, the T04 startup sequence is:
+
+```sh
+docker compose up -d --wait db
+set -a
+. ./.env
+set +a
+uv run --project apps/api alembic -c apps/api/alembic.ini upgrade head
+cd apps/api
+uv run --locked uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+`/health/live` reports process liveness independently of the database.
+`/health/ready` requires a real database query and the vector extension; an absent
+configuration, unavailable database or missing extension returns safe `503`
+unready. It does not claim narrative/search readiness. Migration 0001 installs
+vector and the migration-version table; domain tables arrive with consumers.
+The lifespan owns/disposes the engine; connection and statement timeouts bound
+health checks. See [FastAPI lifespan](https://fastapi.tiangolo.com/advanced/events/)
+and [Alembic migrations](https://alembic.sqlalchemy.org/en/latest/tutorial.html).
+
+Routine database stop is `docker compose stop db`; restart with the startup
+command. Do not use volume deletion as a restart: it would discard local data.
+T04 verified PostgreSQL 17.11 and vector 0.8.7, migration 0001 on a fresh local
+database, actual HTTP liveness/readiness 200/200, and DB-down liveness/readiness
+200/503 with safe responses. The isolated probe restarted Vision's database and
+shut down its temporary API process. Domain tables and integration CI follow.
+
+## Local account administration
+
+After database migration, provision a local account from the API directory:
+
+```sh
+cd apps/api
+uv run --locked --env-file ../../.env python -m app.cli create-user reader
+```
+
+The CLI prompts for a passphrase without echo. `--password-stdin` is available
+for isolated test automation; never put credentials in command arguments or
+commit them. Duplicate usernames fail safely. API session transport and current
+limits are owned by the [authentication contract](../api/api-contract.md#local-authentication--t07).
+The web proxy defaults to `http://127.0.0.1:8000`; set `VISION_API_ORIGIN` before
+building when selecting a different loopback API port. It accepts loopback HTTP
+origins only. The consolidated commands below cover clean setup and integration/browser checks.
+
+## Probe worker — T08
+
+Redis is a dedicated, password-protected, digest-pinned service on loopback 56379
+with persistent queue data. Private `.env` now includes `REDIS_PASSWORD`,
+`REDIS_PORT` and matching `REDIS_URL`. Start it with:
+
+```sh
+docker compose up -d --wait redis
+cd apps/api
+uv run --locked --env-file ../../.env python -m app.workers.dispatch
+uv run --locked --env-file ../../.env dramatiq app.workers.bootstrap --processes 1 --threads 1
+```
+
+The dispatch command publishes up to 50 pending jobs per transaction until none
+are sent; rerun after a broker outage. Worker retries are bounded (two, with
+1–5 second backoff); database and Redis calls have two-second connection bounds.
+No extra metrics server is started. Broker messages contain job IDs only; source,
+credentials and client-selected owners are not payloads. Queue namespace defaults
+to `vision`; tests use a unique namespace and disposable PostgreSQL database.
+
+T08 proved an actual Redis→Dramatiq→PostgreSQL result, stopped-worker pending state,
+restart, scoped polling, request replay/conflict and failed-publication recovery.
+The small probe commits atomically; it does not establish long-running ingestion
+crash/cancellation recovery. The [job API](../api/api-contract.md#bounded-worker-probe--t08)
+owns response semantics. The consolidated commands below and CI check this foundation.
+
+## Local commands and verification
+
+Prerequisites: Node 24.12.0, pnpm 10.28.0, uv 0.12.15, a running Docker daemon,
+and Compose v2-compatible commands. uv selects/manages Python 3.12.14 from the API
+pin. From a clean checkout:
+
+```sh
+make setup
+make dev
+```
+
+`make setup` preserves an existing `.env`, or creates it with random local database/
+broker secrets and mode 0600. Do not copy the blank credential fields from
+[.env.example](../../.env.example) as working credentials. The example documents
+configuration fields; generated `.env` and runtime data stay ignored. Dependency
+installs use frozen locks and disabled dependency lifecycle scripts. No global
+package upgrade or FreeLLM call is part of setup.
+
+`make dev` starts/checks the local database/broker, applies migrations and runs
+API, worker and web processes. Open `http://127.0.0.1:3000`; the honest library
+shell says uploads are not yet available. Ctrl+C stops the development processes;
+`make stop` stops the persistent containers without deleting volumes. The API
+binds loopback 8000, PostgreSQL 55432 and Redis 56379. The command is local-only.
+
+| Command | Purpose |
+|---|---|
+| `make services migrate` | Start/check PostgreSQL/Redis and apply migrations |
+| `make api`, `make worker`, `make web` | Run one service separately in its own terminal |
+| `make dispatch` | Reconcile pending queue publication after a broker outage |
+| `make browsers` | Install the isolated Chromium browser; OS browser prerequisites may be required |
+| `make check` | Repository lint, non-infrastructure tests, deterministic contract regeneration, Node/type checks, web build and shell browser checks, documentation checks |
+| `make integration` | Real authenticated PostgreSQL/Redis/worker tests in disposable databases and unique queue namespaces |
+| `make browser-session` | Real API and Chromium cookie transport through the web proxy, using a disposable database/account |
+| `pnpm audit --audit-level=high` | Native JavaScript known-advisory check; not a general security proof |
+
+Run `make services migrate` and `make browsers` before the browser/infrastructure
+checks. Session-browser verification requires loopback 8000 and 13000 to be free;
+it starts/stops its own API and web test processes. Unit-only runs deliberately
+exclude marked infrastructure tests; the CI and full foundation check run both.
+The PostgreSQL fixture uses the configured development administrator only to
+create isolated `vision_test_*` databases, then removes those test databases.
+Tests never clear the reader's database or flush shared Redis. The browser
+harness provisions only a synthetic test account and cleans its API/database.
+
+The [CI workflow](../../.github/workflows/ci.yml) uses pinned action commits,
+read-only repository permission and generated disposable service credentials.
+It executes these same commands plus the advisory audit; live model/paid tests
+are absent. Only its own ephemeral CI volumes are removed at job end. A separate
+local clone with distinct ports/service project passed the documented clean-setup
+sequence; exact run evidence remains in the task/PR record. No external deployment,
+provider quality or book reconstruction follows from these foundation checks.

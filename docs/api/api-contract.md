@@ -1,8 +1,10 @@
 # HTTP API contract draft
 
-**Status:** T02 selects shared outcomes and mutation conventions (DEC-23); resource routes remain illustrative.
-There are no implemented endpoints or generated OpenAPI schemas yet. Do not
-build clients against these shapes as if they were frozen.
+**Status:** shared outcomes and mutation conventions selected in DEC-23.
+Health, authentication and probe-job routes exist as detailed below; the
+book and reconstruction resource surface remains illustrative. T06 implements
+strict shared Pydantic models and generated JSON Schema/TypeScript, independently
+of the illustrative resource payloads below.
 
 ## Shared requirements
 
@@ -96,7 +98,7 @@ state, not a blanket retry of every POST or provider error.
   `412 / REVISION_CONFLICT`. Wildcard/weak/multiple tokens are invalid requests.
   Incompatible-input generation failures use `409`; successful updates issue a new token.
   Authorization is checked before revision comparisons to avoid disclosure.
-- Effectful POSTs use a bounded opaque `Idempotency-Key` (1–128 ASCII characters
+- Effectful business-operation POSTs use a bounded opaque `Idempotency-Key` (1–128 ASCII characters
   from letters, digits, `-`, `_`). Scope keys by authenticated actor, method,
   route and work; fingerprint the validated request, source upload bytes and
   referenced revisions. Same key/same request returns the existing operation;
@@ -121,9 +123,106 @@ prior ETag; If-Match applies only where an existing resource revision is mutated
 
 ## Unresolved wire details
 
-Before the first consuming client, define authentication, multipart/upload
-encoding, collection pagination, job polling/cancellation/retry endpoints,
-authorized source-span retrieval, resource-specific refinement
-and deletion, streaming if needed, and version evolution. T07 owns auth, T08 job
-routes, T10 upload/pagination, T12 evidence reads, T38 refinement, and T46 deletion. The overview's endpoint
-list alone does not cover the complete library/evidence/job product flow.
+Authentication and probe-job submission/polling are implemented below. Before
+each remaining consumer, define multipart/upload encoding and pagination (T10),
+authorized source-span retrieval (T12), ingestion retry/cancellation (T13),
+refinement (T38), deletion (T46), and streaming/version evolution where needed.
+The overview's endpoint list alone does not cover the complete
+library/evidence/job product flow.
+
+## Executable shared foundation — T06
+
+`apps/api/app/schemas/` owns strict scope, source-span, safe-error and outcome
+primitives. Extra fields, invalid tags and missing required variant payloads are
+rejected. `packages/contracts/schema.json` and `index.ts` are generated from those
+models; do not hand-edit them. Run:
+
+```sh
+pnpm --dir packages/contracts generate
+pnpm --dir packages/contracts test
+pnpm --dir packages/contracts typecheck
+```
+
+Python and Node consume the same `conformance.json` cases. The generated schema
+handles structural validation; Python validators and the TypeScript source-span
+helper additionally enforce code-point length, interval ordering and exact quote
+matching. JSON Schema alone cannot compare two fields or query stored source text.
+Ownership, actual source-revision lookup and reading eligibility are enforced at
+their authoritative operation boundaries, not established by a valid scope shape.
+
+`Resolved[Payload]` is a generic envelope with required typed `data`; the concrete
+`SpanResolution` export is a conformance binding to SourceSpan, not the visual
+specification or a visualization endpoint. T31 binds the actual validated visual
+specification and extends generated contracts then. The build-time SchemaCatalog
+is not a request payload. No speculative full visualization model is shipped.
+
+Sources: [Pydantic discriminated unions](https://docs.pydantic.dev/latest/concepts/unions/#discriminated-unions-with-str-discriminators),
+[Pydantic JSON Schema](https://docs.pydantic.dev/latest/concepts/json_schema/), and
+[json-schema-to-typescript](https://github.com/bcherny/json-schema-to-typescript).
+
+## Local authentication — T07
+
+| Endpoint | Implemented behavior |
+|---|---|
+| `POST /v1/auth/login` | Bounded username/passphrase, generic failure, fresh opaque session, public principal view |
+| `GET /v1/auth/me` | Principal resolved from a nonexpired database session; no client owner ID |
+| `POST /v1/auth/logout` | Authenticated, origin-checked session revocation; `204` and cookie removal |
+
+Accounts are provisioned only by the local administrative CLI. There is no
+registration endpoint, external identity provider or development-principal
+bypass. Usernames are 3–32 lowercase ASCII identifier characters; passphrases
+are 12–128 code points. Passwords use versioned, randomly salted scrypt
+(N=131072, r=8, p=1); only SHA-256 digests of 256-bit random session tokens are
+stored. Existing browser sessions rotate on login; sessions expire after 12 hours.
+
+The browser calls `/api/v1/*` on the Next.js origin, which forwards to the local
+API. Cookie `vision_session` is host-only, HttpOnly, SameSite Strict, path `/`.
+It deliberately uses HTTP on loopback without Secure under DEC-25; external
+network exposure/HTTPS deployment is outside this supported configuration.
+API trusted hosts are localhost/127.0.0.1. Mutations require an exact allowed
+Origin (`http://127.0.0.1:3000` or `http://localhost:3000` by default). Private
+`VISION_WEB_ORIGINS` can select another local test origin. No CORS grant is needed.
+
+A fixed-memory limiter allows ten login attempts per minute per local API process,
+including unknown users; it resets on process restart. Five failed passwords for
+an existing account lock it for five minutes in PostgreSQL. These are initial
+local protections, not a distributed rate-limit claim. Errors use the safe common
+envelope and generated correlation IDs; validation does not echo input.
+Authenticated responses use `Cache-Control: no-store`.
+
+`ActorScope` comes only from the authenticated session and principal lookup.
+The reusable owned-object query binds both object ID and authenticated owner,
+returning the same `404` for missing/inaccessible objects. Integration tests
+prove it with isolated synthetic records; T08/T10 apply it to real product jobs
+and works. Client-supplied owner headers/fields never establish authority.
+
+Verified with two real PostgreSQL-backed principals, expiry/logout, invalid
+credentials/origins/fields, login limits and local CLI provisioning. An actual
+Chromium navigation through the web proxy saw the authenticated principal and
+then `401` after logout. This is session transport proof, not a completed login UI.
+
+Authentication login/logout use the rotation/revocation semantics above rather
+than business-operation idempotency keys; retries do not create works, jobs or
+paid provider effects. This qualifies the general POST convention for sessions.
+
+## Bounded worker probe — T08
+
+`POST /v1/jobs` accepts an authenticated, origin-checked probe request with
+`kind: "probe"` (default) and integer `value` from 0 to 1,000,000. It requires
+`Idempotency-Key`. `202` returns a persisted job reference/state, not completion.
+Keys are scoped by owner and this resource; same request replays the same job,
+different input returns `409 / IDEMPOTENCY_CONFLICT`. Keys are retained without
+expiry at this foundation stage, satisfying the minimum replay window.
+
+`GET /v1/jobs/{id}` applies the authoritative owned-object query. Responses carry
+stage, attempts, nullable result, correlation ID and `dispatch_pending`. With no
+worker, published jobs remain queued; with an unreachable broker, publication
+intent remains in PostgreSQL and pending stays visible. The dispatch command
+reconciles unpublished jobs. Broker acceptance alone never means success.
+
+The only implemented task increments the bounded integer. A real worker loads
+the job's persisted principal/scope and writes one result/attempt under a SQL row
+lock and transaction. Duplicate delivery cannot duplicate its committed result.
+The instantaneous probe exposes queued/succeeded, not a simulated long-running
+stage. Its attempt record retains stage, outcome and timestamps. T13 introduces
+long-running ingestion stages, failures/cancellation and broader recovery.

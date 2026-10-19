@@ -1,0 +1,210 @@
+[
+  {
+    "model": "SourceSpan",
+    "valid": true,
+    "value": {
+      "document_revision_id": "rev-1",
+      "passage_id": "p-1",
+      "start": 1,
+      "end": 2,
+      "quote": "🦊",
+      "offset_unit": "unicode_code_point"
+    }
+  },
+  {
+    "model": "SourceSpan",
+    "valid": false,
+    "value": {
+      "document_revision_id": "rev-1",
+      "passage_id": "p-1",
+      "start": 2,
+      "end": 1,
+      "quote": "x",
+      "offset_unit": "unicode_code_point"
+    }
+  },
+  {
+    "model": "SourceSpan",
+    "valid": false,
+    "value": {
+      "document_revision_id": "rev-1",
+      "passage_id": "p-1",
+      "start": true,
+      "end": 2,
+      "quote": "x",
+      "offset_unit": "unicode_code_point"
+    }
+  },
+  {
+    "model": "RequestScope",
+    "valid": true,
+    "value": {
+      "work_id": "w-1",
+      "document_revision_id": "rev-1",
+      "generation_id": "g-1",
+      "reading_boundary": {
+        "mode": "whole_book"
+      },
+      "story_event_id": null,
+      "creative_mode": "canon_first"
+    }
+  },
+  {
+    "model": "RequestScope",
+    "valid": true,
+    "value": {
+      "work_id": "w-1",
+      "document_revision_id": "rev-1",
+      "generation_id": "g-1",
+      "reading_boundary": {
+        "mode": "through_chapter",
+        "chapter_id": "chapter-2"
+      },
+      "story_event_id": "event-1",
+      "creative_mode": "interpretation"
+    }
+  },
+  {
+    "model": "RequestScope",
+    "valid": false,
+    "value": {
+      "work_id": "w-1",
+      "document_revision_id": "rev-1",
+      "generation_id": "g-1",
+      "reading_boundary": {
+        "mode": "through_chapter"
+      },
+      "creative_mode": "canon_first"
+    }
+  },
+  {
+    "model": "RequestScope",
+    "valid": false,
+    "value": {
+      "work_id": "w-1",
+      "document_revision_id": "rev-1",
+      "generation_id": "g-1",
+      "reading_boundary": {
+        "mode": "whole_book",
+        "chapter_id": "extra"
+      },
+      "creative_mode": "canon_first"
+    }
+  },
+  {
+    "model": "ErrorEnvelope",
+    "valid": true,
+    "value": {
+      "error": {
+        "code": "SOURCE_NOT_READY",
+        "message": "This work is still being processed.",
+        "retryable": true,
+        "correlation_id": "request-1"
+      }
+    }
+  },
+  {
+    "model": "SpanResolution",
+    "valid": true,
+    "value": {
+      "outcome": "resolved",
+      "schema_version": "1.0",
+      "data": {
+        "document_revision_id": "rev-1",
+        "passage_id": "p-1",
+        "start": 1,
+        "end": 2,
+        "quote": "🦊",
+        "offset_unit": "unicode_code_point"
+      }
+    }
+  },
+  {
+    "model": "SpanResolution",
+    "valid": true,
+    "value": {
+      "outcome": "needs_context",
+      "schema_version": "1.0",
+      "choices": [
+        {
+          "id": "mira",
+          "label": "Captain Mira"
+        }
+      ]
+    }
+  },
+  {
+    "model": "SpanResolution",
+    "valid": true,
+    "value": {
+      "outcome": "insufficient_evidence",
+      "schema_version": "1.0",
+      "missing": [
+        "No eligible description."
+      ]
+    }
+  },
+  {
+    "model": "SpanResolution",
+    "valid": true,
+    "value": {
+      "outcome": "failed",
+      "schema_version": "1.0",
+      "error": {
+        "code": "PROVIDER_UNAVAILABLE",
+        "message": "Provider unavailable.",
+        "retryable": true,
+        "correlation_id": "request-2"
+      }
+    }
+  },
+  {
+    "model": "SpanResolution",
+    "valid": false,
+    "value": {
+      "outcome": "invented_success",
+      "schema_version": "1.0"
+    }
+  },
+  {
+    "model": "SpanResolution",
+    "valid": false,
+    "value": {
+      "outcome": "resolved",
+      "schema_version": "1.0"
+    }
+  },
+  {
+    "model": "SpanResolution",
+    "valid": false,
+    "value": {
+      "outcome": "needs_context",
+      "schema_version": "1.0",
+      "choices": []
+    }
+  },
+  {
+    "model": "SpanResolution",
+    "valid": false,
+    "value": {
+      "outcome": "failed",
+      "schema_version": "1.0"
+    }
+  },
+  {
+    "model": "PrincipalView",
+    "valid": true,
+    "value": {
+      "id": "fe26dc86-8746-43b7-bf52-bf9663d3cf02",
+      "username": "reader"
+    }
+  },
+  {
+    "model": "PrincipalView",
+    "valid": false,
+    "value": {
+      "id": "not-a-uuid",
+      "username": "reader"
+    }
+  }
+]

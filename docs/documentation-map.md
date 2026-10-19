@@ -1,7 +1,7 @@
 # Documentation map
 
-**Status:** foundation decisions and checked synthetic corpus, 2026-10-19.
-No running application has been implemented.
+**Status:** executable local foundation and checked synthetic corpus, 2026-10-19.
+Book ingestion and reconstruction remain planned.
 
 The structure follows FIRA's separation of product scope, domain contracts,
 canonical data, operations, and architecture decisions. FIRA's financial domain,
@@ -20,14 +20,14 @@ roles, delivery deadlines, and branch model do not apply to Vision.
 | 7 | [Retrieval strategy](architecture/retrieval-strategy.md) | The adopted retrieval and reconstruction pipeline |
 | 8 | [Visual specification](visualization/visual-specification.md) | What a trustworthy output contains |
 | 9 | [System architecture](architecture/system-architecture.md) | Components, ownership, and allowed dependencies |
-| 10 | [API contract](api/api-contract.md) | Proposed HTTP resources and unresolved wire details |
+| 10 | [API contract](api/api-contract.md) | Implemented foundation routes and proposed product resources |
 | 11 | [Acceptance strategy](testing/acceptance-strategy.md) | How the intended behavior will be proved |
 | 12 | [Implementation roadmap](product/implementation-roadmap.md) | The build order and completion gates |
 
 Supporting owners:
 
 - [Development and operations](operations/development-and-operations.md): current
-  setup status, future runtime topology, job visibility, and deployment gates.
+  local setup, runtime topology, job visibility, and remaining operational gates.
 - [Visual identity](design/visual-identity.md): logo direction, component sources,
   asset inventory, and proposed export targets.
 - [ADR-0001](adr/0001-modular-monolith.md): backend and persistence baseline.
