@@ -1,6 +1,7 @@
 # Contributing to Vision
 
-Vision is in the definition stage. Start with the
+Vision has foundation decisions and a checked synthetic corpus; application
+implementation is pending. Start with the
 [documentation map](docs/documentation-map.md), then the owning specification for
 the area you are changing. The roadmap describes future work; it does not mean
 application implementation has been requested in a documentation-only task.
@@ -37,7 +38,9 @@ and register when a later decision qualifies the brief.
 For documentation, check relative links and anchors, Markdown fences, embedded
 JSON examples, requirement references, status labels, and unintended changes to
 source material. For images, inspect the actual output and record its origin.
-No application tests or CI are currently available.
+The corpus checks and their command are documented in the
+[acceptance strategy](docs/testing/acceptance-strategy.md). No application
+integration tests or CI are currently available.
 
 For future code, demonstrate the affected path using the
 [acceptance strategy](docs/testing/acceptance-strategy.md). A mock establishes a

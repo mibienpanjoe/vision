@@ -21,7 +21,7 @@ milestone's narrative representation.
 
 Implement the selected entity/lexical/vector pipeline, protected evidence,
 fusion and reranking, partial chronology, scoped reconstruction, verification,
-and typed visual JSON. Resolve OPEN-04 and the first wire-schema choices before
+and typed visual JSON. Apply DEC-22 and the selected first wire conventions before
 treating their behavior as stable.
 
 **Gate:** the same entity yields correct childhood/battle/home states with exact

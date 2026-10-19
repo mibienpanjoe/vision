@@ -1,6 +1,7 @@
 # Documentation map
 
-**Status:** working definition, 2026-10-19. No application has been implemented.
+**Status:** foundation decisions and checked synthetic corpus, 2026-10-19.
+No running application has been implemented.
 
 The structure follows FIRA's separation of product scope, domain contracts,
 canonical data, operations, and architecture decisions. FIRA's financial domain,

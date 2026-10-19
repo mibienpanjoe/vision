@@ -54,7 +54,8 @@ and relevant uncertainty remains visible.
 Changing style does not change canon. Changing the subject, moment, reading
 boundary, or locked facts requires revalidation and a correctly scoped derived
 state. Preserve output revisions and processing lineage; exact revision tokens
-and mutation endpoints remain OPEN-07.
+follow the [API conventions](../api/api-contract.md#selected-first-slice-wire-conventions);
+T38 still owns the exact mutation endpoint/payload.
 
 An optional rendered image references its specification revision, provider/model,
 settings, and outcome. The image can be aesthetically plausible and still fail
