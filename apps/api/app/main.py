@@ -1,16 +1,15 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
-from starlette.middleware.trustedhost import TrustedHostMiddleware
-
 from app.api.v1.auth import router as auth_router
 from app.api.v1.jobs import router as jobs_router
 from app.core.errors import install_errors
 from app.core.security import LoginLimiter
 from app.db.session import configured_engine
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 
 @asynccontextmanager

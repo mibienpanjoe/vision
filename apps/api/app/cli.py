@@ -3,14 +3,13 @@ import argparse
 import getpass
 import sys
 
-from pydantic import ValidationError
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
-
 from app.core.passwords import hash_password
 from app.db.session import configured_engine
 from app.models.access import Principal
 from app.schemas.access import LoginRequest
+from pydantic import ValidationError
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 
 def main() -> int:

@@ -2,10 +2,6 @@ import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, Response
-from sqlalchemy import delete, select
-from sqlalchemy.orm import Session
-
 from app.core.errors import PublicError
 from app.core.passwords import verify_password
 from app.core.security import (
@@ -18,6 +14,9 @@ from app.core.security import (
 )
 from app.models.access import LoginSession, Principal
 from app.schemas.access import LoginRequest, PrincipalView
+from fastapi import APIRouter, Depends, Request, Response
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/v1/auth", tags=["identity"])
 

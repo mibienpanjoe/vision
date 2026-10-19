@@ -1,10 +1,9 @@
 import uuid
 from typing import Literal
 
-from pydantic import Field
-
 from app.models.jobs import Job
 from app.schemas.base import ContractModel, OpaqueId
+from pydantic import Field
 
 
 class ProbeRequest(ContractModel):

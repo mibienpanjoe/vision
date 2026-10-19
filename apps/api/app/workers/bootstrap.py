@@ -1,5 +1,4 @@
 import dramatiq
-
 from app.services.dispatch import configured_broker
 from app.services.probe import execute_probe
 

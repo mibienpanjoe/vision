@@ -1,11 +1,10 @@
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, RootModel
-
 from app.schemas.access import LoginRequest, PrincipalView
 from app.schemas.base import ContractModel, OpaqueId
 from app.schemas.jobs import JobView, ProbeRequest
 from app.schemas.scope import RequestScope, SourceSpan
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 
 class SafeError(ContractModel):

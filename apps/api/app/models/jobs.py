@@ -1,10 +1,9 @@
 import uuid
 from datetime import datetime
 
+from app.models.access import Base
 from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.models.access import Base
 
 
 class Job(Base):

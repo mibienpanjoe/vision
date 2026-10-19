@@ -1,6 +1,5 @@
-from fastapi.testclient import TestClient
-
 from app.main import create_app
+from fastapi.testclient import TestClient
 
 
 def test_live_without_database(monkeypatch):
@@ -13,7 +12,9 @@ def test_live_without_database(monkeypatch):
 
 
 def test_unreachable_database_is_safe(monkeypatch):
-    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://probe:private@127.0.0.1:1/absent")
+    monkeypatch.setenv(
+        "DATABASE_URL", "postgresql+psycopg://probe:private@127.0.0.1:1/absent"
+    )
     with TestClient(create_app(), base_url="http://127.0.0.1") as client:
         response = client.get("/health/ready")
         assert response.status_code == 503

@@ -8,12 +8,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Annotated
 
+from app.core.errors import PublicError
+from app.models.access import LoginSession, Principal
 from fastapi import Depends, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
-from app.core.errors import PublicError
-from app.models.access import LoginSession, Principal
 
 COOKIE_NAME = "vision_session"
 

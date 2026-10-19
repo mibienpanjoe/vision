@@ -1,8 +1,7 @@
 import uuid
 
-from pydantic import Field
-
 from app.schemas.base import ContractModel
+from pydantic import Field
 
 
 class LoginRequest(ContractModel):

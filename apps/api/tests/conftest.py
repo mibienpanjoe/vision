@@ -1,4 +1,5 @@
 """Explicitly opted-in PostgreSQL tests, isolated from the reader's database."""
+
 import os
 import uuid
 from pathlib import Path
@@ -16,7 +17,9 @@ def database(monkeypatch):
     if not url:
         pytest.skip("Set VISION_TEST_ADMIN_URL to opt into isolated PostgreSQL tests")
     name = "vision_test_" + uuid.uuid4().hex
-    admin = create_engine(make_url(url).set(database="postgres"), isolation_level="AUTOCOMMIT")
+    admin = create_engine(
+        make_url(url).set(database="postgres"), isolation_level="AUTOCOMMIT"
+    )
     with admin.connect() as connection:
         connection.execute(text(f'CREATE DATABASE "{name}"'))
     test_url = make_url(url).set(database=name)
@@ -29,8 +32,12 @@ def database(monkeypatch):
     finally:
         engine.dispose()
         with admin.connect() as connection:
-            connection.execute(text("SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
-                                    "WHERE datname = :name AND pid <> pg_backend_pid()"), {"name": name})
+            connection.execute(
+                text(
+                    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+                    "WHERE datname = :name AND pid <> pg_backend_pid()"
+                ),
+                {"name": name},
+            )
             connection.execute(text(f'DROP DATABASE "{name}"'))
         admin.dispose()
-

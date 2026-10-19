@@ -1,7 +1,6 @@
 import os
 
 from alembic import context
-
 from app.db.session import configured_engine
 
 if context.is_offline_mode():

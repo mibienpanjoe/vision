@@ -2,13 +2,12 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-
 from app.core.security import ActorScope, owned_object
 from app.db.session import configured_engine
 from app.models.access import Principal
 from app.models.jobs import Job, JobAttempt
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 
 def execute_probe(job_id: str) -> None:

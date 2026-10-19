@@ -3,14 +3,13 @@ import os
 import uuid
 from datetime import UTC, datetime
 
+from app.models.jobs import Job
 from dramatiq import Message
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.middleware import AgeLimit, Retries, ShutdownNotifications, TimeLimit
 from redis.exceptions import RedisError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
-from app.models.jobs import Job
 
 
 def configured_broker() -> RedisBroker | None:

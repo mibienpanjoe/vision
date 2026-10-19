@@ -1,8 +1,7 @@
 from typing import Annotated, Literal
 
-from pydantic import Field, model_validator
-
 from app.schemas.base import ContractModel, OpaqueId
+from pydantic import Field, model_validator
 
 
 class WholeBook(ContractModel):

@@ -1,12 +1,11 @@
 import uuid
 
+from app.schemas.common import ErrorEnvelope, SafeError
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException
-
-from app.schemas.common import ErrorEnvelope, SafeError
 
 
 class PublicError(Exception):
