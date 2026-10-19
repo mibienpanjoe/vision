@@ -104,3 +104,24 @@ Resource ceilings and retry policy are configurable but not numerically chosen.
 Follow [SECURITY.md](../../SECURITY.md) for untrusted content, EPUB expansion,
 private storage, and provider disclosure. Operations and restoration procedures
 belong to [development and operations](../operations/development-and-operations.md).
+
+
+## First upload input boundary — T10
+
+The first upload slice accepts UTF-8 TXT and Markdown, retaining the exact bytes
+without Unicode or newline normalization. Empty text, invalid UTF-8, binary
+control characters and obvious PDF/ZIP disguises are rejected. PDF and EPUB
+acceptance follows the dedicated format-adapter tasks; a text upload does not
+establish parser or narrative success.
+
+Initial limits are 8 MiB per source, a 60-second transfer deadline, titles up to
+256 code points and library pages up to 100 records. These are conservative
+engineering ceilings under OPEN-05, not measured whole-book capacity claims.
+Parser expansion/time and provider budgets are resolved at their consumers.
+
+Originals live under ignored `storage/originals/` (or a private
+`VISION_SOURCE_ROOT`) using random opaque references, directory mode 0700 and
+file mode 0600. Original names and paths never form storage keys or public URLs.
+File leases protect in-flight writes from reconciliation; fsync precedes SQL
+publication. The upload/library API and interrupted-upload reconciliation are
+the next T10 increment.
