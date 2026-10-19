@@ -1,13 +1,13 @@
 # Development and operations
 
-**Status:** Phase 0 foundation decisions and corpus checks complete; application setup and deployment pending.
+**Status:** T04 API/PostgreSQL bootstrap verified locally; remaining Phase 1 tasks pending.
 
 ## Current repository
 
-The repository contains source briefs, working documentation, brand assets and
-a synthetic acceptance corpus with deterministic integrity tests. There are no
-dependency manifests, environment template, database migrations, Compose services,
-application startup commands or CI workflows. Reading the
+The repository contains working specifications, brand assets, a synthetic corpus,
+and the first locked API/health implementation. The database service and
+migration bootstrap are implemented; web, authentication, workers and CI follow.
+Reading the
 [documentation map](../documentation-map.md) is the current starting action.
 Do not run invented `npm`, `uv`, migration, or Compose commands from the brief's
 planned directory tree.
@@ -146,3 +146,47 @@ worker recovery remain required. Later packaging and acceptance tasks target a
 reproducible local environment. Rendering is optional and needs its own capability
 check; selecting FreeLLM does not establish image support. No existing data or
 schema migration is required by these decisions.
+
+## API and database bootstrap — T04
+
+Use the selected Python/uv versions above. Backend dependency installation and
+health tests now exist:
+
+```sh
+uv sync --project apps/api --locked
+uv run --project apps/api pytest apps/api/tests -q
+```
+
+The local private `.env` contains `POSTGRES_PASSWORD` (a random hex secret),
+`POSTGRES_PORT=55432`, and `DATABASE_URL` using the same credentials with the
+`postgresql+psycopg` driver and `127.0.0.1:55432/vision`. The database user and
+name are `vision`. Never commit this file. T09 provides the consolidated setup
+command and secret-free environment example.
+
+With that private environment prepared, the T04 startup sequence is:
+
+```sh
+docker compose up -d --wait db
+set -a
+. ./.env
+set +a
+uv run --project apps/api alembic -c apps/api/alembic.ini upgrade head
+cd apps/api
+uv run --locked uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+`/health/live` reports process liveness independently of the database.
+`/health/ready` requires a real database query and the vector extension; an absent
+configuration, unavailable database or missing extension returns safe `503`
+unready. It does not claim narrative/search readiness. Migration 0001 installs
+vector and the migration-version table; domain tables arrive with consumers.
+The lifespan owns/disposes the engine; connection and statement timeouts bound
+health checks. See [FastAPI lifespan](https://fastapi.tiangolo.com/advanced/events/)
+and [Alembic migrations](https://alembic.sqlalchemy.org/en/latest/tutorial.html).
+
+Routine database stop is `docker compose stop db`; restart with the startup
+command. Do not use volume deletion as a restart: it would discard local data.
+T04 verified PostgreSQL 17.11 and vector 0.8.7, migration 0001 on a fresh local
+database, actual HTTP liveness/readiness 200/200, and DB-down liveness/readiness
+200/503 with safe responses. The isolated probe restarted Vision's database and
+shut down its temporary API process. Domain tables and integration CI follow.
