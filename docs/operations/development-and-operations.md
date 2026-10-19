@@ -260,7 +260,7 @@ binds loopback 8000, PostgreSQL 55432 and Redis 56379. The command is local-only
 |---|---|
 | `make services migrate` | Start/check PostgreSQL/Redis and apply migrations |
 | `make api`, `make worker`, `make web` | Run one service separately in its own terminal |
-| `make dispatch` | Reconcile pending probe queue publication after a broker outage |
+| `make dispatch` | Reconcile pending probe and ingestion queue publication after a broker outage |
 | `make reconcile-sources` | Remove old, unreferenced interrupted originals; preserve active/linked sources |
 | `make browsers` | Install the isolated Chromium browser; OS browser prerequisites may be required |
 | `make check` | Repository lint, non-infrastructure tests, deterministic contract regeneration, Node/type checks, web build and shell browser checks, documentation checks |
@@ -299,5 +299,6 @@ server's public directory or a shared/private-book directory owned by another ap
 active leases, and checks PostgreSQL before removing unreferenced files at least
 one hour old. Run it after interrupted uploads or uncertain database commits.
 It is interrupted-upload cleanup, not reader-requested deletion or retention.
-Those lifecycles remain with their later tasks. Queued text-ingestion intents
-await T11's parser consumer and are not published as probe work by `make dispatch`.
+Those lifecycles remain with their later tasks. Text-ingestion intents use their
+own queue/consumer; `make dispatch` reconciles both probe and ingestion
+publication. The worker verifies the retained source fingerprint before parsing.

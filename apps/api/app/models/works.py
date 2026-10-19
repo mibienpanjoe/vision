@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 
 from app.models.access import Base
 from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -40,3 +41,7 @@ class IngestionJob(Base):
     stage: Mapped[str] = mapped_column(String(32), default="awaiting_parser")
     correlation_id: Mapped[str] = mapped_column(String(128))
     dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempts: Mapped[int] = mapped_column(default=0)
+    error_code: Mapped[str | None] = mapped_column(String(64))
+    warnings: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

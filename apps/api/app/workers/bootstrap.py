@@ -1,5 +1,6 @@
 import dramatiq
 from app.services.dispatch import configured_broker
+from app.services.ingestion.parse import execute_ingestion
 from app.services.probe import execute_probe
 
 broker = configured_broker()
@@ -11,3 +12,8 @@ dramatiq.set_broker(broker)
 @dramatiq.actor(queue_name="probes", max_retries=2, min_backoff=1000, max_backoff=5000, time_limit=5000)
 def probe(job_id: str) -> None:
     execute_probe(job_id)
+
+
+@dramatiq.actor(queue_name="ingestion", max_retries=2, min_backoff=1000, max_backoff=5000, time_limit=10000)
+def ingest(job_id: str) -> None:
+    execute_ingestion(job_id)

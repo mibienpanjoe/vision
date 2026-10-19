@@ -67,6 +67,11 @@
     "IngestionView": {
       "additionalProperties": false,
       "properties": {
+        "attempts": {
+          "minimum": 0,
+          "title": "Attempts",
+          "type": "integer"
+        },
         "correlation_id": {
           "title": "Correlation Id",
           "type": "string"
@@ -80,20 +85,46 @@
           "title": "Document Id",
           "type": "string"
         },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error Code"
+        },
         "id": {
           "format": "uuid",
           "title": "Id",
           "type": "string"
         },
         "stage": {
-          "const": "awaiting_parser",
+          "enum": [
+            "awaiting_parser",
+            "parsed",
+            "failed"
+          ],
           "title": "Stage",
           "type": "string"
         },
         "status": {
-          "const": "queued",
+          "enum": [
+            "queued",
+            "succeeded",
+            "failed"
+          ],
           "title": "Status",
           "type": "string"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
         }
       },
       "required": [
@@ -101,6 +132,9 @@
         "document_id",
         "status",
         "stage",
+        "attempts",
+        "error_code",
+        "warnings",
         "dispatch_pending",
         "correlation_id"
       ],

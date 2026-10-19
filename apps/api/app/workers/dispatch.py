@@ -1,5 +1,5 @@
 from app.db.session import configured_engine
-from app.services.dispatch import dispatch_pending
+from app.services.dispatch import dispatch_ingestions, dispatch_pending
 
 
 def main() -> None:
@@ -9,6 +9,8 @@ def main() -> None:
     try:
         total = 0
         while count := dispatch_pending(engine):
+            total += count
+        while count := dispatch_ingestions(engine):
             total += count
         print(f"Published {total} pending job(s).")
     finally:

@@ -2,8 +2,8 @@
 
 **Status:** private TXT/Markdown upload and library boundary implemented;
 source/generation semantics selected by T02.
-**Scope:** upload through a usable derived index; parser execution and the broader
-ingestion lifecycle remain pending. The foundation probe worker is implemented.
+**Scope:** the text worker persists source-linked chapters and passages. Narrative
+indexing, richer format adapters and broader ingestion recovery remain pending.
 
 ## Input and output
 
@@ -133,10 +133,13 @@ reconciliation command removes only unreferenced originals older than one hour
 after acquiring a nonblocking exclusive lease; linked or active files survive.
 A database failure prevents cleanup rather than guessing source availability.
 
-Ingestion jobs currently expose queued/awaiting_parser and pending publication.
-They are separate from the harmless T08 probe jobs, and no parser success or
-broker delivery is claimed by upload acceptance. T11 supplies the text consumer;
-T13 adds broader retry/cancellation and interrupted-stage recovery.
+Ingestion jobs are separate from the harmless T08 probe jobs. A text worker
+loads only the persisted job/source references, verifies the original SHA-256
+and persists versioned chapters/passages plus a parsed outcome in one locked SQL
+transaction. Redelivery of a terminal job is harmless. Public job states are
+queued, succeeded/parsed or failed with a safe code, attempt count and structure
+warnings. Parsed means source paragraphs are available, not narrative/index
+readiness. T13 adds broader retry/cancellation and interrupted-stage recovery.
 
 Implementation sources: [Starlette request forms](https://starlette.dev/requests/)
 and [SQLAlchemy transaction management](https://docs.sqlalchemy.org/en/21/orm/session_transaction.html).
@@ -162,3 +165,8 @@ Initial parser ceilings are 2,000,000 code points, 20,000 passages, 2,000 chapte
 markers and 16,384 code points per passage. Oversized/unusable sources fail with
 safe parser-budget/no-passages outcomes rather than silent truncation. These
 ceilings are not measured whole-book performance targets.
+
+Parser outputs retain document/parser/normalization revisions, source-order
+ordinals and explicit neighboring ordinals. Chapter and passage IDs are stable
+within that exact document/parser revision. A changed parser/text revision must
+produce a new output set rather than overwriting cited passage text.

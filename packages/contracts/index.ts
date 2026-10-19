@@ -4,13 +4,16 @@ export type Code = string;
 export type CorrelationId = string;
 export type Message = string;
 export type Retryable = boolean;
+export type Attempts = number;
 export type CorrelationId1 = string;
 export type DispatchPending = boolean;
 export type DocumentId = string;
+export type ErrorCode = string | null;
 export type Id = string;
-export type Stage = "awaiting_parser";
-export type Status = "queued";
-export type Attempts = number;
+export type Stage = "awaiting_parser" | "parsed" | "failed";
+export type Status = "queued" | "succeeded" | "failed";
+export type Warnings = string[];
+export type Attempts1 = number;
 export type CorrelationId2 = string;
 export type DispatchPending1 = boolean;
 export type Id1 = string;
@@ -97,15 +100,18 @@ export interface SafeError {
   retryable: Retryable;
 }
 export interface IngestionView {
+  attempts: Attempts;
   correlation_id: CorrelationId1;
   dispatch_pending: DispatchPending;
   document_id: DocumentId;
+  error_code: ErrorCode;
   id: Id;
   stage: Stage;
   status: Status;
+  warnings: Warnings;
 }
 export interface JobView {
-  attempts: Attempts;
+  attempts: Attempts1;
   correlation_id: CorrelationId2;
   dispatch_pending: DispatchPending1;
   id: Id1;

@@ -7,6 +7,7 @@ from app.core.errors import PublicError
 from app.core.storage import PrivateSources
 from app.models.works import Document, IngestionJob, Work
 from app.schemas.works import IngestionView, UploadAccepted, WorkView
+from app.services.dispatch import dispatch_ingestions
 from app.services.ingestion.inputs import validate_text_source
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -26,7 +27,8 @@ def work_view(db, work):
 def ingestion_view(job):
     return IngestionView(id=job.id, document_id=job.document_id, status=job.status,
                          stage=job.stage, correlation_id=job.correlation_id,
-                         dispatch_pending=job.dispatched_at is None)
+                         dispatch_pending=job.dispatched_at is None and job.status == "queued",
+                         attempts=job.attempts, error_code=job.error_code, warnings=job.warnings)
 
 
 def accepted_view(db, work):
@@ -75,4 +77,7 @@ def create_work(db, actor, metadata, data, key, correlation_id):
         # A connection can fail after COMMIT reached PostgreSQL. Keep the file
         # on any uncertain commit; a later reconciliation checks SQL first.
         db.commit()
+        job_id = db.scalar(select(IngestionJob.id).where(IngestionJob.document_id == document.id))
+        dispatch_ingestions(db.get_bind(), job_id)
+        db.expire_all()
         return accepted_view(db, work)

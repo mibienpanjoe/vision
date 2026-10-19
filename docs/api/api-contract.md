@@ -232,11 +232,11 @@ long-running ingestion stages, failures/cancellation and broader recovery.
 
 | Endpoint | Implemented behavior |
 |---|---|
-| `POST /v1/works` | Authenticated multipart `title`, `format` (`txt`/`md`), and one `file`; required `Idempotency-Key`; `202` with work and queued ingestion reference |
+| `POST /v1/works` | Authenticated multipart `title`, `format` (`txt`/`md`), and one `file`; required `Idempotency-Key`; `202` with work and ingestion reference |
 | `GET /v1/works` | Owner-scoped UUID-ascending keyset page; `limit` 1–100 (default 20), optional UUID `after`; `items` and nullable `next_cursor` |
 | `GET /v1/works/{id}` | Owned work metadata and its first immutable document revision |
 | `GET /v1/works/{id}/original` | Owned original bytes as a nosniff attachment with a fixed safe filename; no public storage URL |
-| `GET /v1/works/{id}/ingestions/{job_id}` | Job resolved through the owned work/document; current state queued/awaiting_parser, with publication pending |
+| `GET /v1/works/{id}/ingestions/{job_id}` | Job resolved through the owned work/document; queued or terminal parser state, attempts, safe error code and structure warnings |
 
 Upload authentication and Origin checks precede body consumption. The boundary
 counts actual received bytes, permits at most 64 KiB of multipart overhead,
@@ -255,3 +255,8 @@ committed: replay recovers the persisted reference without deleting its source.
 Pagination cursors are positions, not authority; every page reapplies owner scope.
 Response models are generated from `schemas/works.py`; storage references,
 private filesystem paths, owner identifiers and original filenames are excluded.
+
+T11 publishes text-ingestion intents through Redis to the real parser worker.
+An unavailable broker leaves SQL intent visibly pending for `make dispatch`.
+Successful parsing persists exact paragraph text and chapter anchors; `parsed`
+does not mean the full narrative/search generation is ready.

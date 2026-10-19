@@ -19,6 +19,7 @@ PASSWORD = "synthetic source test passphrase"
 
 @pytest.fixture
 def readers(database, monkeypatch, tmp_path):
+    monkeypatch.delenv("REDIS_URL", raising=False)
     monkeypatch.setenv("VISION_SOURCE_ROOT", str(tmp_path / "originals"))
     with Session(database) as db:
         db.add_all([Principal(username=name, password_hash=hash_password(PASSWORD)) for name in ("upload_alice", "upload_bruno")])
@@ -175,3 +176,90 @@ def test_multipart_controls_and_actual_body_size_without_content_length(readers)
                       headers={**ORIGIN, "Idempotency-Key": "chunked", "Content-Type": "multipart/form-data; boundary=x"}).status_code == 413
     assert alice.post("/v1/works", content=b"not multipart",
                       headers={**ORIGIN, "Idempotency-Key": "bad-type", "Content-Type": "application/octet-stream"}).status_code == 415
+
+
+def test_real_ingestion_worker_persists_exact_passages_once(readers, database, monkeypatch, tmp_path):
+    import json
+    import subprocess
+    import time
+    from pathlib import Path
+
+    from app.models.passages import Chapter, Passage
+    from app.services.ingestion.parse import execute_ingestion
+
+    redis_url = os.environ.get("VISION_TEST_REDIS_URL")
+    if not redis_url:
+        pytest.skip("Set VISION_TEST_REDIS_URL for the real ingestion worker")
+    monkeypatch.setenv("REDIS_URL", redis_url)
+    monkeypatch.setenv("VISION_QUEUE_NAMESPACE", "vision_test_" + uuid.uuid4().hex)
+    fixture = Path(__file__).parent / "fixtures/narrative"
+    source = (fixture / "story.md").read_bytes()
+    annotations = json.loads((fixture / "expected.json").read_text())
+    alice, _ = readers
+    accepted = upload(alice, data=source, format="md").json()
+    job_id, work_id = accepted["job"]["id"], accepted["work"]["id"]
+    assert not accepted["job"]["dispatch_pending"]
+    api = Path(__file__).parents[1]
+    with (tmp_path / "ingestion-worker.log").open("w") as log:
+        worker = subprocess.Popen([str(api / ".venv/bin/dramatiq"), "app.workers.bootstrap",
+                                   "--processes", "1", "--threads", "1"],
+                                  cwd=api, env=os.environ.copy(), stdout=log, stderr=log)
+        try:
+            for _ in range(150):
+                job = alice.get(f"/v1/works/{work_id}/ingestions/{job_id}").json()
+                if job["status"] != "queued":
+                    break
+                time.sleep(0.1)
+            assert job["status"] == "succeeded" and job["stage"] == "parsed", job
+            assert job["attempts"] == 1 and job["warnings"] == []
+        finally:
+            worker.terminate()
+            worker.wait(timeout=15)
+    execute_ingestion(job_id)
+    with Session(database) as db:
+        passages = list(db.scalars(select(Passage).order_by(Passage.ordinal)))
+        assert len(passages) == len(annotations["passages"])
+        assert db.scalar(select(func.count()).select_from(Chapter)) == 5
+        for passage, expected in zip(passages, annotations["passages"], strict=True):
+            assert passage.text == expected["text"]
+            assert (passage.source_start, passage.source_end, passage.chapter_ordinal) == (expected["source_start"], expected["source_end"], expected["chapter"])
+            assert passage.normalization_revision == "none-v1"
+        assert passages[0].previous_ordinal is None and passages[-1].next_ordinal is None
+        assert db.get(IngestionJob, uuid.UUID(job_id)).attempts == 1
+
+
+def test_parser_failure_and_source_integrity_are_safe_persisted_outcomes(readers, database):
+    from app.models.passages import Passage
+    from app.services.ingestion.parse import execute_ingestion
+
+    alice, _ = readers
+    accepted = upload(alice, data=b"a" * 16385).json()
+    execute_ingestion(accepted["job"]["id"])
+    job = alice.get(f"/v1/works/{accepted['work']['id']}/ingestions/{accepted['job']['id']}").json()
+    assert job["status"] == "failed" and job["error_code"] == "PARSER_LIMIT"
+    second = upload(alice, key="integrity").json()
+    with Session(database) as db:
+        document = db.get(Document, uuid.UUID(second["work"]["document_id"]))
+        PrivateSources().path(document.source_ref).write_bytes(b"changed original")
+    execute_ingestion(second["job"]["id"])
+    job = alice.get(f"/v1/works/{second['work']['id']}/ingestions/{second['job']['id']}").json()
+    assert job["status"] == "failed" and job["error_code"] == "SOURCE_INTEGRITY"
+    with Session(database) as db:
+        assert db.scalar(select(func.count()).select_from(Passage)) == 0
+
+
+def test_ingestion_publication_intent_survives_real_broker_outage(readers, database, monkeypatch):
+    from app.services.dispatch import dispatch_ingestions
+
+    redis_url = os.environ.get("VISION_TEST_REDIS_URL")
+    if not redis_url:
+        pytest.skip("Set VISION_TEST_REDIS_URL for real broker recovery")
+    monkeypatch.setenv("VISION_QUEUE_NAMESPACE", "vision_test_" + uuid.uuid4().hex)
+    monkeypatch.setenv("REDIS_URL", "redis://127.0.0.1:1/0")
+    alice, _ = readers
+    accepted = upload(alice).json()
+    assert accepted["job"]["dispatch_pending"]
+    monkeypatch.setenv("REDIS_URL", redis_url)
+    assert dispatch_ingestions(database) == 1
+    job = alice.get(f"/v1/works/{accepted['work']['id']}/ingestions/{accepted['job']['id']}").json()
+    assert not job["dispatch_pending"] and job["status"] == "queued"
