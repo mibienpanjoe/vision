@@ -1,6 +1,6 @@
 # Ingestion and source-mapping contract
 
-**Status:** baseline behavior plus marked implementation proposals.
+**Status:** first-slice source/generation semantics selected by T02; job wire details remain draft.
 **Scope:** upload through a usable derived index; no parser or worker exists yet.
 
 ## Input and output
@@ -35,6 +35,8 @@ extraction pipeline inside job handlers.
 
 ## Source span proposal — PROP-01
 
+**Selected:** DEC-20 supersedes the proposal; heading retained for existing links.
+
 Use zero-based, end-exclusive **Unicode code-point** offsets against immutable
 stored passage text: `[start, end)`, with `0 <= start < end <= length(text)`.
 Passages retain mapping to parser blocks/original pages where available; do not
@@ -44,12 +46,21 @@ Example: `Arthur wore a blue coat.` has `blue coat` at `[14, 23)`. Validate
 the quoted text against the actual slice. Python and browser JavaScript must
 agree on code points; JavaScript UTF-16 offsets need an explicit conversion,
 especially for emoji and supplementary characters. Test Unicode normalization,
-accents, paragraph breaks, and negation windows before fixing this proposal.
+accents, paragraph breaks, and negation windows in executable contract tests.
 
 Changing text normalization creates a new text/parser revision. Do not reuse a
 passage ID for changed text or let old spans point into new content. Stable IDs
 mean old references remain meaningful; they do not promise identical IDs after
 arbitrary resegmentation.
+
+The stored passage is the offset authority: retain its exact code points, with
+no client-side NFC/NFD conversion, trimming or newline replacement. Normalize
+only when producing a new immutable parser revision. A quote mismatch, empty
+span, byte offset, UTF-16 surrogate boundary or out-of-range value is invalid.
+For `é🦊é`, `[1,2)` is `🦊` and `[2,4)` is the decomposed `é`; its total length
+is four code points, five UTF-16 units and nine UTF-8 bytes. A reader must map
+code points to UTF-16 only for DOM highlighting. T03 checks Python slices;
+T06/T36 prove executable client conversion and highlighting.
 
 ## Job lifecycle proposal
 
@@ -66,11 +77,21 @@ API routes for retry and cancellation are still draft additions.
 
 ## Reprocessing proposal — PROP-02
 
+**Selected:** DEC-21 supersedes the proposal; heading retained for existing links.
+
 Build a named new generation from the original revision. Publish it only after
 reference and compatibility checks; keep an earlier usable generation available
 where policy permits. Namespace embeddings by model/dimension/version and states
 by their input generation. Invalidate dependent states when extraction changes.
-Cross-system index publication needs an explicit durable recovery design.
+Separate source availability, narrative eligibility and search eligibility.
+Publication uses an atomic PostgreSQL pointer update conditional on the expected
+previous generation, after validating immutable document/parser/extraction and,
+where required, embedding/retrieval dependencies. Candidate/failed generations
+cannot satisfy readiness; a late-finishing older rebuild cannot overwrite the
+selected newer result. Old cited passages remain addressable by their original
+revision under ownership and retention policy. T16/T22/T25 implement the stages;
+no cross-system atomic transaction is assumed. A compatible partial parser result
+must expose its warnings and coverage; it cannot imply whole-document coverage.
 
 ## Failure categories and safeguards
 

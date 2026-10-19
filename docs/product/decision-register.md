@@ -25,6 +25,10 @@
 | DEC-17 | Public GitHub repository; uploaded works and runtime data remain private | Maintainer instruction, 2026-10-19; [security](../../SECURITY.md) |
 | DEC-18 | Keep overview in `docs/product/` and detailed retrieval strategy in `docs/architecture/`, with no root duplicates | Selected under maintainer instruction, 2026-10-19; [documentation map](../documentation-map.md) |
 | DEC-19 | D0: Python 3.12.14/uv 0.12.15, Node 24.12.0/pnpm 10.28.0, PostgreSQL 17/pgvector 0.8.7, Redis 8.2.10; generated locks and digest-pinned images | T01 implementation selection; [operations](../operations/development-and-operations.md#selected-toolchain--d0) |
+| DEC-20 | Adopt PROP-01: immutable passage text with code-point `[start,end)` spans; reject normalization/quote mismatch | T02; [ingestion](../ingestion/ingestion-contract.md#source-span-proposal--prop-01) |
+| DEC-21 | Adopt PROP-02: compatible stage generations, atomic conditional publication, retained old citations | T02; [ingestion](../ingestion/ingestion-contract.md#reprocessing-proposal--prop-02) |
+| DEC-22 | First slice uses English synthetic text; explicit temporal support is required for canonical carry-forward; cutoff follows dependency closure | T02; [narrative contract](../narrative/narrative-contract.md) |
+| DEC-23 | Adopt PROP-03 shared outcomes/errors; exact ETag/If-Match, scoped durable idempotency and explicit request conflict resolution | T02; [API conventions](../api/api-contract.md#selected-first-slice-wire-conventions) |
 
 ## Proposed elaborations
 
@@ -33,9 +37,6 @@ documents fixed all details.
 
 | ID | Proposal | Resolve in |
 |---|---|---|
-| PROP-01 | Zero-based, end-exclusive Unicode code-point offsets against immutable passage text | Ingestion and frontend contract tests; [ingestion](../ingestion/ingestion-contract.md) |
-| PROP-02 | Named index generations with explicit publication of compatible completed results | Persistence/job implementation; [operations](../operations/development-and-operations.md) |
-| PROP-03 | HTTP outcomes and error envelope described in the API draft | Executable Pydantic/OpenAPI increment |
 | PROP-04 | First vertical slice uses a small synthetic TXT/Markdown narrative before format expansion | First implementation increment; [roadmap](implementation-roadmap.md) |
 | PROP-05 | Cache identity includes creative mode and locked-fact revision in addition to source/retrieval scope | Reconstruction implementation |
 
@@ -45,19 +46,16 @@ documents fixed all details.
 |---|---|---|
 | OPEN-01 | Authentication/session mechanism and ownership representation | Any network-accessible real upload flow |
 | OPEN-02 | Model providers, model IDs, credentials, costs, and source-text handling | Live model integration |
-| OPEN-03 | First supported book languages and lexical configurations | Lexical indexing and multilingual claims |
-| OPEN-04 | When does carrying an acquired trait forward count as explicit support versus inference? | Temporal reconstruction implementation |
+| OPEN-03 | First language resolved by DEC-22 (English); broader languages/configurations remain open | Lexical indexing and multilingual claims |
+| OPEN-04 | Resolved for the first slice by DEC-22; revisit only with an explicit changed decision | Temporal reconstruction implementation |
 | OPEN-05 | Concrete upload/expansion/time/token/cost/candidate limits and performance targets | Accepting untrusted workloads; then calibrate with measurements |
 | OPEN-06 | Runtime/package choices resolved by DEC-19; parser execution/OCR coverage, embedding dimension and ANN settings remain open | Reproducible development environment |
-| OPEN-07 | Revision/edit/retry/idempotency wire protocol, pagination, deletion, and retention | Executable API and persistent lifecycle |
+| OPEN-07 | Shared revision/idempotency resolved by DEC-23; route payloads, pagination, deletion and retention remain open | Executable API and persistent lifecycle |
 | OPEN-08 | Deployment host, backups, recovery targets, provider retention, and data deletion procedure | External deployment |
 | OPEN-09 | Project license, exact component selections, final wordmark/vector assets, and any future optically simplified favicon | Redistribution or relevant implementation increment |
 
-For OPEN-04, the overview says not to assume permanence from one scene, and the
-retrieval example permits carrying a wartime scar forward absent contradiction.
-Preserve both observations. Until the rule is settled, label such extrapolation
-as inferred when applicability is not established; absence of an end date alone
-does not prove persistence.
+OPEN-04 is resolved conservatively by DEC-22. PROP-01/02/03 were promoted to
+DEC-20/21/23; executable tests and runtime proof still belong to their task owners.
 
 ## Deferred scope
 
