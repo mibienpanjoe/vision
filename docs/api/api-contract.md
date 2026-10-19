@@ -1,8 +1,8 @@
 # HTTP API contract draft
 
 **Status:** shared outcomes and mutation conventions selected in DEC-23.
-Health, authentication, probe jobs and the private text-upload/library routes
-exist as detailed below; reconstruction resources remain illustrative. T06 implements
+Health, authentication, probe jobs, private text-upload/library and bounded
+evidence routes exist as detailed below; reconstruction resources remain illustrative. T06 implements
 strict shared Pydantic models and generated JSON Schema/TypeScript, independently
 of the illustrative resource payloads below.
 
@@ -260,3 +260,29 @@ T11 publishes text-ingestion intents through Redis to the real parser worker.
 An unavailable broker leaves SQL intent visibly pending for `make dispatch`.
 Successful parsing persists exact paragraph text and chapter anchors; `parsed`
 does not mean the full narrative/search generation is ready.
+
+
+## Authorized evidence — T12
+
+`POST /v1/works/{work_id}/evidence` is a read-only lookup using a JSON body so
+source quotes do not enter URL/access logs. It requires authentication and the
+usual mutation-method Origin check, but no business idempotency key: it creates
+no durable object or provider effect. The generated `EvidenceRequest` carries
+a bounded `SourceSpan`, exact `parser_revision`, `reading_boundary`, and optional
+`context_before`/`context_after` (0–500, default 100).
+
+The service resolves owner → work → document revision → parser revision → passage
+and chapter eligibility before validating the quote. Missing/inaccessible,
+wrong-revision/parser and out-of-cutoff references return the same safe `404`.
+Through-chapter mode requires an actual chapter in that exact document/parser
+revision; unassigned passages fail closed. Whole-book mode permits passages with
+unknown chapter structure. Quote mismatch and invalid ranges return `422`.
+
+The response retains the validated span, parser revision, optional eligible
+chapter ID, a passage-local excerpt, excerpt/highlight code-point coordinates
+and original-text code-point coordinates. Quotes are at most 2,000 code points;
+context is bounded to the same passage, with at most 3,000 returned code points.
+No neighbor IDs, future chapter titles, storage paths or original filenames leak
+through the response. Requests are bounded to 32 KiB of actual received JSON and
+a 10-second deadline (`413`/`408`); the common error envelope never echoes quotes.
+This endpoint does not render HTML or establish narrative-generation readiness.

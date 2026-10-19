@@ -18,6 +18,16 @@ for (const [index, item] of cases.entries()) {
     if (valid) {
       try {
         if (item.model === "SourceSpan") validateSpan(item.value);
+        if (item.model === "EvidenceView") {
+          const result = item.value;
+          validateSpan(result.span);
+          sourceSlice(result.excerpt, { ...result.span, start: result.highlight_start, end: result.highlight_end });
+          if (result.excerpt_start + result.highlight_start !== result.span.start ||
+              result.excerpt_start + result.highlight_end !== result.span.end ||
+              result.original_end - result.original_start !== Array.from(result.span.quote).length) {
+            throw new Error("Excerpt coordinates must preserve the source span");
+          }
+        }
         if (item.model === "SpanResolution" && item.value.outcome === "resolved") validateSpan(item.value.data);
       } catch { valid = false; }
     }

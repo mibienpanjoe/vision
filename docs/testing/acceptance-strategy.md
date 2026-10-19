@@ -1,6 +1,7 @@
 # Acceptance and verification strategy
 
-**Status:** corpus and local foundation checks are implemented; narrative/provider
+**Status:** corpus, local foundation and TXT/Markdown upload → parser → authorized
+evidence checks are implemented; narrative/provider
 acceptance scenarios below remain pending.
 The [requirements](../product/requirements-and-acceptance.md) own product promises;
 this page owns how to demonstrate them without relying on attractive output.
@@ -94,3 +95,24 @@ They do not establish ingestion, extraction/retrieval quality, narrative tempora
 correctness, rendered images or full product security. The synthetic oracle is
 still the expected input to those later evaluations. Check the actual CI run for
 a named commit; local success alone is not remote CI evidence.
+
+
+## Source ingestion checkpoint
+
+Real database/API/storage tests cover owner-scoped multipart upload, idempotent
+creation, private original reads, bounded library pages and interrupted-upload
+reconciliation, including lost commit acknowledgements. A real Redis/Dramatiq
+worker persists every annotated paragraph/chapter from the retained synthetic
+story. Duplicate delivery retains one committed output set; known parse failures
+and fingerprint mismatches remain explicit terminal outcomes.
+
+The evidence API resolves all annotated exact spans against those persisted
+passages and checks owner, source/parser revision, quote, context size and chapter
+cutoff. Python/Node conformance includes an emoji highlight and rejects an altered
+excerpt. A real Chromium session uploads through the Next.js proxy, reads library
+metadata and retrieves byte-equivalent Unicode/newline source text. This is API
+and transport coverage; product upload/reader controls are still planned.
+
+Broader worker interruption/retry/cancellation, PDF/EPUB adapters and reprocessing
+remain separate acceptance tasks. Parsed source evidence is not proof of live
+narrative extraction, hybrid retrieval or grounded visual reconstruction.

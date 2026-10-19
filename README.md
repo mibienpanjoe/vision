@@ -27,8 +27,9 @@ at that moment, and produce a structured specification for image generation.
 
 **Local executable foundation; the book pipeline is still being built.**
 The repository includes a themed web shell, authenticated API, PostgreSQL/pgvector,
-a durable Redis worker probe, and generated shared contracts. Uploads, narrative
-extraction and grounded reconstruction are not available yet. There is no release.
+private TXT/Markdown uploads, a durable text-parser worker, bounded source-evidence
+reads and generated shared contracts. Upload/reader screens, narrative extraction
+and grounded reconstruction are not available yet. There is no release.
 Logo assets are brand material, not product screenshots.
 
 ## Run locally

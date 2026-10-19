@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 from app.schemas.access import LoginRequest, PrincipalView
 from app.schemas.base import ContractModel, OpaqueId
+from app.schemas.evidence import EvidenceRequest, EvidenceView
 from app.schemas.jobs import JobView, ProbeRequest
 from app.schemas.scope import RequestScope, SourceSpan
 from app.schemas.works import (
@@ -77,6 +78,8 @@ class SchemaCatalog(ContractModel):
     work: WorkView
     library_page: LibraryPage
     ingestion: IngestionView
+    evidence_request: EvidenceRequest
+    evidence: EvidenceView
     source_span: SourceSpan
     scope: RequestScope
     error: ErrorEnvelope

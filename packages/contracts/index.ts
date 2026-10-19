@@ -4,6 +4,33 @@ export type Code = string;
 export type CorrelationId = string;
 export type Message = string;
 export type Retryable = boolean;
+export type ChapterId = string | null;
+export type Excerpt = string;
+export type ExcerptStart = number;
+export type HighlightEnd = number;
+export type HighlightStart = number;
+export type OriginalEnd = number;
+export type OriginalStart = number;
+export type ParserRevision = string;
+export type DocumentRevisionId = string;
+export type End = number;
+export type OffsetUnit = "unicode_code_point";
+export type PassageId = string;
+export type Quote = string;
+export type Start = number;
+export type ContextAfter = number;
+export type ContextBefore = number;
+export type ParserRevision1 = string;
+export type ReadingBoundary = WholeBook | ThroughChapter;
+export type Mode = "whole_book";
+export type ChapterId1 = string;
+export type Mode1 = "through_chapter";
+export type DocumentRevisionId1 = string;
+export type End1 = number;
+export type OffsetUnit1 = "unicode_code_point";
+export type PassageId1 = string;
+export type Quote1 = string;
+export type Start1 = number;
 export type Attempts = number;
 export type CorrelationId1 = string;
 export type DispatchPending = boolean;
@@ -36,20 +63,11 @@ export type Username1 = string;
 export type Kind = "probe";
 export type Value = number;
 export type CreativeMode = "canon_first" | "interpretation";
-export type DocumentRevisionId = string;
+export type DocumentRevisionId2 = string;
 export type GenerationId = string;
-export type ReadingBoundary = WholeBook | ThroughChapter;
-export type Mode = "whole_book";
-export type ChapterId = string;
-export type Mode1 = "through_chapter";
+export type ReadingBoundary1 = WholeBook | ThroughChapter;
 export type StoryEventId = string | null;
 export type WorkId = string;
-export type DocumentRevisionId1 = string;
-export type End = number;
-export type OffsetUnit = "unicode_code_point";
-export type PassageId = string;
-export type Quote = string;
-export type Start = number;
 export type SpanResolution = ResolvedSourceSpan | NeedsContext | InsufficientEvidence | Failed;
 export type Outcome = "resolved";
 export type SchemaVersion = "1.0";
@@ -77,6 +95,8 @@ export type Title1 = string;
  */
 export interface SchemaCatalog {
   error: ErrorEnvelope;
+  evidence: EvidenceView;
+  evidence_request: EvidenceRequest;
   ingestion: IngestionView;
   job: JobView;
   library_page: LibraryPage;
@@ -98,6 +118,47 @@ export interface SafeError {
   correlation_id: CorrelationId;
   message: Message;
   retryable: Retryable;
+}
+export interface EvidenceView {
+  chapter_id: ChapterId;
+  excerpt: Excerpt;
+  excerpt_start: ExcerptStart;
+  highlight_end: HighlightEnd;
+  highlight_start: HighlightStart;
+  original_end: OriginalEnd;
+  original_start: OriginalStart;
+  parser_revision: ParserRevision;
+  span: SourceSpan;
+}
+export interface SourceSpan {
+  document_revision_id: DocumentRevisionId;
+  end: End;
+  offset_unit?: OffsetUnit;
+  passage_id: PassageId;
+  quote: Quote;
+  start: Start;
+}
+export interface EvidenceRequest {
+  context_after?: ContextAfter;
+  context_before?: ContextBefore;
+  parser_revision: ParserRevision1;
+  reading_boundary: ReadingBoundary;
+  span: EvidenceSpan;
+}
+export interface WholeBook {
+  mode: Mode;
+}
+export interface ThroughChapter {
+  chapter_id: ChapterId1;
+  mode: Mode1;
+}
+export interface EvidenceSpan {
+  document_revision_id: DocumentRevisionId1;
+  end: End1;
+  offset_unit?: OffsetUnit1;
+  passage_id: PassageId1;
+  quote: Quote1;
+  start: Start1;
 }
 export interface IngestionView {
   attempts: Attempts;
@@ -146,26 +207,11 @@ export interface ProbeRequest {
 }
 export interface RequestScope {
   creative_mode: CreativeMode;
-  document_revision_id: DocumentRevisionId;
+  document_revision_id: DocumentRevisionId2;
   generation_id: GenerationId;
-  reading_boundary: ReadingBoundary;
+  reading_boundary: ReadingBoundary1;
   story_event_id?: StoryEventId;
   work_id: WorkId;
-}
-export interface WholeBook {
-  mode: Mode;
-}
-export interface ThroughChapter {
-  chapter_id: ChapterId;
-  mode: Mode1;
-}
-export interface SourceSpan {
-  document_revision_id: DocumentRevisionId1;
-  end: End;
-  offset_unit?: OffsetUnit;
-  passage_id: PassageId;
-  quote: Quote;
-  start: Start;
 }
 export interface ResolvedSourceSpan {
   data: SourceSpan;

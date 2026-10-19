@@ -39,6 +39,177 @@
       "title": "ErrorEnvelope",
       "type": "object"
     },
+    "EvidenceRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "context_after": {
+          "default": 100,
+          "maximum": 500,
+          "minimum": 0,
+          "title": "Context After",
+          "type": "integer"
+        },
+        "context_before": {
+          "default": 100,
+          "maximum": 500,
+          "minimum": 0,
+          "title": "Context Before",
+          "type": "integer"
+        },
+        "parser_revision": {
+          "maxLength": 32,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Parser Revision",
+          "type": "string"
+        },
+        "reading_boundary": {
+          "discriminator": {
+            "mapping": {
+              "through_chapter": "#/$defs/ThroughChapter",
+              "whole_book": "#/$defs/WholeBook"
+            },
+            "propertyName": "mode"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/WholeBook"
+            },
+            {
+              "$ref": "#/$defs/ThroughChapter"
+            }
+          ],
+          "title": "Reading Boundary"
+        },
+        "span": {
+          "$ref": "#/$defs/EvidenceSpan"
+        }
+      },
+      "required": [
+        "span",
+        "parser_revision",
+        "reading_boundary"
+      ],
+      "title": "EvidenceRequest",
+      "type": "object"
+    },
+    "EvidenceSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "document_revision_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Document Revision Id",
+          "type": "string"
+        },
+        "end": {
+          "exclusiveMinimum": 0,
+          "title": "End",
+          "type": "integer"
+        },
+        "offset_unit": {
+          "const": "unicode_code_point",
+          "default": "unicode_code_point",
+          "title": "Offset Unit",
+          "type": "string"
+        },
+        "passage_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Passage Id",
+          "type": "string"
+        },
+        "quote": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "document_revision_id",
+        "passage_id",
+        "start",
+        "end",
+        "quote"
+      ],
+      "title": "EvidenceSpan",
+      "type": "object"
+    },
+    "EvidenceView": {
+      "additionalProperties": false,
+      "properties": {
+        "chapter_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Chapter Id"
+        },
+        "excerpt": {
+          "maxLength": 3000,
+          "title": "Excerpt",
+          "type": "string"
+        },
+        "excerpt_start": {
+          "minimum": 0,
+          "title": "Excerpt Start",
+          "type": "integer"
+        },
+        "highlight_end": {
+          "exclusiveMinimum": 0,
+          "title": "Highlight End",
+          "type": "integer"
+        },
+        "highlight_start": {
+          "minimum": 0,
+          "title": "Highlight Start",
+          "type": "integer"
+        },
+        "original_end": {
+          "exclusiveMinimum": 0,
+          "title": "Original End",
+          "type": "integer"
+        },
+        "original_start": {
+          "minimum": 0,
+          "title": "Original Start",
+          "type": "integer"
+        },
+        "parser_revision": {
+          "title": "Parser Revision",
+          "type": "string"
+        },
+        "span": {
+          "$ref": "#/$defs/SourceSpan"
+        }
+      },
+      "required": [
+        "span",
+        "parser_revision",
+        "excerpt",
+        "excerpt_start",
+        "highlight_start",
+        "highlight_end",
+        "original_start",
+        "original_end",
+        "chapter_id"
+      ],
+      "title": "EvidenceView",
+      "type": "object"
+    },
     "Failed": {
       "additionalProperties": false,
       "properties": {
@@ -712,6 +883,12 @@
     "error": {
       "$ref": "#/$defs/ErrorEnvelope"
     },
+    "evidence": {
+      "$ref": "#/$defs/EvidenceView"
+    },
+    "evidence_request": {
+      "$ref": "#/$defs/EvidenceRequest"
+    },
     "ingestion": {
       "$ref": "#/$defs/IngestionView"
     },
@@ -759,6 +936,8 @@
     "work",
     "library_page",
     "ingestion",
+    "evidence_request",
+    "evidence",
     "source_span",
     "scope",
     "error",

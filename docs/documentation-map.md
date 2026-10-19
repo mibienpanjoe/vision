@@ -1,7 +1,8 @@
 # Documentation map
 
 **Status:** executable local foundation and checked synthetic corpus, 2026-10-19.
-Book ingestion and reconstruction remain planned.
+TXT/Markdown source ingestion and bounded evidence reads are implemented;
+richer formats and narrative reconstruction remain planned.
 
 The structure follows FIRA's separation of product scope, domain contracts,
 canonical data, operations, and architecture decisions. FIRA's financial domain,

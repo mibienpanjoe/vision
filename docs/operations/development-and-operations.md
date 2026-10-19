@@ -1,13 +1,14 @@
 # Development and operations
 
-**Status:** executable local foundation verified; book ingestion/reconstruction pending.
+**Status:** executable local foundation and TXT/Markdown source-ingestion/evidence
+checks implemented; narrative reconstruction and richer formats pending.
 The CI workflow checks the same foundation commands without deployment or model calls.
 
 ## Current repository
 
 The repository contains working specifications, brand assets, a synthetic corpus,
 a locked API, generated contracts, local accounts/sessions, a themed web shell,
-and a durable probe worker. PostgreSQL/pgvector and Redis use dedicated loopback
+private text uploads/library/evidence, and durable probe/text-parser workers. PostgreSQL/pgvector and Redis use dedicated loopback
 services. The [documentation map](../documentation-map.md) remains the entrypoint
 for the product contracts; the commands below own the executable setup.
 
@@ -16,9 +17,9 @@ for the product contracts; the commands below own the executable setup.
 | Component | Selected technology | Current boundary |
 |---|---|---|
 | Web | Next.js, TypeScript, Tailwind, shadcn/ui | Themed shell implemented; library/reconstruction screens pending |
-| API | Python, FastAPI, Pydantic | Locked health/auth/job API implemented; domain endpoints pending |
-| Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Principals, sessions, jobs/attempts and vector extension; narrative tables pending |
-| Jobs | Redis, Dramatiq | Actual bounded probe; long-running ingestion/recovery remains T13 |
+| API | Python, FastAPI, Pydantic | Health/auth/probe and text upload/library/evidence implemented; narrative endpoints pending |
+| Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Access, work/document, ingestion, chapters/passages and vector extension; narrative tables pending |
+| Jobs | Redis, Dramatiq | Real probe and text parser; broader interruption/retry/cancellation remains T13 |
 | Sources/assets | Private local filesystem | Storage root, permissions, quota and retention |
 | Models | Role-specific provider adapters | Installed FreeLLM selected; role/model checks remain before first live consumer |
 | Integration | Docker Compose | Pinned private local services and verification commands below |
