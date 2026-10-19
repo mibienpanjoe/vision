@@ -1,0 +1,27 @@
+[project]
+name = "vision-api"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi==0.147.0",
+  "uvicorn>=0.38,<1",
+  "pydantic>=2.12,<3",
+  "sqlalchemy==2.1.5",
+  "psycopg[binary]>=3.2,<4",
+  "alembic==1.20.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.14.0",
+    "pytest>=8,<10",
+    "ruff>=0.14,<1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = ["integration: requires an isolated PostgreSQL or Redis instance"]
+
+[tool.ruff]
+target-version = "py312"

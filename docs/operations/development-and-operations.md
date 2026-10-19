@@ -115,9 +115,34 @@ real users depend on persisted evidence.
 
 ## Deployment gate
 
+**Outside current scope:** DEC-25 selects local-only operation. The original
+external-deployment considerations below are retained for a future scope change.
+
 The selected deployment storage is S3-compatible, but no host/provider has been
 chosen. Before external deployment resolve authorization, TLS/network exposure,
 upload and model budgets, secret management, worker shutdown/recovery, backup
 restoration, source/provider retention, and monitoring. Exercise the real
 browser/API/database/worker path in that environment. Local documentation checks
 and fixture tests are not evidence of deployment readiness.
+
+## Local model gateway
+
+The maintainer selected the installed **FreeLLM API** for LLM calls (DEC-24).
+The existing gateway was observed healthy on loopback port 3001 during Phase 1
+prerequisite inspection. Its role/model capabilities, structured outputs,
+embeddings, authentication, upstream source-text handling and limits still need
+verification before their first consumer. Reuse this installation; no replacement
+gateway or external provider account is required. No model call is needed for
+Phase 1. Keep configuration/secrets private and record safe model/gateway lineage.
+
+## Delivery scope
+
+The application will run locally, per DEC-25. Bind services to loopback and use
+private local file storage. External hosting, domains, deployment and active
+S3-compatible storage integration are outside the current delivery. The earlier
+deployment direction is retained above for context. Local ownership, untrusted
+input safeguards, bounded model work, backup/restore, retention/deletion and
+worker recovery remain required. Later packaging and acceptance tasks target a
+reproducible local environment. Rendering is optional and needs its own capability
+check; selecting FreeLLM does not establish image support. No existing data or
+schema migration is required by these decisions.
