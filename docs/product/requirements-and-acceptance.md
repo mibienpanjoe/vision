@@ -1,6 +1,7 @@
 # Product requirements and acceptance
 
-**Status:** source-derived baseline; implementation not started.
+**Status:** target product requirements; local application foundation implemented.
+Full product acceptance remains pending.
 **Sources:** [overview](project-overview.md),
 [retrieval strategy](../architecture/retrieval-strategy.md).
 

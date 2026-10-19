@@ -1,10 +1,10 @@
 # Contributing to Vision
 
-Vision has foundation decisions and a checked synthetic corpus; application
-implementation is pending. Start with the
+Vision has an executable local foundation and a checked synthetic corpus;
+book ingestion and reconstruction remain planned. Start with the
 [documentation map](docs/documentation-map.md), then the owning specification for
-the area you are changing. The roadmap describes future work; it does not mean
-application implementation has been requested in a documentation-only task.
+the area you are changing. The roadmap distinguishes the target product from
+delivered capabilities.
 
 ## Working conventions
 
@@ -16,7 +16,7 @@ application implementation has been requested in a documentation-only task.
 5. Commit a coherent increment using `docs:`, `feat:`, `fix:`, `test:`, `refactor:`,
    or `chore:`. Push or open a pull request when requested by the maintainer.
 
-Future application changes should normally use short branches from `main`.
+Application changes should normally use short branches from `main`.
 There is no inherited FIRA `develop` branch or multi-role workflow. Do not rewrite
 published history without explicit authorization.
 
@@ -39,10 +39,12 @@ For documentation, check relative links and anchors, Markdown fences, embedded
 JSON examples, requirement references, status labels, and unintended changes to
 source material. For images, inspect the actual output and record its origin.
 The corpus checks and their command are documented in the
-[acceptance strategy](docs/testing/acceptance-strategy.md). No application
-integration tests or CI are currently available.
+[acceptance strategy](docs/testing/acceptance-strategy.md). Local checks and CI
+cover the executable foundation. The
+[operations guide](docs/operations/development-and-operations.md) owns setup
+and verification commands.
 
-For future code, demonstrate the affected path using the
+For code changes, demonstrate the affected path using the
 [acceptance strategy](docs/testing/acceptance-strategy.md). A mock establishes a
 simulated result; integration claims require real persistence and provider or
 worker behavior. A feature crossing frontend and backend boundaries also needs

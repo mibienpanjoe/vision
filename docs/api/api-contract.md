@@ -1,7 +1,8 @@
 # HTTP API contract draft
 
-**Status:** T02 selects shared outcomes and mutation conventions (DEC-23); resource routes remain illustrative.
-The health endpoints exist; resource routes below remain planned. T06 implements
+**Status:** shared outcomes and mutation conventions selected in DEC-23.
+Health, authentication and probe-job routes exist as detailed below; the
+book and reconstruction resource surface remains illustrative. T06 implements
 strict shared Pydantic models and generated JSON Schema/TypeScript, independently
 of the illustrative resource payloads below.
 
@@ -122,12 +123,12 @@ prior ETag; If-Match applies only where an existing resource revision is mutated
 
 ## Unresolved wire details
 
-Before the first consuming client, define authentication, multipart/upload
-encoding, collection pagination, job polling/cancellation/retry endpoints,
-authorized source-span retrieval, resource-specific refinement
-and deletion, streaming if needed, and version evolution. T07 owns auth, T08 job
-routes, T10 upload/pagination, T12 evidence reads, T38 refinement, and T46 deletion. The overview's endpoint
-list alone does not cover the complete library/evidence/job product flow.
+Authentication and probe-job submission/polling are implemented below. Before
+each remaining consumer, define multipart/upload encoding and pagination (T10),
+authorized source-span retrieval (T12), ingestion retry/cancellation (T13),
+refinement (T38), deletion (T46), and streaming/version evolution where needed.
+The overview's endpoint list alone does not cover the complete
+library/evidence/job product flow.
 
 ## Executable shared foundation — T06
 

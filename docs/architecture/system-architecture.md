@@ -1,6 +1,7 @@
 # System architecture
 
-**Status:** chosen baseline; module contracts and deployment packaging unimplemented.
+**Status:** local API, web shell, access and worker foundation implemented;
+narrative pipeline and local application packaging remain planned.
 **Decisions:** [ADR-0001](../adr/0001-modular-monolith.md),
 [ADR-0002](../adr/0002-temporal-hybrid-retrieval.md).
 
@@ -11,7 +12,7 @@ Authorized reader
   → Next.js web application
       → FastAPI REST boundary
           → domain services → PostgreSQL (relational + FTS + pgvector)
-          → private object storage (local development / S3-compatible deployment)
+          → private local object storage (planned)
           → Redis → Dramatiq workers → the same domain services
           → provider adapters → extraction/reasoning/embedding/reranking/image APIs
 ```
@@ -19,13 +20,14 @@ Authorized reader
 The backend is a modular monolith, not independently deployed domain
 microservices. A worker is an execution role using backend domain services;
 it does not change domain ownership. Docker Compose is the selected local
-baseline. No Compose file or external deployment exists yet.
+baseline: Compose runs PostgreSQL/pgvector and Redis, while API, web and worker
+processes run on the host. External deployment is excluded by DEC-25.
 
 ## Responsibilities and dependencies
 
 | Area | Owns | Boundary |
 |---|---|---|
-| API / access | Request validation, authorized work scope, resource outcomes | Authentication choice open; routes do not implement narrative logic |
+| API / access | Request validation, authorized work scope, resource outcomes | Local sessions selected in DEC-26; routes do not implement narrative logic |
 | Ingestion | Source objects, parsing, segmentation, durable ingestion runs | Does not turn unsupported extraction into canon |
 | Narrative | Entity mentions/aliases, events, chronology, atomic visual facts | Does not compose artistic prompts |
 | Retrieval | Query plans, entity/FTS/vector candidates, fusion, reranking | Ranking does not establish truth |
@@ -44,8 +46,8 @@ query → retrieval → consolidation → reconstruction → verification → vi
 
 Shared technical helpers stay free of narrative rules. Services communicate
 through explicit typed inputs/results rather than accessing another module's
-private implementation. Pydantic and generated JSON Schema/OpenAPI are the
-future source for shared TypeScript contracts.
+private implementation. Pydantic and generated JSON Schema own the implemented
+shared TypeScript contracts; FastAPI exposes the executable route OpenAPI schema.
 
 ## Persistence and search
 
@@ -71,11 +73,11 @@ Deterministic adapters make contract tests reproducible; they are not proof of
 live extraction quality. Every live role needs source handling, timeout, retry,
 and budget choices before use. Do not select models implicitly in documentation.
 
-## Intended repository layout
+## Repository layout and remaining modules
 
 ```text
-apps/web/                    Next.js workspace (planned)
-apps/api/app/api/v1/          REST routes (planned)
+apps/web/                    Next.js themed shell
+apps/api/app/api/v1/          authentication and probe-job routes
 apps/api/app/services/        ingestion, narrative, retrieval,
                               reconstruction, verification, visualization
 apps/api/app/providers/       replaceable AI adapters
@@ -87,10 +89,12 @@ infrastructure/docker/       container definitions
 docs/                        working specifications
 ```
 
-Documentation, brand assets and synthetic fixture integrity tests exist. The
-application modules remain planned. The overview and
-detailed retrieval strategy are classified under `docs/product/` and
-`docs/architecture/`, respectively; the application paths above remain planned.
+The shell, access boundary, durable probe-job service, worker entry points,
+Alembic migrations, generated contracts and foundation tests exist. Ingestion,
+narrative, retrieval, reconstruction, verification, visualization and provider
+adapters remain planned. See the
+[operations guide](../operations/development-and-operations.md) for the runnable
+foundation and its verification commands.
 
 ## Trust and operational boundaries
 
