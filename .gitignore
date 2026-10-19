@@ -33,3 +33,6 @@ test-results/
 storage/
 uploads/
 *.bundle
+
+# Incremental TypeScript compiler cache
+*.tsbuildinfo

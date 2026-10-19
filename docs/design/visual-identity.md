@@ -1,7 +1,8 @@
 # Visual identity and agent-interface direction
 
 **Status:** logo approved by the maintainer; typography and theme selected under
-maintainer delegation, 2026-10-19. No UI has been implemented.
+maintainer delegation, 2026-10-19. T05 implements the themed foundation shell;
+full library/reconstruction workflows remain pending.
 
 ## Identity reference
 
@@ -156,7 +157,7 @@ Approved asset uses and remaining export work:
 | Light-surface primary mark | Transparent PNG master | Approved retained mark |
 | Dark-surface inverse mark | Opaque charcoal PNG tile, same motif | Approved opaque counterpart; transparent inverse deferred |
 | README / documentation | Theme-aware PNG, 96 px displayed | Wired to approved retained assets |
-| Web app icon | PNG, 192 and 512 px | Exported; not wired to an application |
+| Web app icon | PNG, 192 and 512 px | Wired to the shell manifest; both exports served in browser checks |
 | Apple touch icon | Opaque PNG, 180 px | Exported on a warm neutral tile |
 | Browser favicon | ICO, 16/32/48 px | Exported; 16 px detail is limited |
 | Compact web asset | WebP with alpha | Lossless export present |
@@ -182,6 +183,9 @@ preview. Keep rejected generations outside the published asset set.
 
 The logo approval and font/theme decisions are settled. Exact agent-interface
 components, a wordmark or true vector source, and an optically simplified 16 px
-favicon remain future work. State-specific colors, actual font rendering,
-responsive behavior, keyboard focus, and contrast must be checked in the real
-frontend. Selected tokens are a design contract, not proof that a UI exists.
+favicon remain future work. The T05 shell uses the selected semantic tokens and self-hosted fonts with
+[retained notices](../../apps/web/THIRD_PARTY_NOTICES.md). Build/type checks and
+Chromium checks cover system/manual themes, retained preference, actual font/icon
+delivery, 320 px overflow and keyboard skip-to-main. Light/dark/narrow screenshots
+were inspected. Full populated interaction, contrast/accessibility and product
+acceptance remain with their feature tasks; shell checks do not establish them.

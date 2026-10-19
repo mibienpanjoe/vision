@@ -46,7 +46,13 @@ h2 { font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.25; margin: 0 0 1.25rem
 p { margin: 0 0 .75rem; }
 .intro, .muted-copy { color: var(--muted-foreground); }
 .empty-library { display: grid; grid-template-columns: 8rem 1fr; align-items: center; gap: 3rem; padding: 3rem; min-height: 18rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--card); }
-.book-spine { color: var(--accent-foreground); background: var(--accent); border-radius: .5rem; aspect-ratio: 4/5; display: grid; place-items: center; font: 400 4rem "Source Serif 4", Georgia, serif; }
+.library-mark { width: 8rem; }
+.mark-dark { display: none; }
+.dark .mark-light { display: none; }
+.dark .mark-dark { display: block; }
+.library-mark img { border-radius: .5rem; outline: 1px solid oklch(0 0 0 / .1); }
+.dark .library-mark img { outline-color: oklch(1 0 0 / .1); }
+code, pre { font-family: "Geist Mono", ui-monospace, monospace; }
 .library-note { margin-top: 1.25rem; color: var(--muted-foreground); font-family: "Source Serif 4", Georgia, serif; font-style: italic; }
 footer { display: flex; justify-content: space-between; gap: 1rem; padding-block: 1.5rem; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: .8125rem; }
 @media (max-width: 36rem) {
@@ -55,7 +61,7 @@ footer { display: flex; justify-content: space-between; gap: 1rem; padding-block
   .site-header { min-height: 6rem; }
   main { padding-block: 2.5rem; }
   .empty-library { grid-template-columns: 1fr; gap: 1.5rem; padding: 1.5rem; }
-  .book-spine { width: 4rem; font-size: 2rem; }
+  .library-mark, .library-mark img { width: 5rem; height: 5rem; }
   footer { flex-direction: column; gap: .25rem; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }

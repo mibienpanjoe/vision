@@ -1,3 +1,6 @@
+import Image from "next/image";
+import lightMark from "../../../assets/brand/vision-mark.png";
+import darkMark from "../../../assets/brand/vision-mark-dark-tile.png";
 import { ThemeControl } from "@/components/theme-provider";
 
 export default function LibraryPage() {
@@ -5,7 +8,9 @@ export default function LibraryPage() {
     <div className="workspace">
       <a className="skip-link" href="#library">Skip to library</a>
       <header className="site-header">
-        <a className="brand" href="/" aria-label="Vision home"><span>Vision</span></a>
+        <a className="brand" href="/" aria-label="Vision home"><Image className="mark-light" src={lightMark} alt="" width={48} height={48} unoptimized />
+          <Image className="mark-dark" src={darkMark} alt="" width={48} height={48} unoptimized />
+          <span>Vision</span></a>
         <ThemeControl />
       </header>
       <main id="library" tabIndex={-1}>
@@ -15,7 +20,10 @@ export default function LibraryPage() {
           <p className="intro">Keep your books close. Bring their worlds into focus.</p>
         </div>
         <section className="empty-library" aria-labelledby="empty-title">
-          <div className="book-spine" aria-hidden="true">V</div>
+          <div className="library-mark" aria-hidden="true">
+            <Image className="mark-light" src={lightMark} alt="" width={128} height={128} unoptimized />
+            <Image className="mark-dark" src={darkMark} alt="" width={128} height={128} unoptimized />
+          </div>
           <div>
             <p className="eyebrow">The first page</p>
             <h2 id="empty-title">A place for your next world.</h2>
