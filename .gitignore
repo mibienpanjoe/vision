@@ -1,0 +1,35 @@
+# Local planning, publication metadata and source material
+tasks/
+.local/
+.agents/
+.codex/
+.aws/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies, caches and build outputs
+node_modules/
+.next/
+dist/
+build/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage/
+htmlcov/
+playwright-report/
+test-results/
+.DS_Store
+
+# Private uploads and generated runtime data
+storage/
+uploads/
+*.bundle

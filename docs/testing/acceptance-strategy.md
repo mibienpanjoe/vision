@@ -1,0 +1,68 @@
+# Acceptance and verification strategy
+
+**Status:** planned scenarios, no application tests executed or CI configured.
+The [requirements](../product/requirements-and-acceptance.md) own product promises;
+this page owns how to demonstrate them without relying on attractive output.
+
+## Synthetic narrative fixture
+
+Prepare a short annotated story with Arthur as a child, an injury during a war,
+armor removed before a home scene, a later chapter flashing back to childhood,
+two people called captain, an object attributed to another person, a rumor,
+a metaphor, and a damaged/rebuilt building. Include explicit unknown traits,
+contradictions, and a fact resolved only beyond a reading cutoff.
+
+The annotations identify entities, exact spans, admissible temporal relations,
+scope, support type, expected inclusions/exclusions, and unresolved ambiguity.
+Add accents and supplementary Unicode characters to exercise source offsets.
+Keep this corpus synthetic; do not commit private books as convenient fixtures.
+
+## Scenario matrix
+
+| Scenario | Requirement IDs | Observable proof |
+|---|---|---|
+| All four input adapters | REQ-02, REQ-04 | Exact quoted slices, structure warnings, original revision mapping |
+| Reprocessing after changed segmentation | REQ-04, REQ-17, REQ-18 | Old citations remain meaningful; incompatible states cannot be reused |
+| Duplicate job delivery, retry, cancellation | REQ-03, REQ-18, REQ-19 | Durable terminal outcome, no duplicate facts or false completion |
+| Alias and ambiguous captain | REQ-05, REQ-12 | Supported identity merge or admissible options; no indiscriminate title merge |
+| Childhood before injury | REQ-06, REQ-07, REQ-09 | Later scar excluded despite a high semantic similarity score |
+| Battle versus home | REQ-07, REQ-10 | Correct attire and ownership; armor removal interpreted correctly |
+| Damaged then rebuilt house | REQ-06, REQ-09 | Requested building version or explicit unresolved chronology |
+| Fact scattered across chapters | REQ-08, REQ-14 | All annotated material traits found and cited; low-rank protected fact survives |
+| Later flashback and derived identity leak | REQ-11, REQ-18 | Ineligible passages, entity merges, context labels, facts, and cache states absent |
+| Dream, rumor, negation, wrong owner | REQ-05, REQ-13 | Unsupported canon rejected with appropriate uncertainty |
+| Conflicting or missing attributes | REQ-12, REQ-14, REQ-15 | Conflict/unknown remains visible; creative completion separately labeled |
+| Schema-valid hallucinated attribute | REQ-13, REQ-16 | Grounding gate rejects it despite structural validity |
+| Style refinement of locked fact | REQ-15, REQ-16 | Canon remains unchanged; final prompt does not contradict profile |
+| Provider failure and changed adapter | REQ-17, REQ-19, REQ-21 | Safe bounded failure, explicit versions, equivalent domain contract |
+| Cross-owner library/job/evidence/cache/asset access | REQ-01, REQ-18 | Every access path denies disclosure, including indirect references |
+| Prompt injection and hostile upload | REQ-19, REQ-22 | No tool/credential access or unbounded parser work |
+| Optional render | REQ-20 | Real image/specification linkage and visible provider failure/retry outcome |
+
+## Evidence levels
+
+- **Documentation checks:** relative links/anchors, JSON syntax, fences, IDs,
+  status consistency, and source preservation. These prove document quality.
+- **Domain tests (pytest):** deterministic fixtures for chronology, offsets,
+  dependency eligibility, ownership, fusion/protected evidence, and validation.
+- **Infrastructure integration:** actual PostgreSQL FTS/pgvector, persistence,
+  Redis/Dramatiq execution/recovery, private storage, and cache boundaries.
+- **Provider integration:** named live role/model, bounded corpus, extracted
+  spans compared to annotations. Mocks do not prove actual extraction quality.
+- **Product checks (Playwright):** actual browser/API/database/worker flow,
+  source highlighting and export, narrow layouts, keyboard behavior, empty and
+  error states. Optional image rendering needs its own real provider check.
+- **CI/deployment:** only report CI success from a real run, and deployment
+  readiness from checks against the intended deployed environment.
+
+Compare extraction and retrieval against annotated expected facts, including
+material omissions and incorrect inclusions. Record the fixture and processing
+versions. Numerical quality, latency, and cost thresholds remain OPEN-05; do not
+invent target percentages or claim exhaustive recall from one synthetic story.
+
+## Current verification boundary
+
+This documentation increment can check documents and brand images. It cannot
+establish application behavior, compatibility of copied components, provider
+quality for book extraction, or runtime security. Future checks must run against
+the current artifact, not only a previously recorded pass.
