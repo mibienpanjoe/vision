@@ -27,7 +27,8 @@ class NarrativeFixtureTests(unittest.TestCase):
                 self.assertLessEqual(previous_end, p['source_start'])
                 self.assertEqual(text[p['source_start']:p['source_end']], p['text'])
                 self.assertLess(p['source_start'], p['source_end'])
-                self.assertIn(p['chapter'], range(1, 6))
+                headings = list(re.finditer(r'^## Chapter (\d+)', text[:p['source_start']], re.M))
+                self.assertEqual(p['chapter'], int(headings[-1].group(1)))
                 previous_end = p['source_end']
         spans = {s['id']: s for s in corpus['spans']}
         self.assertEqual(len(spans), len(corpus['spans']))
@@ -123,6 +124,8 @@ class NarrativeFixtureTests(unittest.TestCase):
                     for span_id in fact['evidence']:
                         chapter = passages[spans[span_id]['passage_id']]['chapter']
                         self.assertLessEqual(chapter, case['through_chapter'])
+                    if key in ('inferred', 'disputed'):
+                        self.assertEqual(fact['support'], key)
                     if key == 'canonical':
                         self.assertEqual(fact['support'], 'explicit')
                         self.assertIn(case['event'], fact['events'])
