@@ -9,6 +9,7 @@ dependencies = [
   "sqlalchemy==2.1.5",
   "psycopg[binary]>=3.2,<4",
   "alembic==1.20.0",
+  "dramatiq[redis]==2.2.1",
 ]
 
 [dependency-groups]

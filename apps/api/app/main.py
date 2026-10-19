@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api.v1.auth import router as auth_router
+from app.api.v1.jobs import router as jobs_router
 from app.core.errors import install_errors
 from app.core.security import LoginLimiter
 from app.db.session import configured_engine
@@ -29,6 +30,7 @@ def create_app() -> FastAPI:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
     install_errors(app)
     app.include_router(auth_router)
+    app.include_router(jobs_router)
 
     @app.get("/health/live")
     def live() -> dict[str, str]:
