@@ -24,6 +24,7 @@
 | DEC-16 | Inter for UI, Source Serif 4 for literary text/headings, Geist Mono for structured output; warm paper/charcoal/gold light and dark themes | Selected under maintainer delegation, 2026-10-19; [visual identity](../design/visual-identity.md) |
 | DEC-17 | Public GitHub repository; uploaded works and runtime data remain private | Maintainer instruction, 2026-10-19; [security](../../SECURITY.md) |
 | DEC-18 | Keep overview in `docs/product/` and detailed retrieval strategy in `docs/architecture/`, with no root duplicates | Selected under maintainer instruction, 2026-10-19; [documentation map](../documentation-map.md) |
+| DEC-19 | D0: Python 3.12.14/uv 0.12.15, Node 24.12.0/pnpm 10.28.0, PostgreSQL 17/pgvector 0.8.7, Redis 8.2.10; generated locks and digest-pinned images | T01 implementation selection; [operations](../operations/development-and-operations.md#selected-toolchain--d0) |
 
 ## Proposed elaborations
 
@@ -47,7 +48,7 @@ documents fixed all details.
 | OPEN-03 | First supported book languages and lexical configurations | Lexical indexing and multilingual claims |
 | OPEN-04 | When does carrying an acquired trait forward count as explicit support versus inference? | Temporal reconstruction implementation |
 | OPEN-05 | Concrete upload/expansion/time/token/cost/candidate limits and performance targets | Accepting untrusted workloads; then calibrate with measurements |
-| OPEN-06 | Runtime versions, package manager, parser format coverage/OCR, embedding dimension and ANN settings | Reproducible development environment |
+| OPEN-06 | Runtime/package choices resolved by DEC-19; parser execution/OCR coverage, embedding dimension and ANN settings remain open | Reproducible development environment |
 | OPEN-07 | Revision/edit/retry/idempotency wire protocol, pagination, deletion, and retention | Executable API and persistent lifecycle |
 | OPEN-08 | Deployment host, backups, recovery targets, provider retention, and data deletion procedure | External deployment |
 | OPEN-09 | Project license, exact component selections, final wordmark/vector assets, and any future optically simplified favicon | Redistribution or relevant implementation increment |
