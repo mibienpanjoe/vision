@@ -43,7 +43,8 @@ remain visible. The original text remains the source of truth.
 | REQ-22 | Untrusted source handling | Document instructions cannot change tools, system behavior, credentials, or ownership scope. |
 
 REQ-15 uses the conservative canonical-field interpretation of the brief. The
-precise carry-forward rule for an acquired trait is still [OPEN-04](decision-register.md).
+first-slice carry-forward rule is selected by [DEC-22](decision-register.md) and
+owned by the [narrative contract](../narrative/narrative-contract.md).
 A model confidence score alone cannot satisfy REQ-13.
 
 ## Product flow and outcomes
