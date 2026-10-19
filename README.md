@@ -25,10 +25,25 @@ at that moment, and produce a structured specification for image generation.
 
 ## Status
 
-**Product and technical definition; application development has not started.**
-This repository contains the source brief and working specifications. There is
-no running application, installation procedure, executable API, or release yet.
+**Local executable foundation; the book pipeline is still being built.**
+The repository includes a themed web shell, authenticated API, PostgreSQL/pgvector,
+a durable Redis worker probe, and generated shared contracts. Uploads, narrative
+extraction and grounded reconstruction are not available yet. There is no release.
 Logo assets are brand material, not product screenshots.
+
+## Run locally
+
+With the [documented prerequisites](docs/operations/development-and-operations.md#local-commands-and-verification):
+
+```sh
+make setup
+make dev
+```
+
+Open `http://127.0.0.1:3000`. Setup generates private local service credentials;
+see [operations](docs/operations/development-and-operations.md) for account setup,
+verification commands and shutdown. Vision runs locally; LLM integration will use
+the installed FreeLLM API gateway.
 
 ## Planned capabilities
 

@@ -1,6 +1,7 @@
 # Acceptance and verification strategy
 
-**Status:** T03 corpus integrity tests pass; application/provider scenarios and CI remain pending.
+**Status:** corpus and local foundation checks are implemented; narrative/provider
+acceptance scenarios below remain pending.
 The [requirements](../product/requirements-and-acceptance.md) own product promises;
 this page owns how to demonstrate them without relying on attractive output.
 
@@ -85,7 +86,11 @@ invent target percentages or claim exhaustive recall from one synthetic story.
 
 ## Current verification boundary
 
-Phase 0 establishes decisions and a checked fixture oracle. It cannot
-establish application behavior, compatibility of copied components, provider
-quality for book extraction, or runtime security. Future checks must run against
-the current artifact, not only a previously recorded pass.
+The foundation checks establish database readiness/migrations, authenticated
+ownership/session boundaries, real broker/worker probe execution, shared contracts
+and the browser shell/font/icon/session surfaces. Commands and isolated fixture
+setup belong to [operations](../operations/development-and-operations.md#local-commands-and-verification).
+They do not establish ingestion, extraction/retrieval quality, narrative temporal
+correctness, rendered images or full product security. The synthetic oracle is
+still the expected input to those later evaluations. Check the actual CI run for
+a named commit; local success alone is not remote CI evidence.

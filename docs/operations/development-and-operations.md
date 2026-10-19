@@ -1,28 +1,27 @@
 # Development and operations
 
-**Status:** T04 API/PostgreSQL bootstrap verified locally; remaining Phase 1 tasks pending.
+**Status:** executable local foundation verified; book ingestion/reconstruction pending.
+The CI workflow checks the same foundation commands without deployment or model calls.
 
 ## Current repository
 
 The repository contains working specifications, brand assets, a synthetic corpus,
-and the first locked API/health implementation. The database service and
-migration bootstrap are implemented; web, authentication, workers and CI follow.
-Reading the
-[documentation map](../documentation-map.md) is the current starting action.
-Do not run invented `npm`, `uv`, migration, or Compose commands from the brief's
-planned directory tree.
+a locked API, generated contracts, local accounts/sessions, a themed web shell,
+and a durable probe worker. PostgreSQL/pgvector and Redis use dedicated loopback
+services. The [documentation map](../documentation-map.md) remains the entrypoint
+for the product contracts; the commands below own the executable setup.
 
 ## Intended local baseline
 
-| Component | Selected technology | Setup still required |
+| Component | Selected technology | Current boundary |
 |---|---|---|
-| Web | Next.js, TypeScript, Tailwind, shadcn/ui | Manifests, app shell; runtime/package tools selected below |
-| API | Python, FastAPI, Pydantic | Dependency locks, app and configuration; runtime selected below |
-| Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Schema, search configuration, migrations; image selected below |
-| Jobs | Redis, Dramatiq | Broker/worker settings, durable attempts, cancellation and recovery |
+| Web | Next.js, TypeScript, Tailwind, shadcn/ui | Themed shell implemented; library/reconstruction screens pending |
+| API | Python, FastAPI, Pydantic | Locked health/auth/job API implemented; domain endpoints pending |
+| Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Principals, sessions, jobs/attempts and vector extension; narrative tables pending |
+| Jobs | Redis, Dramatiq | Actual bounded probe; long-running ingestion/recovery remains T13 |
 | Sources/assets | Private local filesystem | Storage root, permissions, quota and retention |
-| Models | Role-specific provider adapters | Provider/model selection, credentials, data handling, budgets |
-| Integration | Docker Compose | Service definitions, health checks, ports, volumes |
+| Models | Role-specific provider adapters | Installed FreeLLM selected; role/model checks remain before first live consumer |
+| Integration | Docker Compose | Pinned private local services and verification commands below |
 
 The first executable setup change must document actual prerequisites, pinned
 versions, environment variables, startup/stop/reset commands, migration order,
@@ -160,8 +159,7 @@ uv run --project apps/api pytest apps/api/tests -q
 The local private `.env` contains `POSTGRES_PASSWORD` (a random hex secret),
 `POSTGRES_PORT=55432`, and `DATABASE_URL` using the same credentials with the
 `postgresql+psycopg` driver and `127.0.0.1:55432/vision`. The database user and
-name are `vision`. Never commit this file. T09 provides the consolidated setup
-command and secret-free environment example.
+name are `vision`. Never commit this file. Use `make setup` below and the secret-free environment field reference.
 
 With that private environment prepared, the T04 startup sequence is:
 
@@ -206,7 +204,7 @@ commit them. Duplicate usernames fail safely. API session transport and current
 limits are owned by the [authentication contract](../api/api-contract.md#local-authentication--t07).
 The web proxy defaults to `http://127.0.0.1:8000`; set `VISION_API_ORIGIN` before
 building when selecting a different loopback API port. It accepts loopback HTTP
-origins only. T09 consolidates clean-checkout and integration/browser commands.
+origins only. The consolidated commands below cover clean setup and integration/browser checks.
 
 ## Probe worker — T08
 
@@ -232,4 +230,56 @@ T08 proved an actual Redis→Dramatiq→PostgreSQL result, stopped-worker pendin
 restart, scoped polling, request replay/conflict and failed-publication recovery.
 The small probe commits atomically; it does not establish long-running ingestion
 crash/cancellation recovery. The [job API](../api/api-contract.md#bounded-worker-probe--t08)
-owns response semantics. T09 establishes consolidated commands and actual CI.
+owns response semantics. The consolidated commands below and CI check this foundation.
+
+## Local commands and verification
+
+Prerequisites: Node 24.12.0, pnpm 10.28.0, uv 0.12.15, a running Docker daemon,
+and Compose v2-compatible commands. uv selects/manages Python 3.12.14 from the API
+pin. From a clean checkout:
+
+```sh
+make setup
+make dev
+```
+
+`make setup` preserves an existing `.env`, or creates it with random local database/
+broker secrets and mode 0600. Do not copy the blank credential fields from
+[.env.example](../../.env.example) as working credentials. The example documents
+configuration fields; generated `.env` and runtime data stay ignored. Dependency
+installs use frozen locks and disabled dependency lifecycle scripts. No global
+package upgrade or FreeLLM call is part of setup.
+
+`make dev` starts/checks the local database/broker, applies migrations and runs
+API, worker and web processes. Open `http://127.0.0.1:3000`; the honest library
+shell says uploads are not yet available. Ctrl+C stops the development processes;
+`make stop` stops the persistent containers without deleting volumes. The API
+binds loopback 8000, PostgreSQL 55432 and Redis 56379. The command is local-only.
+
+| Command | Purpose |
+|---|---|
+| `make services migrate` | Start/check PostgreSQL/Redis and apply migrations |
+| `make api`, `make worker`, `make web` | Run one service separately in its own terminal |
+| `make dispatch` | Reconcile pending queue publication after a broker outage |
+| `make browsers` | Install the isolated Chromium browser; OS browser prerequisites may be required |
+| `make check` | Repository lint, non-infrastructure tests, deterministic contract regeneration, Node/type checks, web build and shell browser checks, documentation checks |
+| `make integration` | Real authenticated PostgreSQL/Redis/worker tests in disposable databases and unique queue namespaces |
+| `make browser-session` | Real API and Chromium cookie transport through the web proxy, using a disposable database/account |
+| `pnpm audit --audit-level=high` | Native JavaScript known-advisory check; not a general security proof |
+
+Run `make services migrate` and `make browsers` before the browser/infrastructure
+checks. Session-browser verification requires loopback 8000 and 13000 to be free;
+it starts/stops its own API and web test processes. Unit-only runs deliberately
+exclude marked infrastructure tests; the CI and full foundation check run both.
+The PostgreSQL fixture uses the configured development administrator only to
+create isolated `vision_test_*` databases, then removes those test databases.
+Tests never clear the reader's database or flush shared Redis. The browser
+harness provisions only a synthetic test account and cleans its API/database.
+
+The [CI workflow](../../.github/workflows/ci.yml) uses pinned action commits,
+read-only repository permission and generated disposable service credentials.
+It executes these same commands plus the advisory audit; live model/paid tests
+are absent. Only its own ephemeral CI volumes are removed at job end. A separate
+local clone with distinct ports/service project passed the documented clean-setup
+sequence; exact run evidence remains in the task/PR record. No external deployment,
+provider quality or book reconstruction follows from these foundation checks.
