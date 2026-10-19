@@ -140,3 +140,25 @@ T13 adds broader retry/cancellation and interrupted-stage recovery.
 
 Implementation sources: [Starlette request forms](https://starlette.dev/requests/)
 and [SQLAlchemy transaction management](https://docs.sqlalchemy.org/en/21/orm/session_transaction.html).
+
+
+## Text parser revision — T11
+
+`text-v1` extracts paragraph passages as exact code-point slices of the UTF-8
+original. It preserves internal CRLF, accents, combining marks, emoji, dialogue
+and Markdown syntax. Leading/trailing paragraph whitespace is outside the stored
+slice; normalization revision is `none-v1`. Evidence offsets are relative to the
+immutable passage; source start/end separately locate it in the original text.
+
+Chapter structure is conservative: explicit English `Chapter N` lines in TXT,
+or ATX `#`–`######` chapter headings in Markdown outside fenced code. Ordinals
+follow source order rather than trusting printed chapter numbers. Other Markdown
+headings delimit paragraphs and are retained in the original, not emitted as
+paragraph evidence. This is a paragraph adapter, not a CommonMark renderer or
+scene detector. Missing chapters, unassigned preamble and unclosed fences produce
+explicit warnings; unknown chapters are not silently assigned to chapter 1.
+
+Initial parser ceilings are 2,000,000 code points, 20,000 passages, 2,000 chapter
+markers and 16,384 code points per passage. Oversized/unusable sources fail with
+safe parser-budget/no-passages outcomes rather than silent truncation. These
+ceilings are not measured whole-book performance targets.
