@@ -24,7 +24,7 @@ chronology, visual claims, and provenance. It is a revisable derived index, not
 an authority replacing the original passage. Apply owner and reading boundaries
 to source material and derived decisions.
 
-The [retrieval strategy](../../retrieval_strategy.md) owns the detailed pipeline.
+The [retrieval strategy](../architecture/retrieval-strategy.md) owns the detailed pipeline.
 
 ## Alternatives and exclusions
 

@@ -28,8 +28,9 @@ context, consequences, and any migration effect. Preserve superseded decisions
 and link their replacements.
 
 Keep each topic on its owning page. Use links instead of copying procedures,
-requirements, or contracts. Preserve the two root source documents; update the
-focused specifications and register when a later decision qualifies the brief.
+requirements, or contracts. Keep the overview under `docs/product/` and the
+retrieval strategy under `docs/architecture/`; update the owning specifications
+and register when a later decision qualifies the brief.
 
 ## Verification and completion
 

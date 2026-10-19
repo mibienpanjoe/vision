@@ -87,8 +87,9 @@ infrastructure/docker/       container definitions
 docs/                        working specifications
 ```
 
-Only documentation and brand assets exist in this increment. Source files remain
-at the repository root instead of being duplicated into the proposed structure.
+Only documentation and brand assets exist in this increment. The overview and
+detailed retrieval strategy are classified under `docs/product/` and
+`docs/architecture/`, respectively; the application paths above remain planned.
 
 ## Trust and operational boundaries
 

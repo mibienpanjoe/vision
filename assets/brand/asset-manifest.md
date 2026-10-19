@@ -1,7 +1,7 @@
 # Vision brand asset manifest
 
-**Status:** initial candidates generated and inspected on 2026-10-19. Final
-identity approval remains open. Application icon wiring has not started.
+**Status:** generated and inspected on 2026-10-19; retained logo assets approved
+by the maintainer. Application icon wiring has not started.
 
 ## Sources and masters
 
@@ -23,10 +23,10 @@ integration was used.
 | [vision-mark-192.png](vision-mark-192.png) | 192 × 192 | Transparent primary derivative |
 | [vision-mark-512.png](vision-mark-512.png) | 512 × 512 | Transparent primary derivative |
 | [vision-mark.webp](vision-mark.webp) | 1254 × 1254 | Lossless WebP, alpha retained |
-| [icon-192.png](icon-192.png) | 192 × 192 | Opaque warm neutral app-icon candidate |
-| [icon-512.png](icon-512.png) | 512 × 512 | Opaque warm neutral app-icon candidate |
-| [apple-touch-icon.png](apple-touch-icon.png) | 180 × 180 | Opaque warm neutral touch-icon candidate |
-| [favicon.ico](favicon.ico) | 48, 32, and 16 px entries | Opaque warm neutral browser-icon candidate |
+| [icon-192.png](icon-192.png) | 192 × 192 | Opaque warm neutral app-icon export |
+| [icon-512.png](icon-512.png) | 512 × 512 | Opaque warm neutral app-icon export |
+| [apple-touch-icon.png](apple-touch-icon.png) | 180 × 180 | Opaque warm neutral touch-icon export |
+| [favicon.ico](favicon.ico) | 48, 32, and 16 px entries | Opaque warm neutral browser-icon export |
 
 There is no true SVG, final wordmark, maskable-icon guarantee, or social card.
 Do not label the opaque dark tile a transparent mark. The generated raster is
@@ -60,12 +60,12 @@ exports. Lossless WebP is compared against the PNG master during verification.
 
 The primary loses contrast against charcoal, so the README selects the dark
 tile through `picture`. The rejected transparent inverse is not shipped. Minor
-raster edge variation remains possible at master scale; these files are initial
-assets, not approved vector masters. At 32/48 px the book and doorway read more
+raster edge variation remains possible at master scale; approval of these raster
+assets does not make them vector masters. At 32/48 px the book and doorway read more
 clearly; at 16 px the fine page/doorway detail is limited. A dedicated simplified
 favicon remains a future refinement, not an already completed export.
 
 Local previews establish asset appearance, not GitHub's final HTML sanitization
 or every browser's theme behavior. No application shell or manifest consumes
-the icon candidates yet. Final palette, contrast tokens, and wordmark decisions
-belong to the [visual identity](../../docs/design/visual-identity.md).
+the icon exports yet. The selected palette and contrast tokens, plus the remaining
+wordmark work, belong to the [visual identity](../../docs/design/visual-identity.md).

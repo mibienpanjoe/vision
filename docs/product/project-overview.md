@@ -103,7 +103,7 @@ User asks to visualize a subject
   → show prompt, evidence, unknowns and optional image
 ```
 
-Retrieval is specified in detail in [`retrieval_strategy.md`](./retrieval_strategy.md).
+Retrieval is specified in detail in [retrieval strategy](../architecture/retrieval-strategy.md).
 
 ## 6. Technology stack
 
@@ -228,9 +228,11 @@ vision/
 ├── packages/
 │   └── contracts/                 # shared generated TS types / JSON schema
 ├── docs/
-│   ├── project_overview.md
-│   ├── retrieval_strategy.md
-│   └── architecture-decisions/
+│   ├── documentation-map.md
+│   ├── product/project-overview.md
+│   ├── architecture/retrieval-strategy.md
+│   ├── design/visual-identity.md
+│   └── adr/
 ├── infrastructure/
 │   └── docker/
 ├── docker-compose.yml
@@ -248,25 +250,18 @@ Keep a **modular monolith** in the FastAPI application. Separate domain services
 
 Reference principles: Readwise Reader's reading ergonomics, Linear's information density and interactions, and an editorial publication's visual hierarchy. These are inspiration, not templates to copy.
 
-### Palette
+### Selected visual system
 
-| Token | Color | Usage |
-|---|---|---|
-| Canvas | `#F8F7F4` | Warm light background |
-| Surface | `#FFFFFF` | Cards and panels |
-| Ink | `#242424` | Main text |
-| Muted | `#817D76` | Secondary labels |
-| Accent | `#A28B71` | Sparse active-state emphasis |
-| Cinema | `#252527` | Optional immersive dark viewer |
+The approved book-and-doorway logo, Inter interface typography, Source Serif 4
+literary typography, Geist Mono structured output, and warm paper/charcoal/gold
+light and dark themes are defined in the owning
+[visual identity specification](../design/visual-identity.md). That page owns
+semantic colors, contrast pairs, typography roles, and component styling.
 
-Use accessible contrast for text and controls; don't use low-contrast accent text on white. Provide dark-mode surfaces and token mappings rather than hard-coded colors in components.
-
-### Typography
-
-- **Interface:** Geist or Inter.
-- **Editorial headings:** Instrument Serif.
-- **Book passages:** Source Serif 4.
-- **Structured JSON:** Geist Mono.
+Use shadcn/ui with selected specialized agent-interface components, including
+Agents Kit as a reference subject to its component licensing constraints. Theme
+tokens apply to copied components as well as native UI; do not import a separate
+library palette or hard-code competing colors.
 
 ### Primary screens
 
@@ -309,4 +304,4 @@ A visualization is ready only when it has: a resolved subject; an explicit time/
 
 ---
 
-**Companion architecture:** [`retrieval_strategy.md`](./retrieval_strategy.md) defines the retrieval design selected for Vision, including indexing, evidence collection, temporal reconstruction, and verification.
+**Companion architecture:** [retrieval strategy](../architecture/retrieval-strategy.md) defines the retrieval design selected for Vision, including indexing, evidence collection, temporal reconstruction, and verification.

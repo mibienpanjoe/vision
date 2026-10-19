@@ -10,13 +10,13 @@ roles, delivery deadlines, and branch model do not apply to Vision.
 
 | Order | Owning document | What it answers |
 |---|---|---|
-| 1 | [Project overview](../project_overview.md) | What Vision is intended to do |
+| 1 | [Project overview](product/project-overview.md) | What Vision is intended to do |
 | 2 | [Requirements and acceptance](product/requirements-and-acceptance.md) | What must be true for each capability |
 | 3 | [Decision register](product/decision-register.md) | What is selected, proposed, open, or deferred |
 | 4 | [Canonical model](data/canonical-model.md) | What the domain objects mean and how they relate |
 | 5 | [Narrative contract](narrative/narrative-contract.md) | How identity, chronology, facts, and ambiguity behave |
 | 6 | [Ingestion contract](ingestion/ingestion-contract.md) | How sources become versioned, inspectable evidence |
-| 7 | [Retrieval strategy](../retrieval_strategy.md) | The adopted retrieval and reconstruction pipeline |
+| 7 | [Retrieval strategy](architecture/retrieval-strategy.md) | The adopted retrieval and reconstruction pipeline |
 | 8 | [Visual specification](visualization/visual-specification.md) | What a trustworthy output contains |
 | 9 | [System architecture](architecture/system-architecture.md) | Components, ownership, and allowed dependencies |
 | 10 | [API contract](api/api-contract.md) | Proposed HTTP resources and unresolved wire details |
@@ -36,15 +36,17 @@ Supporting owners:
 
 ## Authority and status
 
-The root `project_overview.md` and `retrieval_strategy.md` are retained unchanged
-as source material. Focused specifications organize their requirements; they do
-not establish runtime proof. Later explicit maintainer decisions are recorded
-in the register and take precedence where they qualify the source brief.
+The project overview belongs under `docs/product/`; the detailed retrieval
+strategy belongs under `docs/architecture/`. Both remain useful source
+specifications and are maintained in those locations, without root duplicates.
+Focused contracts own the elaborated requirements. None establish runtime proof.
+Later maintainer decisions are recorded in the register and reflected in the
+affected specifications.
 
-The overview's section 10 is initial UX and styling input. The design document
-owns the current visual direction: shadcn/ui, selected agent-interface
-components, and the supplied logo. Exact design tokens and final asset approval
-remain distinct from that direction.
+The design document owns the approved logo and selected typography, light/dark
+themes, and component direction. The overview links to those choices rather
+than maintaining a second palette or font list. Asset approval and selected
+design tokens do not imply a rendered or accessibility-tested application.
 
 Use these labels consistently:
 

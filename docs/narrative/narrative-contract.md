@@ -53,7 +53,7 @@ definite “before” or “after” claim. Contradictions are resolved only whe
 or better evidence explains them; otherwise they remain disputed.
 
 The detailed retrieval/reconstruction algorithm belongs to the
-[retrieval strategy](../../retrieval_strategy.md), not a separate pipeline here.
+[retrieval strategy](../architecture/retrieval-strategy.md), not a separate pipeline here.
 
 ## Spoiler eligibility
 

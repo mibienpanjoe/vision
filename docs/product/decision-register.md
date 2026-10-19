@@ -20,6 +20,10 @@
 | DEC-12 | Private uploads; local files in development and S3-compatible deployment storage | Overview §§6,11; [security](../../SECURITY.md) |
 | DEC-13 | shadcn/ui base with selected specialized agent-interface components; Agents Kit is a named reference | Maintainer instruction, 2026-10-19; [visual identity](../design/visual-identity.md) |
 | DEC-14 | Supplied book-and-doorway logo is the identity direction; use image generation for initial derivatives and inspect outputs | Maintainer instruction, 2026-10-19; [visual identity](../design/visual-identity.md) |
+| DEC-15 | Approve the retained book-and-doorway logo assets; keep the documented 16 px/favicon and transparent-inverse limitations | Maintainer approval, 2026-10-19; [asset manifest](../../assets/brand/asset-manifest.md) |
+| DEC-16 | Inter for UI, Source Serif 4 for literary text/headings, Geist Mono for structured output; warm paper/charcoal/gold light and dark themes | Selected under maintainer delegation, 2026-10-19; [visual identity](../design/visual-identity.md) |
+| DEC-17 | Public GitHub repository; uploaded works and runtime data remain private | Maintainer instruction, 2026-10-19; [security](../../SECURITY.md) |
+| DEC-18 | Keep overview in `docs/product/` and detailed retrieval strategy in `docs/architecture/`, with no root duplicates | Selected under maintainer instruction, 2026-10-19; [documentation map](../documentation-map.md) |
 
 ## Proposed elaborations
 
@@ -46,7 +50,7 @@ documents fixed all details.
 | OPEN-06 | Runtime versions, package manager, parser format coverage/OCR, embedding dimension and ANN settings | Reproducible development environment |
 | OPEN-07 | Revision/edit/retry/idempotency wire protocol, pagination, deletion, and retention | Executable API and persistent lifecycle |
 | OPEN-08 | Deployment host, backups, recovery targets, provider retention, and data deletion procedure | External deployment |
-| OPEN-09 | Project license, final design tokens, approved logo variants, and exact component selections | Redistribution or public product release |
+| OPEN-09 | Project license, exact component selections, final wordmark/vector assets, and any future optically simplified favicon | Redistribution or relevant implementation increment |
 
 For OPEN-04, the overview says not to assume permanence from one scene, and the
 retrieval example permits carrying a wartime scar forward absent contradiction.

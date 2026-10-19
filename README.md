@@ -41,8 +41,9 @@ Logo assets are brand material, not product screenshots.
 ## Start here
 
 Read the [documentation map](docs/documentation-map.md) for the recommended order
-and the owner of each topic. The original [project overview](project_overview.md)
-and [retrieval strategy](retrieval_strategy.md) remain available unchanged.
+and the owner of each topic. The [project overview](docs/product/project-overview.md)
+and [retrieval strategy](docs/architecture/retrieval-strategy.md) are organized
+under product and architecture documentation.
 
 The selected baseline combines **Next.js and TypeScript**, **FastAPI**, and
 **PostgreSQL with full-text search and pgvector**. Redis and Dramatiq handle
@@ -51,8 +52,9 @@ See the [architecture](docs/architecture/system-architecture.md).
 
 The interface will use shadcn/ui with selected components from agent-interface
 libraries such as [Agents Kit](https://github.com/agents-ui/agents-kit).
-The [visual direction](docs/design/visual-identity.md) uses the supplied
-book-and-doorway logo as its reference.
+The [visual identity](docs/design/visual-identity.md) pairs the approved
+book-and-doorway logo with warm paper, charcoal, and gold themes. Inter handles
+controls, Source Serif 4 handles literary text, and Geist Mono handles JSON.
 
 ## Contributing and licensing
 

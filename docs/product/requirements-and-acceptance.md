@@ -1,8 +1,8 @@
 # Product requirements and acceptance
 
 **Status:** source-derived baseline; implementation not started.
-**Sources:** [overview](../../project_overview.md),
-[retrieval strategy](../../retrieval_strategy.md).
+**Sources:** [overview](project-overview.md),
+[retrieval strategy](../architecture/retrieval-strategy.md).
 
 These requirements describe the target product. They are not a list of delivered
 features. Direct image rendering follows the structured-output milestone.
