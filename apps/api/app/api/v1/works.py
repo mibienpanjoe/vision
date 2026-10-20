@@ -9,6 +9,8 @@ from app.core.security import ActorScope, current_actor, database_session, owned
 from app.core.storage import PrivateSources
 from app.models.works import IngestionJob, Work
 from app.schemas.works import (
+    GenerationPage,
+    GenerationView,
     IngestionView,
     LibraryPage,
     UploadAccepted,
@@ -17,6 +19,7 @@ from app.schemas.works import (
 )
 from app.services.ingestion.inputs import MAX_SOURCE_BYTES, UPLOAD_SECONDS
 from app.services.ingestion.jobs import mutate_job
+from app.services.ingestion.reprocess import create_generation, list_generations
 from app.services.ingestion.upload import (
     create_work,
     document_for,
@@ -130,3 +133,13 @@ def change_ingestion(work_id: uuid.UUID, job_id: uuid.UUID, action: Literal["ret
     view = mutate_job(db, actor, work_id, job_id, action, match, key)
     response.headers["ETag"] = f'"{view.revision}"'
     return view
+
+
+@router.get("/{work_id}/generations", response_model=GenerationPage)
+def generations(work_id: uuid.UUID, actor: Actor, db: Database):
+    return list_generations(db, actor, work_id)
+
+
+@router.post("/{work_id}/generations", status_code=202, response_model=GenerationView)
+def rebuild(work_id: uuid.UUID, actor: Actor, db: Database, key: Key, request: Request):
+    return create_generation(db, actor, work_id, key, request.state.correlation_id)

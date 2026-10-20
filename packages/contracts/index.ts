@@ -58,6 +58,7 @@ export type Result = number | null;
 export type Stage1 = "queued" | "complete";
 export type Status1 = "queued" | "succeeded";
 export type ByteCount = number;
+export type CurrentParserRevision = string | null;
 export type DocumentId1 = string;
 export type Format = "txt" | "md" | "pdf" | "epub";
 export type Id2 = string;
@@ -200,6 +201,7 @@ export interface LibraryPage {
 }
 export interface WorkView {
   byte_count: ByteCount;
+  current_parser_revision: CurrentParserRevision;
   document_id: DocumentId1;
   format: Format;
   id: Id2;

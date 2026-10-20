@@ -879,6 +879,17 @@
           "title": "Byte Count",
           "type": "integer"
         },
+        "current_parser_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Current Parser Revision"
+        },
         "document_id": {
           "format": "uuid",
           "title": "Document Id",
@@ -921,7 +932,8 @@
         "revision",
         "format",
         "byte_count",
-        "sha256"
+        "sha256",
+        "current_parser_revision"
       ],
       "title": "WorkView",
       "type": "object"

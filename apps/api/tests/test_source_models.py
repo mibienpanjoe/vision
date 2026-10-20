@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 from app.models.access import Principal
+from app.models.generations import SourceGeneration
 from app.models.works import Document, IngestionJob, Work
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -20,7 +21,10 @@ def test_original_and_job_linkage_and_owner_scoped_creation_identity(database):
         document = Document(work_id=work.id, source_ref=uuid.uuid4().hex, sha256="b" * 64, format="txt", byte_count=10)
         db.add(document)
         db.flush()
-        job = IngestionJob(document_id=document.id, correlation_id=uuid.uuid4().hex)
+        generation = SourceGeneration(document_id=document.id, ordinal=1, parser_revision="text-v1", idempotency_key="upload")
+        db.add(generation)
+        db.flush()
+        job = IngestionJob(document_id=document.id, generation_id=generation.id, correlation_id=uuid.uuid4().hex)
         db.add(job)
         db.commit()
         assert job.status == "queued" and job.stage == "awaiting_parser" and job.dispatched_at is None

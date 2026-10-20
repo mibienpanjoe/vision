@@ -233,10 +233,12 @@ long-running ingestion stages, failures/cancellation and broader recovery.
 |---|---|
 | `POST /v1/works` | Authenticated multipart `title`, `format` (`txt`/`md`/`pdf`/`epub`), and one `file`; required `Idempotency-Key`; `202` with work and ingestion reference |
 | `GET /v1/works` | Owner-scoped UUID-ascending keyset page; `limit` 1–100 (default 20), optional UUID `after`; `items` and nullable `next_cursor` |
-| `GET /v1/works/{id}` | Owned work metadata and its first immutable document revision |
+| `GET /v1/works/{id}` | Owned work metadata, its first immutable document revision and `current_parser_revision` (null until a generation is published) |
 | `GET /v1/works/{id}/original` | Owned original bytes as a nosniff attachment with a fixed safe filename; no public storage URL |
 | `GET /v1/works/{id}/ingestions/{job_id}` | Job resolved through the owned work/document; lifecycle state, `revision` (also the `ETag`), cancel request, attempts, safe error code and structure warnings |
 | `POST /v1/works/{id}/ingestions/{job_id}/retry` and `.../cancel` | Owned conditional mutation; see [ingestion recovery](#ingestion-retry-and-cancellation--t13) |
+| `GET /v1/works/{id}/generations` | Owned source generations in ordinal order: parser revision, derived status, `current`, `parsed`, `narrative_ready`, `search_ready`, job ID and warnings |
+| `POST /v1/works/{id}/generations` | Rebuild with the format's current parser revision; required `Idempotency-Key`, no body; `202` with the new generation |
 
 Upload authentication and Origin checks precede body consumption. The boundary
 counts actual received bytes, permits at most 64 KiB of multipart overhead,
@@ -312,5 +314,10 @@ different action or revision returns `409 IDEMPOTENCY_CONFLICT`.
 | `cancel` | `running` | Sets `cancel_requested`; status stays `running` until the worker or recovery confirms `cancelled` without publishing passages |
 | `retry` | `failed`, `cancelled` | Returns to `queued`, clears the safe error and publishes dispatch intent; `429 ATTEMPTS_EXHAUSTED` after three attempts |
 
-A cancel request is therefore distinct from confirmed cancellation. Retry and
+A cancel request is therefore distinct from confirmed cancellation.
+
+A rebuild key is scoped to the document: replaying it returns that generation's
+current view. A refused rebuild returns `409` with `GENERATION_IN_PROGRESS`,
+`GENERATION_CURRENT` or `GENERATION_EXISTS`, as defined by the
+[source generation rules](../ingestion/ingestion-contract.md#source-generations--t16). Retry and
 cancel never delete or rewrite passages already published by a succeeded job.

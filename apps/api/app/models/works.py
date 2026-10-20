@@ -4,6 +4,7 @@ import uuid
 from datetime import UTC, datetime
 
 from app.models.access import Base
+from app.models.generations import SourceGeneration  # noqa: F401  (registers the referenced table)
 from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -30,12 +31,16 @@ class Document(Base):
     sha256: Mapped[str] = mapped_column(String(64))
     format: Mapped[str] = mapped_column(String(16))
     byte_count: Mapped[int]
+    # Published generation; moves only to a higher ordinal under this row's lock.
+    current_generation_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("source_generations.id", use_alter=True, name="fk_documents_current_generation"))
 
 
 class IngestionJob(Base):
     __tablename__ = "ingestion_jobs"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     document_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("documents.id"), index=True)
+    generation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("source_generations.id"), index=True)
     revision: Mapped[int] = mapped_column(default=1)
     cancel_requested: Mapped[bool] = mapped_column(default=False)
     processing_version: Mapped[str] = mapped_column(String(32), default="text-v1")

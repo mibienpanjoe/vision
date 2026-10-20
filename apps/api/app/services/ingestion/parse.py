@@ -11,6 +11,7 @@ from app.models.passages import Chapter, Passage
 from app.models.works import Document, IngestionAttempt, IngestionJob
 from app.services.ingestion.adapters import parse_source
 from app.services.ingestion.jobs import MAX_ATTEMPTS, finish_attempt, job_lock
+from app.services.ingestion.reprocess import publish_generation
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -82,6 +83,7 @@ def execute_locked(engine, job_id):
             job.status, job.stage, job.error_code = "failed", "failed", error_code
         else:
             publish_passages(db, document_id, parsed, parser_revision, normalization)
+            publish_generation(db, job)
             job.status, job.stage, job.warnings, job.error_code = "succeeded", "parsed", list(parsed.warnings), None
         finish_attempt(db, job, job.status)
         job.completed_at, job.revision = datetime.now(UTC), job.revision + 1

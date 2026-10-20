@@ -91,7 +91,8 @@ previous generation, after validating immutable document/parser/extraction and,
 where required, embedding/retrieval dependencies. Candidate/failed generations
 cannot satisfy readiness; a late-finishing older rebuild cannot overwrite the
 selected newer result. Old cited passages remain addressable by their original
-revision under ownership and retention policy. T16/T22/T25 implement the stages;
+revision under ownership and retention policy. T16 implements source generations
+(see [source generations](#source-generations--t16)); T22/T25 add their stages;
 no cross-system atomic transaction is assumed. A compatible partial parser result
 must expose its warnings and coverage; it cannot imply whole-document coverage.
 
@@ -296,3 +297,33 @@ chapter, nav, stylesheet, script, remote image reference and wrapped paragraph
 markup), every annotated passage and all 33 annotated spans match exactly, and
 all five chapters are found. Real-world EPUB 2 files, NCX-only navigation and
 fixed-layout books are not yet measured.
+
+
+## Source generations — T16
+
+Each parse of a document revision is a numbered source generation that records
+its parser revision; the upload creates generation 1. A document holds at most
+one generation per parser revision, and every ingestion job belongs to exactly
+one generation. A generation's state is derived from its job: queued or running
+is `building`, then `available`, `failed` or `cancelled`. Retry and cancellation
+apply to that job as in [ingestion recovery](#ingestion-recovery--t13).
+
+A rebuild creates the next generation with the format's current parser revision
+and a new job. It is refused while any generation of the document is building
+(`GENERATION_IN_PROGRESS`). It is also refused when the current generation
+already uses that revision (`GENERATION_CURRENT`). When a failed or cancelled
+generation already has that revision, the rebuild is refused with
+`GENERATION_EXISTS`; retry that generation's job instead.
+
+Publication happens in the worker's success transaction. With the document row
+locked, the document's current-generation pointer moves to the new generation
+only if no higher-numbered generation is current. A late-finishing older build
+stays `available` but not current. A failed or cancelled rebuild leaves the
+previous generation current. Passages of every generation remain stored under
+their own parser revision, so a citation keeps resolving after a newer
+generation is published.
+
+`parsed` means the generation's passages are published. `narrative_ready` and
+`search_ready` stay false until the narrative (T22) and search (T25) stages
+record their own completion for that generation. Migration 0008 turns each
+existing job into generation 1 and makes succeeded ones current.

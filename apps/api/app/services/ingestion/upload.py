@@ -5,6 +5,7 @@ import json
 
 from app.core.errors import PublicError
 from app.core.storage import PrivateSources
+from app.models.generations import SourceGeneration
 from app.models.works import Document, IngestionJob, Work
 from app.schemas.works import IngestionView, UploadAccepted, WorkView
 from app.services.dispatch import dispatch_ingestions
@@ -20,9 +21,11 @@ def document_for(db, work):
 
 def work_view(db, work):
     document = document_for(db, work)
+    current = db.get(SourceGeneration, document.current_generation_id) if document.current_generation_id else None
     return WorkView(id=work.id, title=work.title, document_id=document.id,
                     revision=document.revision, format=document.format,
-                    byte_count=document.byte_count, sha256=document.sha256)
+                    byte_count=document.byte_count, sha256=document.sha256,
+                    current_parser_revision=current.parser_revision if current else None)
 
 
 def ingestion_view(job):
@@ -35,7 +38,8 @@ def ingestion_view(job):
 
 def accepted_view(db, work):
     view = work_view(db, work)
-    job = db.scalar(select(IngestionJob).where(IngestionJob.document_id == view.document_id))
+    job = db.scalar(select(IngestionJob).join(SourceGeneration, SourceGeneration.id == IngestionJob.generation_id)
+                    .where(SourceGeneration.document_id == view.document_id, SourceGeneration.ordinal == 1))
     return UploadAccepted(work=view, job=ingestion_view(job))
 
 
@@ -61,8 +65,12 @@ def create_work(db, actor, metadata, data, key, correlation_id):
                                 sha256=fingerprint, format=metadata.format, byte_count=len(data))
             db.add(document)
             db.flush()
-            db.add(IngestionJob(document_id=document.id, correlation_id=correlation_id,
-                                processing_version=REVISIONS[metadata.format]))
+            generation = SourceGeneration(document_id=document.id, ordinal=1, idempotency_key="upload",
+                                          parser_revision=REVISIONS[metadata.format])
+            db.add(generation)
+            db.flush()
+            db.add(IngestionJob(document_id=document.id, generation_id=generation.id, correlation_id=correlation_id,
+                                processing_version=generation.parser_revision))
             db.flush()
         except IntegrityError:
             db.rollback()
