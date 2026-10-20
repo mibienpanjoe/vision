@@ -27,15 +27,20 @@ The model returns quotes, not offsets. Each mention, alias and relation is kept
 only when its quote is found verbatim in the referenced passage (alias labels
 must also appear in the quote) and its entity keys were declared; otherwise it is
 counted by reason in `derivations.rejections` without storing text. Entities
-without a grounded mention are dropped. Entities from different batches unify
-only on identical kind and case-folded label; titles never merge identities.
+without a grounded mention are dropped. Later batches receive the entities
+declared by earlier batches as a separate derived data item and reuse them by
+`k:n` key; otherwise identities from different batches unify only on identical
+kind and case-folded label. Titles never merge identities.
 A mention with no supported identity keeps `entity_id` null and lists its
 candidates; an identity link such as Wren = Arthur is a `same_as` relation
 carrying its own chapter-five span, so T21 can apply it only within scope.
 
 Publication is all-or-nothing under the derivation row lock and an attempt
 counter: a failed, cancelled or superseded attempt stores only its model runs.
-A failed derivation can be retried; a succeeded one is returned unchanged.
+Each batch may make up to three calls when the outcome is invalid output,
+unavailable or timeout (a routed gateway can pick a weak or overloaded model);
+every call is recorded. A failed derivation can be retried; a succeeded one is
+returned unchanged.
 
 ## Two independent axes of time
 

@@ -55,7 +55,7 @@ documents fixed all details.
 | ID | Question | Needed before |
 |---|---|---|
 | OPEN-01 | Resolved by DEC-26; later work consumes the validated ActorScope | Any network-accessible real upload flow |
-| OPEN-02 | Gateway selected by DEC-24; T18 adapter reads `VISION_LLM_*` (default model `auto`, proposed); live model capability, upstream source-text handling, retry and cost ceilings remain to verify | Live model integration and any real-book extraction |
+| OPEN-02 | Gateway selected by DEC-24; T18 adapter reads `VISION_LLM_*` (default model `auto`, proposed) with three calls per batch on retryable outcomes; live entity extraction verified on the synthetic corpus only. Model pinning, upstream source-text handling for private books and cost ceilings remain open | Any real-book extraction |
 | OPEN-03 | First language resolved by DEC-22 (English); broader languages/configurations remain open | Lexical indexing and multilingual claims |
 | OPEN-04 | Resolved for the first slice by DEC-22; revisit only with an explicit changed decision | Temporal reconstruction implementation |
 | OPEN-05 | Concrete upload/expansion/time/token/cost/candidate limits and performance targets | Accepting untrusted workloads; then calibrate with measurements |

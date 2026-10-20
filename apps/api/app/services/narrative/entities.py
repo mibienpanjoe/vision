@@ -4,6 +4,7 @@ Every accepted item is grounded in an exact passage span; see `derivations` for
 the claim and guarded publication shared with later stages.
 """
 
+import json
 import uuid
 from collections import Counter
 from collections.abc import Callable
@@ -25,30 +26,47 @@ from app.providers.extraction import (
 from app.services.narrative.derivations import ground, run_derivation
 
 STAGE = "entities"
+KNOWN_BUDGET = 8_000
+
+
+def known_listing(previous) -> str:
+    """Earlier groups' declared entities as `k:n` keys, in output order, within the budget."""
+    listing, size = [], 2
+    for n, item in enumerate(e for output in previous for e in output.entities):
+        entry = json.dumps({"key": f"k:{n}", "kind": item.kind, "label": item.label}, ensure_ascii=False)
+        if size + len(entry) + 1 > KNOWN_BUDGET:
+            break
+        listing.append(entry)
+        size += len(entry) + 1
+    return f"[{','.join(listing)}]"
 
 
 def derive_entities(engine, generation_id: uuid.UUID, adapter: ProviderAdapter, limits: Limits = Limits(),
                     cancelled: Callable[[], bool] = lambda: False) -> uuid.UUID:
-    def build(group, _previous):
-        return entity_request([SourceItem(ref=f"p{p.ordinal}", text=p.text) for p in group], limits)
+    def build(group, previous):
+        return entity_request([SourceItem(ref=f"p{p.ordinal}", text=p.text) for p in group],
+                              known_listing(previous) if previous else "", limits)
 
     return run_derivation(engine, generation_id, STAGE, adapter, EntityExtraction, PROMPT_VERSION, limits,
-                          build, publish, limits.max_input_chars - len(INSTRUCTIONS), cancelled=cancelled)
+                          build, publish, limits.max_input_chars - len(INSTRUCTIONS) - KNOWN_BUDGET,
+                          cancelled=cancelled)
 
 
 def publish(db, derivation_id, outputs) -> dict:
     """Write grounded items; returns rejection counts by reason (no text)."""
     rejected: Counter[str] = Counter()
     entities: dict[tuple[str, str], Entity] = {}
+    earlier: list = []  # declarations from previous groups, addressed as k:n
     staged = []
     for group, output, run_id in outputs:
         by_ref = {f"p{p.ordinal}": p for p in group}
-        declared = {}
+        declared = {f"k:{n}": item for n, item in enumerate(earlier)}
         for item in output.entities:
             if item.key in declared:
                 rejected["duplicate_key"] += 1
             else:
                 declared[item.key] = item
+        earlier.extend(output.entities)
         used, mentions, seen = set(), [], set()
         for item in output.mentions:
             passage = by_ref.get(item.ref)
@@ -65,7 +83,7 @@ def publish(db, derivation_id, outputs) -> dict:
                 used.update(keys)
                 mentions.append((passage, span, item.entity, keys))
         for key in declared:
-            if key not in used:
+            if key not in used and not key.startswith("k:"):
                 rejected["unmentioned_entity"] += 1
         local = {}
         for key in used:

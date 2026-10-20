@@ -23,6 +23,10 @@ from app.providers.execution import RunResult, execute, persist_run
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+# A routed gateway may send one call to a weak or overloaded model; retry those outcomes a bounded number of times.
+CALLS_PER_GROUP = 3
+RETRYABLE = frozenset({"invalid_output", "provider_unavailable", "timeout"})
+
 
 def processing_version(prompt_version: str, output: type[StructuredOutput], adapter: ProviderAdapter) -> str:
     return f"{prompt_version}/{output.schema_version}/{adapter.provider}/{adapter.model}"[:160]
@@ -83,23 +87,31 @@ def run_derivation(engine, generation_id: uuid.UUID, stage: str, adapter: Provid
     derivation_id, attempt, owner_id, passages = claim(engine, generation_id, stage, version, input_id)
     if attempt is None:
         return derivation_id
-    results: list[tuple[list[Passage], RunResult]] = []
+    results: list[tuple[list[Passage], RunResult]] = []  # every call, including retried failures
+    accepted: list[tuple[list[Passage], RunResult]] = []
     for group in batches(passages, budget):
-        results.append((group, execute(adapter, build(group, [r.output for _, r in results]), output, cancelled)))
-        if results[-1][1].output is None:
+        request = build(group, [r.output for _, r in accepted])
+        for _ in range(CALLS_PER_GROUP):
+            result = execute(adapter, request, output, cancelled)
+            results.append((group, result))
+            if result.record.outcome not in RETRYABLE:
+                break
+        if result.output is None:
             break
+        accepted.append((group, result))
     with Session(engine) as db, db.begin():
         derivation = db.scalar(select(Derivation).where(Derivation.id == derivation_id).with_for_update())
         if derivation.attempt != attempt or derivation.status != "running":
             return derivation_id
-        runs = [persist_run(db, owner_id, result.record, generation_id, derivation_id) for _, result in results]
+        runs = {id(result): persist_run(db, owner_id, result.record, generation_id, derivation_id)
+                for _, result in results}
         db.flush()
-        failed = next((result.record for _, result in results if result.output is None), None)
+        failed = results[-1][1].record if results and results[-1][1].output is None else None
         if failed is not None:
             derivation.status = "cancelled" if failed.outcome == "cancelled" else "failed"
             derivation.error_code = failed.error_code
         else:
-            derivation.rejections = publish(db, derivation_id, [(g, r.output, run.id) for (g, r), run in zip(results, runs)])
+            derivation.rejections = publish(db, derivation_id, [(g, r.output, runs[id(r)].id) for g, r in accepted])
             derivation.status = "succeeded"
         derivation.completed_at = datetime.now(UTC)
     return derivation_id

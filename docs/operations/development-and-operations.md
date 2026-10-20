@@ -138,7 +138,15 @@ Phase 1. Keep configuration/secrets private and record safe model/gateway lineag
 Vision reads `VISION_LLM_API_KEY` (the gateway's unified key, from its Keys
 page), `VISION_LLM_BASE_URL` (default `http://127.0.0.1:3001/v1`) and
 `VISION_LLM_MODEL` (default `auto`) from the private `.env`. Without the key no
-live adapter is constructed and the opt-in live extraction test is skipped. The
+live adapter is constructed. The live extraction test runs only when explicitly
+requested, so `make integration` never calls the gateway:
+
+```sh
+set -a; . ./.env; set +a
+VISION_LIVE_PROVIDER=1 VISION_TEST_ADMIN_URL=$DATABASE_URL \
+  uv run --project apps/api --locked pytest apps/api/tests/test_entity_extraction.py -k live -m integration -s
+```
+ The
 gateway forwards requests to whichever upstream free provider it routes to, so
 any text sent leaves the machine; only the synthetic corpus may be sent until
 provider data handling is recorded (SECURITY.md, OPEN-02).

@@ -99,7 +99,13 @@ OpenAI-compatible chat adapter for the local FreeLLM gateway (DEC-24): JSON
 object mode, temperature 0, the output schema appended to the system text, no
 tools, and HTTP/timeout failures mapped to the typed outcomes. It is disabled
 unless `VISION_LLM_API_KEY` is set; the routed model name returned by the
-gateway is recorded as `model_version`. Live verification is pending (OPEN-02).
+gateway is recorded as `model_version`. On 2026-10-20 the opt-in live test ran
+entity extraction on the synthetic corpus through `auto` routing: five chapter
+batches succeeded after bounded retries (one timeout, one unavailable route),
+with 0 misses, 0 false merges, 0 splits and 0 ambiguity violations against the
+annotations, plus unannotated object entities. Routed models varied per call
+(e.g. qwen3.8-27b, gpt-oss-120b, Gemini variants), so results are not
+reproducible by model name; a pinned model was unavailable upstream at the time.
 
 ## Repository layout and remaining modules
 

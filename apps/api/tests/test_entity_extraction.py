@@ -25,6 +25,7 @@ from app.providers.contracts import (
     ProviderUnavailable,
 )
 from app.providers.deterministic import RuleAdapter, ScriptedAdapter
+from app.providers.extraction import KNOWN_REF
 from app.providers.openai_compatible import ChatGateway, strip_fence
 from app.services.ingestion.parse import execute_ingestion
 from app.services.narrative.derivations import batches
@@ -59,8 +60,10 @@ RELATIONS = [("mira", "carries", "compass", "Captain Mira carried a brass compas
 
 def fixture_rule(sources):
     """An 'ideal model' over whatever passages a batch holds, plus deliberately bad items."""
+    text = [s for s in sources if s["ref"] != KNOWN_REF]  # derived listing, never source text
+
     def found(quote):
-        return next((s["ref"] for s in sources if quote in s["text"]), None)
+        return next((s["ref"] for s in text if quote in s["text"]), None)
 
     mentions = []
     for quote, entity, candidates in MENTIONS:
@@ -114,7 +117,7 @@ def test_fixture_derivation_keeps_ambiguity_spans_and_lineage(database, generati
     with Session(database) as db:
         derivation = db.get(Derivation, derivation_id)
         assert (derivation.status, derivation.attempt) == ("succeeded", 1)
-        assert derivation.processing_version == "entities-v1/entities-schema-v1/deterministic/rule-v1"
+        assert derivation.processing_version == "entities-v2/entities-schema-v2/deterministic/rule-v1"
         assert derivation.rejections == {"ungrounded": 2, "unknown_entity": 1}
         report = evaluate(db, derivation_id)
         assert report == {"misses": [], "false_merges": [], "splits": [], "unmatched_entities": [],
@@ -165,9 +168,9 @@ def test_failed_or_invalid_extraction_writes_no_entities_and_retry_publishes(dat
     good = fixture_adapter()
     calls = []
 
-    def flaky(sources):
+    def flaky(sources):  # the second batch is down for all of its bounded retries
         calls.append(1)
-        if len(calls) == 2:
+        if len(calls) >= 2:
             raise ProviderUnavailable()
         return fixture_rule(sources)
 
@@ -175,20 +178,33 @@ def test_failed_or_invalid_extraction_writes_no_entities_and_retry_publishes(dat
     with Session(database) as db:
         derivation = db.get(Derivation, failed)
         assert (derivation.status, derivation.error_code) == ("failed", "PROVIDER_UNAVAILABLE")
-        assert counts(db, failed) == {"Entity": 0, "EntityMention": 0, "EntityRelation": 0, "ModelRun": 2}
+        assert counts(db, failed) == {"Entity": 0, "EntityMention": 0, "EntityRelation": 0, "ModelRun": 4}
     assert derive_entities(database, generation, good) == failed
     with Session(database) as db:
         derivation = db.get(Derivation, failed)
         assert (derivation.status, derivation.attempt, derivation.error_code) == ("succeeded", 2, None)
         assert counts(db, failed)["Entity"] == 8
 
-    invalid = ScriptedAdapter('{"entities": [], "mentions": [], "unexpected": 1}')
+    invalid = ScriptedAdapter(*['{"entities": [], "mentions": [], "unexpected": 1}'] * 3)
     invalid.model = "scripted-invalid"
     bad = derive_entities(database, generation, invalid)
     with Session(database) as db:
         derivation = db.get(Derivation, bad)
         assert (derivation.status, derivation.error_code) == ("failed", "PROVIDER_INVALID_OUTPUT")
-        assert counts(db, bad) == {"Entity": 0, "EntityMention": 0, "EntityRelation": 0, "ModelRun": 1}
+        assert counts(db, bad) == {"Entity": 0, "EntityMention": 0, "EntityRelation": 0, "ModelRun": 3}
+
+    class Recovering:  # first call is malformed, the bounded retry succeeds
+        provider, model, calls = "deterministic", "rule-recovers", 0
+
+        def complete(self, call):
+            self.calls += 1
+            return ScriptedAdapter("not json").complete(call) if self.calls == 1 else fixture_adapter().complete(call)
+
+    healed = derive_entities(database, generation, Recovering())
+    with Session(database) as db:
+        assert db.get(Derivation, healed).status == "succeeded"
+        assert [r.outcome for r in db.scalars(select(ModelRun).where(ModelRun.derivation_id == healed)
+                                              .order_by(ModelRun.started_at))][:2] == ["invalid_output", "succeeded"]
 
 
 @pytest.mark.integration
@@ -214,7 +230,8 @@ def test_superseded_or_cancelled_attempt_cannot_publish(database, generation):
 
 
 @pytest.mark.integration
-@pytest.mark.skipif(not os.environ.get("VISION_LLM_API_KEY"), reason="Set VISION_LLM_API_KEY for the live gateway call")
+@pytest.mark.skipif(os.environ.get("VISION_LIVE_PROVIDER") != "1" or not os.environ.get("VISION_LLM_API_KEY"),
+                    reason="Set VISION_LIVE_PROVIDER=1 and VISION_LLM_API_KEY to send the synthetic corpus to the gateway")
 def test_live_gateway_extraction_on_the_synthetic_fixture(database, generation):
     adapter = ChatGateway.from_environment()
     derivation_id = derive_entities(database, generation, adapter, Limits(timeout_seconds=120, max_output_tokens=4_096))

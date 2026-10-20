@@ -14,15 +14,18 @@ from app.providers.contracts import (
 )
 from pydantic import Field
 
-PROMPT_VERSION = "entities-v1"
+PROMPT_VERSION = "entities-v2"
+KNOWN_REF = "known-entities"
 Kind = Literal["character", "place", "object", "organization"]
 RelationType = Literal["same_as", "carries", "located_at", "member_of", "family_of", "associated_with"]
 Key = Annotated[str, Field(pattern=r"^[a-z0-9_-]{1,32}$")]
+# A key declared in this response, or `k:n` for an entity listed from earlier chapters.
+EntityRef = Annotated[str, Field(pattern=r"^(k:)?[a-z0-9_-]{1,32}$")]
 Quote = Annotated[str, Field(min_length=1, max_length=400)]
 Ref = Annotated[str, Field(min_length=1, max_length=128)]
 Label = Annotated[str, Field(min_length=1, max_length=256)]
 
-INSTRUCTIONS = """You extract narrative entities from numbered book passages.
+INSTRUCTIONS = f"""You extract narrative entities from numbered book passages.
 Return JSON that matches the schema exactly, with no other keys.
 - entities: every character, place, object or organization named or described; give each a short key and the
   name the text uses for it. A title such as "the captain" is not a name.
@@ -33,6 +36,8 @@ Return JSON that matches the schema exactly, with no other keys.
   when the text states the mapping, otherwise "candidate".
 - relations: only relations the quoted text states; "same_as" only when the text explicitly says two
   entities are the same.
+The data item "{KNOWN_REF}" lists entities from earlier chapters; when a passage refers to one of them, use
+its key (they start with "k:") instead of declaring it again. Never quote that item.
 Never merge entities because they share a title, and never add facts the passages do not state."""
 
 
@@ -45,12 +50,12 @@ class ExtractedEntity(StructuredOutput):
 class ExtractedMention(StructuredOutput):
     ref: Ref
     quote: Quote
-    entity: Key | None = None
-    candidates: list[Key] = Field(default=[], max_length=8)
+    entity: EntityRef | None = None
+    candidates: list[EntityRef] = Field(default=[], max_length=8)
 
 
 class ExtractedAlias(StructuredOutput):
-    entity: Key
+    entity: EntityRef
     label: Label
     status: Literal["supported", "candidate"]
     ref: Ref
@@ -58,21 +63,22 @@ class ExtractedAlias(StructuredOutput):
 
 
 class ExtractedRelation(StructuredOutput):
-    subject: Key
+    subject: EntityRef
     relation: RelationType
-    object: Key
+    object: EntityRef
     ref: Ref
     quote: Quote
 
 
 class EntityExtraction(StructuredOutput):
-    schema_version = "entities-schema-v1"
+    schema_version = "entities-schema-v2"
     entities: list[ExtractedEntity] = Field(max_length=200)
     mentions: list[ExtractedMention] = Field(max_length=1_000)
     aliases: list[ExtractedAlias] = Field(default=[], max_length=200)
     relations: list[ExtractedRelation] = Field(default=[], max_length=200)
 
 
-def entity_request(sources: list[SourceItem], limits: Limits) -> ProviderRequest:
+def entity_request(sources: list[SourceItem], known: str, limits: Limits) -> ProviderRequest:
+    items = [*sources, SourceItem(ref=KNOWN_REF, text=known)] if known else sources
     return ProviderRequest(role="extraction", purpose="narrative.entities", prompt_version=PROMPT_VERSION,
-                           instructions=INSTRUCTIONS, sources=tuple(sources), limits=limits)
+                           instructions=INSTRUCTIONS, sources=tuple(items), limits=limits)
