@@ -41,6 +41,7 @@
 | DEC-33 | Visual facts: explicit/inferred support only, polarity and modality kept, lexical attribution/owner/negation/question gates before storage, canonical = explicit+affirmed+fact/memory, conflicts recorded unresolved at shared events | T20; [narrative contract](../narrative/narrative-contract.md#visual-fact-derivation--t20) |
 | DEC-34 | Narrative browse reads the latest succeeded derivation chain of the current generation and filters every derived record by dependency closure at the chapter cutoff; labels must come from visible mentions; `409 NARRATIVE_NOT_READY` before extraction | T21; [API](../api/api-contract.md#narrative-browse--t21) |
 | DEC-35 | Narrative completion: per-generation job queued with parse publication, entity→event→fact stages through the worker, readiness only on full success, live provider opt-in via `VISION_NARRATIVE_PROVIDER=live` | T22; [ingestion](../ingestion/ingestion-contract.md#narrative-completion--t22) |
+| DEC-36 | Query-time fallback provider for minimal-disclosure consolidation: Groq (`gpt-oss-120b`) with Zero Data Retention, over cutoff-filtered excerpts only | Maintainer decision, 2026-10-20; [research](../research/local-first-processing.md#10-spike-results-2026-10-20) |
 
 ## Proposed elaborations
 

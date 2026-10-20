@@ -1,7 +1,8 @@
 # Research: local-first processing and minimal-disclosure retrieval
 
-**Status:** Proposed — research for maintainer review, 2026-10-20. Nothing here
-is adopted; the [retrieval strategy](../architecture/retrieval-strategy.md) and
+**Status:** Proposed — research for maintainer review, 2026-10-20, with
+evaluation spike results in section 10. Only the query-time fallback (Groq with
+Zero Data Retention, DEC-36) is decided; nothing else here is adopted; the [retrieval strategy](../architecture/retrieval-strategy.md) and
 the [decision register](../product/decision-register.md) remain authoritative
 until a maintainer accepts an ADR. Figures marked *estimate* are unmeasured.
 
@@ -160,6 +161,100 @@ If the results hold, record the change as ADR-0003 (proposed) for acceptance.
 3. Choose the query-time fallback: Groq with ZDR (free), paid Gemini, or
    local-only.
 4. Accept or reject quantized models as the default once measured.
+
+## 10. Spike results (2026-10-20)
+
+Measured on the target laptop with `scripts/spike/local_pipeline.py` in an
+isolated environment (`.local/spike`, transformers 4.57, sentence-transformers
+5.1, torch 2.14 CPU). Corpora: the annotated synthetic story (14 passages) and
+*The Strange Case of Dr Jekyll and Mr Hyde* (Project Gutenberg #43; 334
+passages, 137K characters, about 25K words). No book text left the machine;
+EmbeddingGemma and Qwen3 ran in the local Ollama server.
+
+### Entities and coreference
+
+| Run | Result |
+|---|---|
+| Synthetic, GLiNER2 base fp32 + fastcoref | 0 misses, 0 false merges, 0 splits against the annotations; "the captain" never resolved to one person; NER 1.8 s, coref 0.8 s, 24 pronouns linked |
+| Jekyll, same pipeline | NER 198 s, coref 24.5 s, 3 min 51 s wall; 1,543 mentions; 771 pronoun links; peak RSS 4.4 GB |
+
+On Jekyll all main characters were found (Utterson, Jekyll, Hyde, Poole,
+Lanyon, Enfield). Remaining issues are rule-level: full names not unified with
+surnames ("Henry Jekyll" / "Jekyll"), "you" and "will" tagged as characters,
+role nouns ("the lawyer") needing coreference. Peak memory comes from
+coreference on long chapters; windowed coreference is needed on this machine.
+Extrapolated cost: about 15 minutes for a 100K-word novel (*estimate*).
+
+### Appearance passages
+
+| Method (synthetic, 42 sentences, 24 gold) | Precision | Recall |
+|---|---|---|
+| GLiNER2 classification | 0.89 | 0.33 |
+| Hand-written patterns | 0.76 | 0.79 |
+
+Patterns win on recall and cost nothing; the classifier took 129 s for 1,361
+Jekyll sentences and also fired on non-visual uses ("name your figure"). This
+matches the cited research on fiction.
+
+### Retrieval
+
+| Method | Synthetic recall@5 (14 cases) | Jekyll recall@5 (4 queries) | Jekyll indexing |
+|---|---|---|---|
+| BM25 | 1.00 | 0.25 | instant |
+| bge-small fp32 | 1.00 | 0.55 | 9 s |
+| bge-small int8 | 1.00 | 0.30 | 7 s |
+| EmbeddingGemma (Ollama) | 1.00 | **0.85** | **1,518 s** |
+| RRF fusion | 1.00 | 0.80 | — |
+| RRF + MiniLM rerank | 0.96 | — | — |
+
+The synthetic story is too small to separate methods. On the novel,
+EmbeddingGemma is clearly best, but indexing through Ollama took about 4.5 s
+per passage. Jekyll gold passages were identified by distinctive phrases, so the
+sample is small (4 queries).
+
+### Grounding check (HHEM-2.1-open, 18 claims)
+
+| Variant | Accuracy | Time | Notes |
+|---|---|---|---|
+| fp32 | 0.72 | 1.9 s | Accepted the dream (0.95), the denied armor (0.81) and the rumor (0.73) |
+| int8 | 0.83 | 0.46 s | Rejected all 9 unsupported claims but also 3 supported ones |
+
+HHEM does not judge modality or negation; Vision's deterministic gates cover
+exactly those cases, so HHEM is useful only as a secondary signal.
+
+### Local generator (Qwen3 4B Q4 via Ollama)
+
+About 1 token/s under the available RAM; one of three questions returned invalid
+JSON after 19 minutes, and the other two produced one fact each. Not viable on
+this machine.
+
+### Quantization findings
+
+- PyTorch dynamic int8 (deprecated API in torch 2.14) **broke GLiNER2**: zero
+  entities, even with attention layers left in fp32.
+- It **halved bge-small recall** on the novel (0.55 → 0.30).
+- It made HHEM 4x faster with shifted calibration (see above).
+- Conclusion: no default quantization; any quantized model must pass the same
+  evaluation. ONNX-based quantization remains untested.
+
+### Revised recommendation
+
+1. **Ingestion, local:** GLiNER2 base fp32 for entities, fastcoref with windowed
+   chapters for pronouns, hand-written patterns for appearance passages, rule
+   fixes for surname unification and pronoun filtering.
+2. **Embeddings:** EmbeddingGemma for quality; before adoption, measure it
+   through sentence-transformers (requires accepting the Gemma licence on
+   Hugging Face) to see whether indexing gets fast enough. bge-small is the
+   fast fallback.
+3. **Query-time consolidation:** Groq `gpt-oss-120b` with Zero Data Retention
+   and strict JSON schema (DEC-36), over cutoff-filtered excerpts only. A local
+   generator is not viable on this hardware.
+4. **Verification:** existing deterministic gates first; HHEM as an additional
+   signal, never the only check.
+
+Remaining before an ADR: faster EmbeddingGemma path, windowed coreference memory
+check, a larger annotated sample from a real novel, and a Groq account with ZDR
+enabled.
 
 ## Sources
 
