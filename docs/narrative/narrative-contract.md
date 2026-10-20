@@ -47,6 +47,27 @@ unknown. Conflicting relations must be surfaced rather than forced into an
 ordered list. A dream or metaphor is not a chronology update. “Chapter 14” may
 name a source boundary; “at age ten” names a story-time constraint.
 
+### Event derivation and partial chronology — T19
+
+`services/narrative/events.py` derives events from one succeeded entity
+derivation of the same generation, recorded as the derivation's input; a new
+entity derivation therefore yields a new event derivation. Each event keeps its
+modality (fact, memory, dream, rumor, metaphor, hypothesis), at least one grounded
+evidence span, temporal anchors (age, date, relative) with their spans, and
+participants matched to entities by exact label only. Later chapters receive the
+earlier chapters' event list as a separate derived data item and refer to those
+events by `k:n` keys; quoting that item as evidence is rejected.
+
+Relations are stored exactly as stated (before, after, during, overlaps,
+unknown). `services/narrative/chronology.py` computes a partial order over fact
+and memory events only: transitive `before`, `after` normalised, and an event
+`during` another inheriting its container's order. Events on a stated cycle
+return `inconsistent` and are not used as intermediates, and an overlap that
+contradicts a definite order is `inconsistent`. Pairs without stated support
+remain `unknown`; source position (evidence passage order) is never used as
+story order, so a chapter-five memory of childhood orders before the war while
+being revealed after it.
+
 ## Appearance claims
 
 | Kind | Applicability |

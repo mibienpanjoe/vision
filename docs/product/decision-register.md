@@ -37,6 +37,7 @@
 | DEC-29 | EPUB via a project XHTML adapter (container validation before parsing, defusedxml for package XML, network-free lxml HTML for spine documents) rather than Docling's EPUB backend; spine order with document/fragment anchors | T15; [ingestion](../ingestion/ingestion-contract.md#epub-parser-revision--t15) |
 | DEC-30 | Provider envelope: frozen tool-free requests, sources only as a quoted JSON data block, strict schema-versioned outputs, seven distinct outcomes, side-effect-free execution persisted with canon; default 60 s / 48,000 chars / 2,048 output / 16,000 total tokens | T17 engineering bounds under OPEN-05; [architecture](../architecture/system-architecture.md#provider-envelope--t17) |
 | DEC-31 | Entity derivation: versioned per-generation derivations, chapter-aligned batches, verbatim quote grounding with counted rejections, kind+label unification only, explicit candidates and `same_as` links, attempt-guarded atomic publication | T18; [narrative contract](../narrative/narrative-contract.md#entity-derivation--t18) |
+| DEC-32 | Events depend on an explicit entity derivation; modality kept per event; stated relations only; partial order over fact/memory events with cycle and overlap conflicts reported as inconsistent; earlier events passed as non-citable `k:n` data | T19; [narrative contract](../narrative/narrative-contract.md#event-derivation-and-partial-chronology--t19) |
 
 ## Proposed elaborations
 

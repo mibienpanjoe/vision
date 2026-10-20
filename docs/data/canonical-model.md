@@ -36,7 +36,7 @@ Physical IDs are opaque; their final storage type is an implementation choice.
 | `entity_aliases` | Candidate or supported names/titles; entity, scope, provenance, ambiguity |
 | `entity_mentions` | Exact source occurrence; span, candidate entities (`mention_candidates`), resolved identity if justified, model run |
 | `entity_relations` | Source-supported relationship between identities; type, temporal scope, evidence |
-| `events` | Narrative event; label, participants, place, source evidence, temporal status |
+| `events` | Narrative event; label, participants, place, source evidence, temporal status; T19 stores modality, `event_evidence` spans and `event_participants` per derivation |
 | `event_relations` | Before/after/during/overlap/unknown/inconsistent relation; linked events and support |
 | `temporal_anchors` | Date, age, relative event, or uncertain interval; preserve granularity and evidence |
 | `visual_facts` | Atomic claim about an entity; value, scope, temporal/context conditions, support/modality/status |

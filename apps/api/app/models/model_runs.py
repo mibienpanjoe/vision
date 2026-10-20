@@ -12,11 +12,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 class Derivation(Base):
     __tablename__ = "derivations"
-    __table_args__ = (UniqueConstraint("generation_id", "stage", "processing_version"),)
+    __table_args__ = (UniqueConstraint("generation_id", "stage", "processing_version", "input_derivation_id",
+                                       postgresql_nulls_not_distinct=True),)
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     generation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("source_generations.id"), index=True)
     stage: Mapped[str] = mapped_column(String(16))
     processing_version: Mapped[str] = mapped_column(String(160))
+    # The upstream derivation this stage consumed, e.g. the entity set events refer to.
+    input_derivation_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("derivations.id"))
     status: Mapped[str] = mapped_column(String(16), default="running")
     # Each claim increments it; only the latest claim may publish, so redelivery cannot duplicate rows.
     attempt: Mapped[int] = mapped_column(default=1)

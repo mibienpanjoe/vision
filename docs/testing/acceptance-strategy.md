@@ -2,8 +2,9 @@
 
 **Status:** corpus, local foundation and TXT/Markdown upload → parser → authorized
 evidence checks are implemented; the provider envelope has deterministic
-contract tests (T17); narrative and live-provider acceptance scenarios below
-remain pending.
+contract tests (T17); entity and event derivation, ambiguity, chronology and
+modality have deterministic fixture and PostgreSQL evidence (T18–T19). Live
+extraction quality and the remaining scenarios below remain pending.
 The [requirements](../product/requirements-and-acceptance.md) own product promises;
 this page owns how to demonstrate them without relying on attractive output.
 

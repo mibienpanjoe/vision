@@ -27,7 +27,8 @@ from app.providers.contracts import (
 from app.providers.deterministic import RuleAdapter, ScriptedAdapter
 from app.providers.openai_compatible import ChatGateway, strip_fence
 from app.services.ingestion.parse import execute_ingestion
-from app.services.narrative.entities import batches, derive_entities
+from app.services.narrative.derivations import batches
+from app.services.narrative.entities import derive_entities
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
@@ -233,9 +234,9 @@ def test_live_gateway_extraction_on_the_synthetic_fixture(database, generation):
 def test_batches_follow_chapters_and_input_bounds():
     passage = lambda ordinal, chapter, size: SimpleNamespace(ordinal=ordinal, chapter_ordinal=chapter, text="x" * size)  # noqa: E731
     passages = [passage(0, 1, 100), passage(1, 1, 100), passage(2, 2, 100), passage(3, 2, 30_000), passage(4, 2, 30_000)]
-    groups = batches(passages, Limits(max_input_chars=40_000))
+    groups = batches(passages, 40_000)
     assert [[p.ordinal for p in group] for group in groups] == [[0, 1], [2, 3], [4]]
-    assert batches([], Limits()) == []
+    assert batches([], 1_000) == []
 
 
 class Gateway(BaseHTTPRequestHandler):
