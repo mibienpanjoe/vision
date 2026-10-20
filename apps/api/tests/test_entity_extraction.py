@@ -43,7 +43,7 @@ ENTITIES = {"arthur": ("character", "Arthur"), "elodie": ("character", "Élodie"
             "sword": ("object", "silver sword"), "ghost": ("character", "Ghost")}
 MENTIONS = [("Arthur", "arthur", []), ("Élodie", "elodie", []), ("Mira", "mira", []), ("Brann", "brann", []),
             ("Wren", "wren", []), ("house by the ash tree", "house", []), ("brass compass", "compass", []),
-            ("silver sword", "sword", []), ("captain", None, ["mira", "brann"]),
+            ("silver sword", "sword", []), ("house's", "house", []), ("captain", None, ["mira", "brann"]),
             # Hostile model items: an invented quote and an undeclared identity.
             ("Arthur had wings of fire", "arthur", []), ("masked visitor", "ghost-missing", [])]
 ALIASES = [("mira", "Captain Mira", "supported", "Captain Mira carried a brass compass."),

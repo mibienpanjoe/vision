@@ -140,4 +140,4 @@ def publish_events(db, derivation_id, entity_derivation_id, outputs) -> dict:
                 db.add(EventRelation(derivation_id=derivation_id, source_id=source.id, relation=item.relation,
                                      target_id=target.id, passage_id=passage.id, start=span[0], end=span[1],
                                      model_run_id=run_id))
-    return dict(rejected)
+    return {reason: count for reason, count in rejected.items() if count}

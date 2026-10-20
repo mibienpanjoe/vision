@@ -106,4 +106,4 @@ def publish(db, derivation_id, outputs) -> dict:
                 db.add(EntityRelation(derivation_id=derivation_id, subject_id=local[item.subject].id,
                                       relation=item.relation, object_id=local[item.object].id,
                                       passage_id=passage.id, start=span[0], end=span[1], model_run_id=run_id))
-    return dict(rejected)
+    return {reason: count for reason, count in rejected.items() if count}

@@ -89,6 +89,30 @@ Scene clothing does not persist after an explicit removal; missing replacement
 clothing remains unknown. This conservative rule resolves OPEN-04 for the first
 slice; inference never becomes explicit solely through confidence or repetition.
 
+### Visual fact derivation — T20
+
+`services/narrative/visual_facts.py` derives atomic subject/attribute/value
+facts from one succeeded event derivation (recorded as input). Each fact keeps
+kind (identity, acquired, interval, scene), support (explicit or inferred; the
+extraction schema has no creative value), modality, polarity (affirmed or
+negated), optional perspective, an assumption for inferred facts, grounded
+evidence spans and linked events. Batches only see events revealed up to their
+chapter.
+
+Deterministic gates run before storage: known subject; grounded quote; subject
+named or resolved as a mention in an evidence passage; no explicit owner
+negation such as "not Arthur"; inferred facts state their assumption; scene
+facts name an event; and affirmed explicit facts need a value word asserted
+outside a question and without a preceding negation (a negated name such as
+"not Arthur" does not count). These are lexical guards, not entailment checks;
+rejected facts are counted by reason. A fact is canonical only when explicit,
+affirmed and presented as fact or memory.
+
+`services/reconstruction/conflicts.py` records unresolved `fact_conflicts` for
+canonical facts on the same subject and attribute with different values at a
+shared event (or two unscoped identity traits), and summarises a subject at an
+event as known, disputed (all values) or unknown, never an average.
+
 ## Reconstruction operation
 
 Input scope includes work, entity candidates, requested event/age/interval,
