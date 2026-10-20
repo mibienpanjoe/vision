@@ -1,0 +1,179 @@
+# Research: local-first processing and minimal-disclosure retrieval
+
+**Status:** Proposed — research for maintainer review, 2026-10-20. Nothing here
+is adopted; the [retrieval strategy](../architecture/retrieval-strategy.md) and
+the [decision register](../product/decision-register.md) remain authoritative
+until a maintainer accepts an ADR. Figures marked *estimate* are unmeasured.
+
+## 1. Why this review
+
+The adopted pipeline extracts entities, events and visual facts with an LLM at
+ingestion. Implemented as T18–T22, that means the **whole book** is sent to a
+model provider three times (once per stage, plus retries). Provider data
+handling was not part of the original architecture, and the live runs on the
+synthetic corpus exposed three problems:
+
+| Problem | Observation |
+|---|---|
+| Disclosure | The FreeLLM gateway routes each call to a different upstream (Google, Groq, NVIDIA, OpenRouter-hosted models). Free tiers may log, review or train on prompts. |
+| Reliability | `auto` routing returned a different model per call; a pinned model was unavailable upstream (Google 503); weak routes returned invalid JSON. |
+| Capacity | Groq's free plan allows about 200K tokens/day for `gpt-oss-120b`; one novel needs on the order of 1M+ tokens across three stages (*estimate*). |
+
+Goal: a processing and retrieval strategy that keeps book text on the machine
+by default, is reproducible, and sends at most small, cutoff-filtered excerpts
+to an external model — or nothing at all.
+
+## 2. Constraints of the target machine
+
+Measured on 2026-10-20:
+
+| Resource | Value | Consequence |
+|---|---|---|
+| CPU | Intel i5-1155G7, 4 cores / 8 threads | Encoder models are practical; large generators are not |
+| RAM | 11 GB total, about 4 GB free in normal use | Prefer models under about 1 GB each, loaded one at a time |
+| GPU | Intel Iris Xe (integrated) | No CUDA; CPU inference only |
+| Disk | 1.2 GB free (root at 100%) | **Blocker:** about 3 GB must be freed before any local model work |
+| Runtimes | Ollama installed | GGUF generators and embedding models can run locally |
+
+## 3. Provider options (if anything leaves the machine)
+
+| Provider | Data handling | Structured output | Cost / limits |
+|---|---|---|---|
+| Google Gemini, paid tier | Content **not** used to improve products | JSON schema via OpenAI-compatible endpoint | 3.8 Flash $0.75 / $3.75 per 1M in/out until 2026-12-31, then $1.50 / $7.50 |
+| Google Gemini, free tier | Content **used** to improve products; human review possible | Same | Free, rate-limited |
+| Groq | No retention by default; Zero Data Retention available to all customers in Data Controls; abuse logs up to 30 days unless ZDR | Strict JSON schema (constrained decoding) on supported models, including gpt-oss | Free plan about 30 RPM, 8K TPM, 200K TPD for gpt-oss-120b |
+| NVIDIA build (trial) | Trial terms; prototyping only | OK | Free trial |
+| OpenRouter `:free` | Per-endpoint; roughly half of free endpoints may train (third-party snapshot) | Varies | Free |
+
+Groq with ZDR is the strongest free option for privacy, but its daily token
+budget only fits **query-time** use with small excerpts, not whole-book
+extraction. Paid Gemini is the strongest quality option if spending is acceptable.
+
+## 4. Local building blocks found
+
+| Need | Candidate | Licence / activity | Notes |
+|---|---|---|---|
+| Entities, relations, classification | **GLiNER2** (205M, schema-driven, one CPU pass) | Apache-2.0; active (pushed 2026-10-18) | Designed for GPU-scarce, on-prem privacy; vendor claims about 1–2 F1 below dedicated NER |
+| Zero-shot NER (fallback) | GLiNER | Apache-2.0; active | Older single-task model family |
+| Coreference | **fastcoref** (F-coref / LingMess) | MIT; active (pushed 2026-05) | Process per chapter to bound memory |
+| Coreference (alternative) | Maverick | Licence unclear; pushed 2025-06 | LitBank about 78 F1; CPU supported |
+| Book pipeline | BookNLP | MIT; last push 2024-07 | NER, coref, quote attribution; README warns book-length coref over-merges |
+| Appearance passages | Hand-written lexical-syntactic patterns plus a small classifier | — | Research on fiction found hand-written queries beat an ML classifier for physical descriptions |
+| Embeddings | **EmbeddingGemma-300M** | Gemma terms | Top open multilingual model under 500M on MTEB; under 200 MB RAM quantized; 768-d, truncatable |
+| Reranking | ms-marco MiniLM cross-encoder (22M) | Apache-2.0 | Fast on CPU; bge-reranker-v2-m3 (568M) is better quality but slow on CPU |
+| Grounding check | **HHEM-2.1-open** (FLAN-T5 base) | Apache-2.0 | Premise/hypothesis score; under 600 MB; about 1.5 s per 2K tokens on CPU (secondary source); English only |
+| Local generator | Qwen3-4B or Gemma 4B class via Ollama with `format` schema | Open weights | About 7–10 tokens/s on comparable laptops (*estimate*); suitable only for short outputs |
+
+## 5. Proposed architecture
+
+```mermaid
+flowchart TD
+    A[Upload] --> B[Parse and spans - existing adapters]
+    B --> C[Local NER and relations - GLiNER2]
+    B --> D[Local coreference - fastcoref, per chapter]
+    B --> E[Appearance and time cues - patterns plus classifier]
+    B --> F[FTS plus local embeddings - EmbeddingGemma]
+    C --> G[(Derivations: entities, mentions, candidate spans)]
+    D --> G
+    E --> G
+    F --> H[(PostgreSQL FTS plus pgvector)]
+    Q[Visualization query] --> I[Local retrieval: entity links, FTS, vectors]
+    G --> I
+    H --> I
+    I --> J[Local rerank - MiniLM]
+    J --> K[Reading cutoff applied before any model call]
+    K --> L[Fact consolidation on about 20 passages]
+    L --> M[Local verification - gates plus HHEM]
+    M --> N[Visual JSON]
+```
+
+**Ingestion is local and deterministic.** Entities, mentions, coreference,
+candidate appearance spans, temporal and modality cues, and both search indexes
+are produced without network access. Outputs keep the existing derivation,
+grounding and provenance contracts.
+
+**LLM use moves to query time and shrinks.** After local retrieval, reranking
+and the reading cutoff, only the selected evidence (target: about 20 passages,
+about 5K tokens per question) is consolidated into atomic facts with the strict
+schema. Order of preference:
+
+1. Local generator through Ollama, if it meets the evaluation bar.
+2. Groq `gpt-oss-120b` with Zero Data Retention (about 30–40 questions/day on
+   the free plan, *estimate*).
+3. Paid Gemini, if the maintainer accepts per-use cost.
+
+**Verification stays local:** the existing lexical gates plus an HHEM grounding
+score for each fact against its cited span; low scores downgrade the fact to
+non-canonical instead of silently accepting it.
+
+### What carries over unchanged
+
+Derivations and attempt-guarded publication, quote grounding, dependency-closure
+eligibility and browse, the provider envelope and run lineage, the evaluation
+harness against the annotated corpus, and the worker pipeline. T18–T20 become
+local adapters behind the same derivation stages; Phase 4 adds query-time
+consolidation through the provider envelope.
+
+## 6. Quantization
+
+Quantization reduces disk, RAM and CPU time, which matters more than peak
+quality on this machine. It must be measured, not assumed lossless.
+
+| Model type | Method | Expected effect (*estimate*) |
+|---|---|---|
+| Encoders (GLiNER2, fastcoref, EmbeddingGemma, MiniLM, HHEM) | ONNX Runtime dynamic int8 (`onnxruntime.quantization.quantize_dynamic`) or Optimum export | About 2–4x smaller and faster on CPU; small accuracy loss typical |
+| Embeddings | Matryoshka truncation 768 → 256 dimensions, optionally int8 vectors in pgvector | 3x smaller index; recall must be checked |
+| Generator | GGUF Q4_K_M (Ollama default) or Q5_K_M | 4B model around 2.5–3 GB on disk and in RAM |
+
+Rules: record quantization method, file hash and runtime version in the
+processing version so results stay reproducible, and compare each quantized
+model against its full-precision version on the annotated corpus before use.
+
+## 7. Risks and open questions
+
+| Risk | Mitigation |
+|---|---|
+| Local event and fact extraction weaker than a large LLM | Extract only candidates locally; consolidate facts at query time over a small, relevant set |
+| Book-length coreference over-merges | Per-chapter coref; keep ambiguous candidates (existing behaviour); measure false merges |
+| English only (HHEM, patterns) | Matches DEC-22; other languages stay open |
+| CPU time per book unknown | Measure in the spike; encoder passes expected in minutes (*estimate*) |
+| Disk full | Free about 3 GB before the spike |
+| Model licences (Gemma terms, Maverick unclear) | Review before adoption |
+
+## 8. Proposed evaluation spike
+
+Before any architecture change:
+
+1. Install GLiNER2, fastcoref and EmbeddingGemma (full precision and int8).
+2. Run them on the synthetic corpus and one public-domain novel.
+3. Score with the existing harness: misses, false merges, splits, ambiguity
+   violations; plus retrieval recall of annotated spans.
+4. Measure wall time and peak RAM per book.
+5. Try one local generator for query-time consolidation on the fixture cases.
+
+If the results hold, record the change as ADR-0003 (proposed) for acceptance.
+
+## 9. Decisions requested
+
+1. Free about 3 GB of disk for local models.
+2. Approve the evaluation spike.
+3. Choose the query-time fallback: Groq with ZDR (free), paid Gemini, or
+   local-only.
+4. Accept or reject quantized models as the default once measured.
+
+## Sources
+
+- GLiNER2: [paper](https://arxiv.org/pdf/2507.18546), [model card](https://huggingface.co/fastino/gliner2-large-v1), [overview](https://pioneer.ai/gliner2)
+- [BookNLP](https://github.com/booknlp/booknlp)
+- [Maverick coreference](https://preview.aclanthology.org/setup/2024.acl-long.722), [fast-coref](https://github.com/shtoshni/fast-coref)
+- EmbeddingGemma: [Hugging Face blog](https://huggingface.co/blog/embeddinggemma), [DeepMind](https://deepmind.google/models/gemma/embeddinggemma/)
+- HHEM: [model](https://huggingface.co/vectara/hallucination%5Fevaluation%5Fmodel), [CPU figures](https://www.promptlayer.com/models/hallucinationevaluationmodel)
+- Rerankers: [comparison 2026](https://docs.bswen.com/blog/2026-02-25-best-reranker-models/), [latency preprint](https://arxiv.org/pdf/2605.18767)
+- [Physical descriptions in fiction (Koolen et al.)](https://academic.oup.com/dsh/article/3091837)
+- Groq: [your data](https://console.groq.com/docs/your-data), [rate limits](https://console.groq.com/docs/rate-limits), [structured outputs](https://console.groq.com/docs/structured-outputs.md)
+- Gemini: [pricing](https://ai.google.dev/gemini-api/docs/pricing), [OpenAI compatibility](https://ai.google.dev/gemini-api/docs/openai), [free vs paid data use](https://ampm-aiops.com/en/guides/gemini-free-tier-data-tradeoff-2026/)
+- [OpenRouter provider logging](https://openrouter.ai/docs/guides/privacy/provider-logging), [free models analysis](https://www.truefoundry.com/blog/openrouter-free-models-whats-actually-free-and-what-it-costs-you)
+- [NVIDIA trial API use](https://forums.developer.nvidia.com/t/clarification-on-trial-api-use/334275)
+- [Ollama structured outputs](https://docs.ollama.com/capabilities/structured-outputs)
+- [CPU LLM benchmarks](https://itsfoss.com/testing-local-llms-without-gpu)
+- [ONNX Runtime quantization](https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html)
