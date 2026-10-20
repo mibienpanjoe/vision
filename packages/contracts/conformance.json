@@ -227,7 +227,8 @@
       "original_start": 111,
       "original_end": 112,
       "chapter_id": null,
-      "pages": null
+      "pages": null,
+      "section": null
     }
   },
   {
@@ -250,7 +251,8 @@
       "original_start": 111,
       "original_end": 112,
       "chapter_id": null,
-      "pages": null
+      "pages": null,
+      "section": null
     }
   },
   {
@@ -276,7 +278,8 @@
       "pages": [
         4,
         5
-      ]
+      ],
+      "section": null
     }
   },
   {
@@ -301,7 +304,32 @@
       "chapter_id": null,
       "pages": [
         0
-      ]
+      ],
+      "section": null
+    }
+  },
+  {
+    "model": "EvidenceView",
+    "valid": true,
+    "value": {
+      "span": {
+        "document_revision_id": "r",
+        "passage_id": "p",
+        "start": 11,
+        "end": 12,
+        "quote": "🦊",
+        "offset_unit": "unicode_code_point"
+      },
+      "parser_revision": "epub-xhtml-v1",
+      "excerpt": "é🦊é",
+      "excerpt_start": 10,
+      "highlight_start": 1,
+      "highlight_end": 2,
+      "original_start": 111,
+      "original_end": 112,
+      "chapter_id": null,
+      "pages": null,
+      "section": "OEBPS/text/chapter5.xhtml#ch5-p2"
     }
   }
 ]

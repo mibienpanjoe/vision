@@ -15,7 +15,9 @@ dependencies = [
 
 [dependency-groups]
 pdf = [
+    "defusedxml>=0.7,<1",
     "docling==2.140.0",
+    "lxml>=6,<7",
     "torch",
     "torchvision",
 ]

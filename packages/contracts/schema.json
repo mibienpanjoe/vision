@@ -208,6 +208,19 @@
           "title": "Parser Revision",
           "type": "string"
         },
+        "section": {
+          "anyOf": [
+            {
+              "maxLength": 1024,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Content document and fragment of the containing passage, for EPUB",
+          "title": "Section"
+        },
         "span": {
           "$ref": "#/$defs/SourceSpan"
         }
@@ -222,7 +235,8 @@
         "original_start",
         "original_end",
         "chapter_id",
-        "pages"
+        "pages",
+        "section"
       ],
       "title": "EvidenceView",
       "type": "object"
@@ -822,7 +836,8 @@
           "enum": [
             "txt",
             "md",
-            "pdf"
+            "pdf",
+            "epub"
           ],
           "title": "Format",
           "type": "string"
@@ -873,7 +888,8 @@
           "enum": [
             "txt",
             "md",
-            "pdf"
+            "pdf",
+            "epub"
           ],
           "title": "Format",
           "type": "string"

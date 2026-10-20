@@ -1883,7 +1883,9 @@ dev = [
     { name = "ruff" },
 ]
 pdf = [
+    { name = "defusedxml" },
     { name = "docling" },
+    { name = "lxml" },
     { name = "torch", version = "2.14.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
     { name = "torch", version = "2.14.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
     { name = "torchvision", version = "0.29.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
@@ -1909,7 +1911,9 @@ dev = [
     { name = "ruff", specifier = ">=0.14,<1" },
 ]
 pdf = [
+    { name = "defusedxml", specifier = ">=0.7,<1" },
     { name = "docling", specifier = "==2.140.0" },
+    { name = "lxml", specifier = ">=6,<7" },
     { name = "torch", index = "https://download.pytorch.org/whl/cpu" },
     { name = "torchvision", index = "https://download.pytorch.org/whl/cpu" },
 ]

@@ -1,6 +1,6 @@
 # Security and source privacy
 
-**Status:** local authentication, owned text and PDF uploads/library and private
+**Status:** local authentication, owned text, PDF and EPUB uploads/library and private
 source storage are implemented. Broader pipeline controls remain requirements; no
 external deployment is in scope.
 
@@ -21,7 +21,8 @@ not permission to read it. Local CLI-provisioned sessions and authoritative Acto
 
 - Validate allowed formats and actual content; do not trust filename or MIME alone.
 - Bound file size, decompression, parser time, extracted text, and model usage.
-  EPUB is a container: reject unsafe paths and oversized expanded contents.
+  EPUB is a container: reject unsafe paths and oversized expanded contents
+  before parsing, refuse XML entity declarations and never load book resources.
 - Parse PDFs only in the worker, offline from a local model directory, with
   encryption, page-count and document-time limits checked; no embedded link,
   remote service or OCR model is used.

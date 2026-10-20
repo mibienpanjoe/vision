@@ -114,8 +114,9 @@ belong to [development and operations](../operations/development-and-operations.
 The first upload slice accepts UTF-8 TXT and Markdown, retaining the exact bytes
 without Unicode or newline normalization. Empty text, invalid UTF-8, binary
 control characters and obvious PDF/ZIP disguises are rejected. PDF acceptance
-is described in the [PDF parser revision](#pdf-parser-revision--t14); EPUB
-follows its format-adapter task; a text upload does not
+and EPUB acceptance are described in the
+[PDF](#pdf-parser-revision--t14) and [EPUB](#epub-parser-revision--t15) parser
+revisions; a text upload does not
 establish parser or narrative success.
 
 Initial limits are 8 MiB per source, a 60-second transfer deadline, titles up to
@@ -249,3 +250,49 @@ layer itself drops a line-break hyphen (`pdftotext` agrees). Layout segmentation
 may also merge authored paragraphs. Quotes must therefore come from stored
 passage text, not from the author's original. Real books with columns, footnotes,
 drop caps or ligatures are not yet measured.
+
+
+## EPUB parser revision — T15
+
+Uploads accept `epub` under the same 8 MiB/60-second boundary; the file must
+start with the ZIP local-header signature. The job records `epub-xhtml-v1`.
+
+`epub-xhtml-v1` is a project adapter rather than Docling's EPUB backend, so the
+container is validated before any content is parsed and every passage keeps a
+stable content anchor. Container checks, in order:
+
+| Check | Outcome |
+|---|---|
+| Not a ZIP, duplicate entry names, missing `mimetype` of `application/epub+zip`, container or package | `INVALID_SOURCE` |
+| More than 2,000 entries | `PARSER_LIMIT` |
+| Absolute, backslash, drive-letter or `..` entry names; container, manifest or encryption references that leave the container or name a URL | `EPUB_UNSAFE_PATH` |
+| ZIP-encrypted entries, or `META-INF/encryption.xml` covering a spine document | `EPUB_ENCRYPTED` (font obfuscation alone is allowed) |
+| Declared expansion above 64 MiB, or actual reads above 16 MiB per entry or 64 MiB in total | `PARSER_LIMIT` |
+| DTD entity declarations in `container.xml`, the package or `encryption.xml` | `INVALID_SOURCE` (defusedxml) |
+
+Only the container file, package document, encryption manifest and XHTML spine
+documents are read. Spine documents are decoded as UTF-8 or UTF-16 and parsed
+by lxml's HTML parser with network access disabled. DTD entities are left
+literal, never resolved. Scripts, styles, `head`, `nav`, templates and comments
+are removed. Images, stylesheets, fonts and links are never loaded. Non-XHTML
+spine items and media elements add `non_text_content_skipped`.
+
+Passages are the innermost HTML block elements (paragraphs, list items,
+blockquotes, cells, leaf `div`/`section`, and similar) in spine order. Text that
+sits directly in a block alongside child blocks is not extracted and adds
+`mixed_block_text_skipped`. Headings `h1`–`h6` matching the `Chapter N` rule
+start chapters; other headings are not passages. Normalization `html-space-v1`
+collapses HTML whitespace (space, tab, CR, LF, form feed) to one space, keeps
+no-break spaces, and turns `<br>` into a newline. As with PDF, offsets index this
+revision's canonical text: headings and passages joined by blank lines. Each
+locator records the content document path, spine index, block ordinal within
+that document, and the nearest element `id` on the block or its ancestors.
+Evidence returns this as `section`, for example
+`OEBPS/text/chapter5.xhtml#ch5-p2`. EPUB has no reliable printed page numbers,
+so `pages` is null.
+
+On a synthetic EPUB 3 built from the corpus (title page, one document per
+chapter, nav, stylesheet, script, remote image reference and wrapped paragraph
+markup), every annotated passage and all 33 annotated spans match exactly, and
+all five chapters are found. Real-world EPUB 2 files, NCX-only navigation and
+fixed-layout books are not yet measured.

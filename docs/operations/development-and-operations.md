@@ -72,7 +72,7 @@ The probe passed with binary distributions for the selected target; this is
 metadata resolution, not an API lock, installation or parser execution.
 Resolve and commit actual dependencies with their first consumer. T14 added
 Docling for PDF parsing without OCR; see [PDF parser runtime](#pdf-parser-runtime--t14).
-EPUB mapping still needs its T15 fixtures; no OCR engine is approved.
+EPUB parsing (T15) uses lxml and defusedxml from the same group; no OCR engine is approved.
 Embedding dimension/model, ANN tuning, provider choices and resource budgets
 remain open at their owning gates. There is no existing database to migrate.
 
@@ -307,8 +307,9 @@ publication. The worker verifies the retained source fingerprint before parsing.
 
 ## PDF parser runtime — T14
 
-The API project's default `pdf` dependency group installs Docling 2.140.0 with
-CPU-only PyTorch from the PyTorch CPU index, so no CUDA wheels are installed.
+The API project's default `pdf` dependency group installs Docling 2.140.0,
+lxml and defusedxml, with CPU-only PyTorch from the PyTorch CPU index, so no
+CUDA wheels are installed.
 The environment grows to about 1.5 GB. Only the worker imports Docling.
 
 `make setup` downloads Docling's Heron layout model (about 330 MB, Apache-2.0)

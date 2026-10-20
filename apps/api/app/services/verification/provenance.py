@@ -14,6 +14,12 @@ def not_found():
     return PublicError(404, "RESOURCE_NOT_FOUND", "Resource not found.")
 
 
+def section_of(locator):
+    if "section" not in locator:
+        return None
+    return locator["section"] + (f"#{locator['anchor']}" if locator.get("anchor") else "")
+
+
 def resolve_evidence(db, actor, work_id, body):
     owned_object(db, Work, work_id, actor)
     try:
@@ -41,6 +47,7 @@ def resolve_evidence(db, actor, work_id, body):
         body.span.validate_text(passage.text)
     except ValueError:
         raise PublicError(422, "EVIDENCE_MISMATCH", "Source span does not match the retained text.") from None
+    locator = passage.locator or {}
     start = max(0, body.span.start - body.context_before)
     end = min(len(passage.text), body.span.end + body.context_after)
     return EvidenceView(span=body.span, parser_revision=passage.parser_revision,
@@ -49,4 +56,4 @@ def resolve_evidence(db, actor, work_id, body):
                         original_start=passage.source_start + body.span.start,
                         original_end=passage.source_start + body.span.end,
                         chapter_id=chapter.id if chapter is not None else None,
-                        pages=(passage.locator or {}).get("pages"))
+                        pages=locator.get("pages"), section=section_of(locator))

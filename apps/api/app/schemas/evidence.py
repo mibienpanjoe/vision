@@ -29,6 +29,7 @@ class EvidenceView(ContractModel):
     original_end: int = Field(gt=0)
     chapter_id: uuid.UUID | None
     pages: list[Annotated[int, Field(ge=1)]] | None = Field(description="Source pages of the containing passage, when the format has pages")
+    section: str | None = Field(max_length=1024, description="Content document and fragment of the containing passage, for EPUB")
 
 
     @model_validator(mode="after")

@@ -6,13 +6,16 @@ MAX_SOURCE_BYTES = 8 * 1024 * 1024
 UPLOAD_SECONDS = 60
 
 
+SIGNATURES = {"pdf": b"%PDF-", "epub": b"PK\x03\x04"}
+
+
 def validate_source(data: bytes, source_format: str) -> None:
-    if source_format != "pdf":
+    if source_format not in SIGNATURES:
         validate_text_source(data)
     elif len(data) > MAX_SOURCE_BYTES:
         raise PublicError(413, "SOURCE_TOO_LARGE", "Source exceeds the upload limit.")
-    elif not data.startswith(b"%PDF-"):
-        raise PublicError(422, "INVALID_SOURCE", "Source is not a PDF document.")
+    elif not data.startswith(SIGNATURES[source_format]):
+        raise PublicError(422, "INVALID_SOURCE", "Source does not match its declared format.")
 
 
 def validate_text_source(data: bytes) -> str:
