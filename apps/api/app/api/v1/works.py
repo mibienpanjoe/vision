@@ -2,7 +2,7 @@
 
 import asyncio
 import uuid
-from typing import Annotated
+from typing import Annotated, Literal
 
 from app.core.errors import PublicError
 from app.core.security import ActorScope, current_actor, database_session, owned_object
@@ -16,6 +16,7 @@ from app.schemas.works import (
     WorkView,
 )
 from app.services.ingestion.inputs import MAX_SOURCE_BYTES, UPLOAD_SECONDS
+from app.services.ingestion.jobs import mutate_job
 from app.services.ingestion.upload import (
     create_work,
     document_for,
@@ -113,9 +114,19 @@ def original(work_id: uuid.UUID, actor: Actor, db: Database):
 
 
 @router.get("/{work_id}/ingestions/{job_id}", response_model=IngestionView)
-def read_ingestion(work_id: uuid.UUID, job_id: uuid.UUID, actor: Actor, db: Database):
+def read_ingestion(work_id: uuid.UUID, job_id: uuid.UUID, actor: Actor, db: Database, response: Response):
     document = document_for(db, owned_object(db, Work, work_id, actor))
     job = db.scalar(select(IngestionJob).where(IngestionJob.id == job_id, IngestionJob.document_id == document.id))
     if job is None:
         raise PublicError(404, "RESOURCE_NOT_FOUND", "Resource not found.")
+    response.headers["ETag"] = f'"{job.revision}"'
     return ingestion_view(job)
+
+
+@router.post("/{work_id}/ingestions/{job_id}/{action}", response_model=IngestionView)
+def change_ingestion(work_id: uuid.UUID, job_id: uuid.UUID, action: Literal["retry", "cancel"],
+                     actor: Actor, db: Database, key: Key, response: Response,
+                     match: Annotated[str | None, Header(alias="If-Match", max_length=32)] = None):
+    view = mutate_job(db, actor, work_id, job_id, action, match, key)
+    response.headers["ETag"] = f'"{view.revision}"'
+    return view

@@ -35,8 +35,10 @@ class LibraryPage(ContractModel):
 class IngestionView(ContractModel):
     id: uuid.UUID
     document_id: uuid.UUID
-    status: Literal["queued", "succeeded", "failed"]
-    stage: Literal["awaiting_parser", "parsed", "failed"]
+    status: Literal["queued", "running", "succeeded", "failed", "cancelled"]
+    stage: Literal["awaiting_parser", "parse", "parsed", "failed", "cancelled"]
+    revision: int = Field(ge=1)
+    cancel_requested: bool
     attempts: int = Field(ge=0)
     error_code: str | None
     warnings: list[str]

@@ -74,8 +74,8 @@ The exact degraded-result representation is settled with the executable schema.
 Persist attempts, configuration versions, document fingerprint, and durable
 outputs. A retry must not duplicate facts or advertise a half-built index as
 current. Propagate cancellation into bounded stages; confirm terminal state
-rather than immediately treating a cancel request as completion. The initial
-API routes for retry and cancellation are still draft additions.
+rather than immediately treating a cancel request as completion. T13 implements
+this lifecycle for text parsing; see [ingestion recovery](#ingestion-recovery--t13).
 
 ## Reprocessing proposal — PROP-02
 
@@ -139,7 +139,34 @@ and persists versioned chapters/passages plus a parsed outcome in one locked SQL
 transaction. Redelivery of a terminal job is harmless. Public job states are
 queued, succeeded/parsed or failed with a safe code, attempt count and structure
 warnings. Parsed means source paragraphs are available, not narrative/index
-readiness. T13 adds broader retry/cancellation and interrupted-stage recovery.
+readiness. T13 adds retry/cancellation and interrupted-stage recovery below.
+
+## Ingestion recovery — T13
+
+Text jobs move through `queued` → `running` (stage `parse`) → `succeeded`/
+`parsed`, `failed` or `cancelled`. Each job carries a monotonically increasing
+`revision` for conditional mutations; the
+[API contract](../api/api-contract.md#ingestion-retry-and-cancellation--t13)
+owns the wire behavior.
+
+A worker first takes a PostgreSQL session advisory lock on a dedicated
+connection, so concurrent deliveries of one job never run together and a killed
+worker's lease ends with its connection. Under that lease it claims the job in a
+short transaction, increments `attempts` and records a running
+`ingestion_attempts` row. Reading and parsing happen outside any SQL
+transaction. A second locked transaction then either confirms a requested
+cancellation, records a safe failure code, or publishes every chapter and passage
+together with the succeeded outcome. Partial output is never visible, and
+redelivery of a terminal job is harmless.
+
+A worker that finds its job still `running` treats the previous attempt as
+`abandoned` (or `cancelled` when requested) before continuing. `make dispatch`
+and `make worker` first reconcile interrupted running jobs whose lease is free:
+requested cancellations are confirmed, exhausted jobs fail with
+`ATTEMPTS_EXHAUSTED`, and others return to queued for redispatch. At most three
+attempts run per job, including manual retries. Unexpected parser exceptions
+fail safely as `PARSER_FAILURE`. Dramatiq time-limit interruption leaves the job
+running for redelivery or reconciliation rather than marking it failed.
 
 Implementation sources: [Starlette request forms](https://starlette.dev/requests/)
 and [SQLAlchemy transaction management](https://docs.sqlalchemy.org/en/21/orm/session_transaction.html).

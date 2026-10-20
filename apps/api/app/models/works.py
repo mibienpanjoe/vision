@@ -36,6 +36,8 @@ class IngestionJob(Base):
     __tablename__ = "ingestion_jobs"
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     document_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("documents.id"), index=True)
+    revision: Mapped[int] = mapped_column(default=1)
+    cancel_requested: Mapped[bool] = mapped_column(default=False)
     processing_version: Mapped[str] = mapped_column(String(32), default="text-v1")
     status: Mapped[str] = mapped_column(String(16), default="queued")
     stage: Mapped[str] = mapped_column(String(32), default="awaiting_parser")
@@ -45,3 +47,20 @@ class IngestionJob(Base):
     error_code: Mapped[str | None] = mapped_column(String(64))
     warnings: Mapped[list[str]] = mapped_column(JSONB, default=list)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class IngestionAttempt(Base):
+    __tablename__ = "ingestion_attempts"
+    job_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("ingestion_jobs.id"), primary_key=True)
+    number: Mapped[int] = mapped_column(primary_key=True)
+    outcome: Mapped[str] = mapped_column(String(16))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class IngestionMutation(Base):
+    __tablename__ = "ingestion_mutations"
+    job_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("ingestion_jobs.id"), primary_key=True)
+    key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    action: Mapped[str] = mapped_column(String(16))
+    expected_revision: Mapped[int]

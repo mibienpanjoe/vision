@@ -19,7 +19,7 @@ for the product contracts; the commands below own the executable setup.
 | Web | Next.js, TypeScript, Tailwind, shadcn/ui | Themed shell implemented; library/reconstruction screens pending |
 | API | Python, FastAPI, Pydantic | Health/auth/probe and text upload/library/evidence implemented; narrative endpoints pending |
 | Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Access, work/document, ingestion, chapters/passages and vector extension; narrative tables pending |
-| Jobs | Redis, Dramatiq | Real probe and text parser; broader interruption/retry/cancellation remains T13 |
+| Jobs | Redis, Dramatiq | Real probe and text parser with bounded retry, cancellation and interrupted-job reconciliation |
 | Sources/assets | Private local filesystem | Storage root, permissions, quota and retention |
 | Models | Role-specific provider adapters | Installed FreeLLM selected; role/model checks remain before first live consumer |
 | Integration | Docker Compose | Pinned private local services and verification commands below |

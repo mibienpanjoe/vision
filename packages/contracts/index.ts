@@ -32,13 +32,15 @@ export type PassageId1 = string;
 export type Quote1 = string;
 export type Start1 = number;
 export type Attempts = number;
+export type CancelRequested = boolean;
 export type CorrelationId1 = string;
 export type DispatchPending = boolean;
 export type DocumentId = string;
 export type ErrorCode = string | null;
 export type Id = string;
-export type Stage = "awaiting_parser" | "parsed" | "failed";
-export type Status = "queued" | "succeeded" | "failed";
+export type Revision = number;
+export type Stage = "awaiting_parser" | "parse" | "parsed" | "failed" | "cancelled";
+export type Status = "queued" | "running" | "succeeded" | "failed" | "cancelled";
 export type Warnings = string[];
 export type Attempts1 = number;
 export type CorrelationId2 = string;
@@ -51,7 +53,7 @@ export type ByteCount = number;
 export type DocumentId1 = string;
 export type Format = "txt" | "md";
 export type Id2 = string;
-export type Revision = number;
+export type Revision1 = number;
 export type Sha256 = string;
 export type Title = string;
 export type Items = WorkView[];
@@ -162,11 +164,13 @@ export interface EvidenceSpan {
 }
 export interface IngestionView {
   attempts: Attempts;
+  cancel_requested: CancelRequested;
   correlation_id: CorrelationId1;
   dispatch_pending: DispatchPending;
   document_id: DocumentId;
   error_code: ErrorCode;
   id: Id;
+  revision: Revision;
   stage: Stage;
   status: Status;
   warnings: Warnings;
@@ -189,7 +193,7 @@ export interface WorkView {
   document_id: DocumentId1;
   format: Format;
   id: Id2;
-  revision: Revision;
+  revision: Revision1;
   sha256: Sha256;
   title: Title;
 }

@@ -123,10 +123,9 @@ prior ETag; If-Match applies only where an existing resource revision is mutated
 
 ## Unresolved wire details
 
-Authentication, probe jobs and multipart uploads/library pagination are
-implemented below. Before each remaining consumer, define authorized source-span
-retrieval (T12), ingestion retry/cancellation (T13),
-refinement (T38), deletion (T46), and streaming/version evolution where needed.
+Authentication, probe jobs, multipart uploads/library pagination, authorized
+source-span retrieval and ingestion retry/cancellation are implemented below.
+Before each remaining consumer, define refinement (T38), deletion (T46), and streaming/version evolution where needed.
 The overview's endpoint list alone does not cover the complete
 library/evidence/job product flow.
 
@@ -236,7 +235,8 @@ long-running ingestion stages, failures/cancellation and broader recovery.
 | `GET /v1/works` | Owner-scoped UUID-ascending keyset page; `limit` 1–100 (default 20), optional UUID `after`; `items` and nullable `next_cursor` |
 | `GET /v1/works/{id}` | Owned work metadata and its first immutable document revision |
 | `GET /v1/works/{id}/original` | Owned original bytes as a nosniff attachment with a fixed safe filename; no public storage URL |
-| `GET /v1/works/{id}/ingestions/{job_id}` | Job resolved through the owned work/document; queued or terminal parser state, attempts, safe error code and structure warnings |
+| `GET /v1/works/{id}/ingestions/{job_id}` | Job resolved through the owned work/document; lifecycle state, `revision` (also the `ETag`), cancel request, attempts, safe error code and structure warnings |
+| `POST /v1/works/{id}/ingestions/{job_id}/retry` and `.../cancel` | Owned conditional mutation; see [ingestion recovery](#ingestion-retry-and-cancellation--t13) |
 
 Upload authentication and Origin checks precede body consumption. The boundary
 counts actual received bytes, permits at most 64 KiB of multipart overhead,
@@ -286,3 +286,26 @@ No neighbor IDs, future chapter titles, storage paths or original filenames leak
 through the response. Requests are bounded to 32 KiB of actual received JSON and
 a 10-second deadline (`413`/`408`); the common error envelope never echoes quotes.
 This endpoint does not render HTML or establish narrative-generation readiness.
+
+
+## Ingestion retry and cancellation — T13
+
+Both mutations require authentication, the mutation Origin check, an
+`Idempotency-Key` and `If-Match` carrying the job's current strong ETag
+(`"<revision>"`). The job resolves through the owned work and document, so
+another owner receives the common `404`. A missing precondition returns `428`,
+a stale or malformed revision `412`, and an action invalid for the current state
+`409 STATE_CONFLICT`. Each response returns the job view and its new `ETag`.
+
+Keys are scoped to one job. Replaying the same key, action and expected revision
+returns the job's current view without a second effect; reusing a key for a
+different action or revision returns `409 IDEMPOTENCY_CONFLICT`.
+
+| Action | Allowed from | Effect |
+|---|---|---|
+| `cancel` | `queued` | Immediately confirmed `cancelled`; no worker has started it |
+| `cancel` | `running` | Sets `cancel_requested`; status stays `running` until the worker or recovery confirms `cancelled` without publishing passages |
+| `retry` | `failed`, `cancelled` | Returns to `queued`, clears the safe error and publishes dispatch intent; `429 ATTEMPTS_EXHAUSTED` after three attempts |
+
+A cancel request is therefore distinct from confirmed cancellation. Retry and
+cancel never delete or rewrite passages already published by a succeeded job.

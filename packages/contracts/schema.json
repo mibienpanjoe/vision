@@ -243,6 +243,10 @@
           "title": "Attempts",
           "type": "integer"
         },
+        "cancel_requested": {
+          "title": "Cancel Requested",
+          "type": "boolean"
+        },
         "correlation_id": {
           "title": "Correlation Id",
           "type": "string"
@@ -272,11 +276,18 @@
           "title": "Id",
           "type": "string"
         },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
         "stage": {
           "enum": [
             "awaiting_parser",
+            "parse",
             "parsed",
-            "failed"
+            "failed",
+            "cancelled"
           ],
           "title": "Stage",
           "type": "string"
@@ -284,8 +295,10 @@
         "status": {
           "enum": [
             "queued",
+            "running",
             "succeeded",
-            "failed"
+            "failed",
+            "cancelled"
           ],
           "title": "Status",
           "type": "string"
@@ -303,6 +316,8 @@
         "document_id",
         "status",
         "stage",
+        "revision",
+        "cancel_requested",
         "attempts",
         "error_code",
         "warnings",

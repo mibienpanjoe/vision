@@ -26,6 +26,7 @@ def work_view(db, work):
 
 def ingestion_view(job):
     return IngestionView(id=job.id, document_id=job.document_id, status=job.status,
+                         revision=job.revision, cancel_requested=job.cancel_requested,
                          stage=job.stage, correlation_id=job.correlation_id,
                          dispatch_pending=job.dispatched_at is None and job.status == "queued",
                          attempts=job.attempts, error_code=job.error_code, warnings=job.warnings)
