@@ -4,6 +4,7 @@ import uuid
 
 from app.models.access import Base
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -16,6 +17,7 @@ class Chapter(Base):
     title: Mapped[str] = mapped_column(Text)
     source_start: Mapped[int]
     source_end: Mapped[int]
+    locator: Mapped[dict | None] = mapped_column(JSONB)
 
 
 class Passage(Base):
@@ -36,3 +38,5 @@ class Passage(Base):
     text: Mapped[str] = mapped_column(Text)
     previous_ordinal: Mapped[int | None]
     next_ordinal: Mapped[int | None]
+    # Format-specific anchors, e.g. PDF {"pages": [...], "boxes": [[page, l, t, r, b]]}.
+    locator: Mapped[dict | None] = mapped_column(JSONB)

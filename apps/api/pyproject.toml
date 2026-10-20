@@ -14,6 +14,11 @@ dependencies = [
 ]
 
 [dependency-groups]
+pdf = [
+    "docling==2.140.0",
+    "torch",
+    "torchvision",
+]
 dev = [
     "httpx2>=2.14.0",
     "pytest>=8,<10",
@@ -24,3 +29,16 @@ dev = [
 pythonpath = ["."]
 testpaths = ["tests"]
 markers = ["integration: requires an isolated PostgreSQL or Redis instance"]
+
+[tool.uv]
+# The worker parses PDFs; keep CPU-only torch so no CUDA wheels are installed.
+default-groups = ["dev", "pdf"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

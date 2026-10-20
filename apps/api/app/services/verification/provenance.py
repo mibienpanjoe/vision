@@ -48,4 +48,5 @@ def resolve_evidence(db, actor, work_id, body):
                         highlight_start=body.span.start - start, highlight_end=body.span.end - start,
                         original_start=passage.source_start + body.span.start,
                         original_end=passage.source_start + body.span.end,
-                        chapter_id=chapter.id if chapter is not None else None)
+                        chapter_id=chapter.id if chapter is not None else None,
+                        pages=(passage.locator or {}).get("pages"))

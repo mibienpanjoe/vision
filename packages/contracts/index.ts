@@ -11,6 +11,10 @@ export type HighlightEnd = number;
 export type HighlightStart = number;
 export type OriginalEnd = number;
 export type OriginalStart = number;
+/**
+ * Source pages of the containing passage, when the format has pages
+ */
+export type Pages = number[] | null;
 export type ParserRevision = string;
 export type DocumentRevisionId = string;
 export type End = number;
@@ -51,7 +55,7 @@ export type Stage1 = "queued" | "complete";
 export type Status1 = "queued" | "succeeded";
 export type ByteCount = number;
 export type DocumentId1 = string;
-export type Format = "txt" | "md";
+export type Format = "txt" | "md" | "pdf";
 export type Id2 = string;
 export type Revision1 = number;
 export type Sha256 = string;
@@ -89,7 +93,7 @@ export type Outcome2 = "insufficient_evidence";
 export type SchemaVersion2 = "1.0";
 export type Outcome3 = "failed";
 export type SchemaVersion3 = "1.0";
-export type Format1 = "txt" | "md";
+export type Format1 = "txt" | "md" | "pdf";
 export type Title1 = string;
 
 /**
@@ -129,6 +133,7 @@ export interface EvidenceView {
   highlight_start: HighlightStart;
   original_end: OriginalEnd;
   original_start: OriginalStart;
+  pages: Pages;
   parser_revision: ParserRevision;
   span: SourceSpan;
 }

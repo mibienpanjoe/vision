@@ -1,4 +1,5 @@
 import uuid
+from typing import Annotated
 
 from app.schemas.base import ContractModel
 from app.schemas.scope import ReadingBoundary, SourceSpan
@@ -27,6 +28,7 @@ class EvidenceView(ContractModel):
     original_start: int = Field(ge=0)
     original_end: int = Field(gt=0)
     chapter_id: uuid.UUID | None
+    pages: list[Annotated[int, Field(ge=1)]] | None = Field(description="Source pages of the containing passage, when the format has pages")
 
 
     @model_validator(mode="after")

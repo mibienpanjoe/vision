@@ -56,6 +56,10 @@ def setup():
     else:
         print("Preserved existing private .env.")
     run(["uv", "sync", "--project", "apps/api", "--locked"])
+    models = ROOT / ".local/docling-models"
+    if not models.is_dir():
+        # One-time layout model fetch; the PDF worker itself never downloads.
+        run(["uv", "run", "--locked", "docling-tools", "models", "download", "layout", "-o", str(models)], cwd=API)
     run(["pnpm", "install", "--frozen-lockfile", "--ignore-scripts"])
 
 

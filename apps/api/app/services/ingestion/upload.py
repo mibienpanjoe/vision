@@ -8,7 +8,8 @@ from app.core.storage import PrivateSources
 from app.models.works import Document, IngestionJob, Work
 from app.schemas.works import IngestionView, UploadAccepted, WorkView
 from app.services.dispatch import dispatch_ingestions
-from app.services.ingestion.inputs import validate_text_source
+from app.services.ingestion.adapters import REVISIONS
+from app.services.ingestion.inputs import validate_source
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -39,7 +40,7 @@ def accepted_view(db, work):
 
 
 def create_work(db, actor, metadata, data, key, correlation_id):
-    validate_text_source(data)
+    validate_source(data, metadata.format)
     fingerprint = hashlib.sha256(data).hexdigest()
     digest = hashlib.sha256(json.dumps({**metadata.model_dump(), "sha256": fingerprint}, sort_keys=True).encode()).hexdigest()
     prior = db.scalar(select(Work).where(Work.owner_id == actor.owner_id, Work.idempotency_key == key))
@@ -60,7 +61,8 @@ def create_work(db, actor, metadata, data, key, correlation_id):
                                 sha256=fingerprint, format=metadata.format, byte_count=len(data))
             db.add(document)
             db.flush()
-            db.add(IngestionJob(document_id=document.id, correlation_id=correlation_id))
+            db.add(IngestionJob(document_id=document.id, correlation_id=correlation_id,
+                                processing_version=REVISIONS[metadata.format]))
             db.flush()
         except IntegrityError:
             db.rollback()

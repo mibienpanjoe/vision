@@ -64,12 +64,12 @@ def test_running_cancel_is_confirmed_only_after_worker_observes_it(recovery_clie
 
     client, _, endpoint, accepted = recovery_clients
     entered, release = threading.Event(), threading.Event()
-    actual_parse = parse.parse_text
-    def gated_parse(data, source_format):
+    actual_parse = parse.parse_source
+    def gated_parse(data, source_format, revision):
         entered.set()
         assert release.wait(timeout=10)
-        return actual_parse(data, source_format)
-    monkeypatch.setattr(parse, "parse_text", gated_parse)
+        return actual_parse(data, source_format, revision)
+    monkeypatch.setattr(parse, "parse_source", gated_parse)
     with ThreadPoolExecutor(max_workers=1) as pool:
         future = pool.submit(parse.execute_ingestion, accepted["job"]["id"])
         try:

@@ -9,24 +9,24 @@ from app.core.storage import PrivateSources
 from app.db.session import configured_engine
 from app.models.passages import Chapter, Passage
 from app.models.works import Document, IngestionAttempt, IngestionJob
+from app.services.ingestion.adapters import parse_source
 from app.services.ingestion.jobs import MAX_ATTEMPTS, finish_attempt, job_lock
-from app.services.ingestion.text_adapter import PARSER_REVISION, parse_text
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 
-def publish_passages(db, document_id, parsed):
+def publish_passages(db, document_id, parsed, revision, normalization):
     for chapter in parsed.chapters:
-        db.add(Chapter(id=uuid.uuid5(document_id, f"{PARSER_REVISION}:chapter:{chapter.ordinal}"),
-                       document_id=document_id, parser_revision=PARSER_REVISION,
-                       ordinal=chapter.ordinal, title=chapter.title,
+        db.add(Chapter(id=uuid.uuid5(document_id, f"{revision}:chapter:{chapter.ordinal}"),
+                       document_id=document_id, parser_revision=revision,
+                       ordinal=chapter.ordinal, title=chapter.title, locator=chapter.locator,
                        source_start=chapter.start, source_end=chapter.end))
     db.flush()
     for passage in parsed.passages:
-        db.add(Passage(id=uuid.uuid5(document_id, f"{PARSER_REVISION}:passage:{passage.ordinal}"),
-            document_id=document_id, parser_revision=PARSER_REVISION, ordinal=passage.ordinal,
-            chapter_ordinal=passage.chapter, text=passage.text,
-            source_start=passage.start, source_end=passage.end,
+        db.add(Passage(id=uuid.uuid5(document_id, f"{revision}:passage:{passage.ordinal}"),
+            document_id=document_id, parser_revision=revision, normalization_revision=normalization,
+            ordinal=passage.ordinal, chapter_ordinal=passage.chapter, text=passage.text,
+            source_start=passage.start, source_end=passage.end, locator=passage.locator,
             previous_ordinal=passage.ordinal - 1 if passage.ordinal else None,
             next_ordinal=passage.ordinal + 1 if passage.ordinal + 1 < len(parsed.passages) else None))
 
@@ -62,14 +62,12 @@ def execute_locked(engine, job_id):
         job.attempts += 1
         job.status, job.stage, job.revision = "running", "parse", job.revision + 1
         db.add(IngestionAttempt(job_id=job.id, number=job.attempts, outcome="running", started_at=datetime.now(UTC)))
-    error_code, parsed = None, None
+    error_code, parsed, normalization = None, None, None
     try:
-        if parser_revision != PARSER_REVISION:
-            raise PublicError(422, "UNSUPPORTED_PARSER_VERSION", "Parser revision is not supported.")
         data = PrivateSources().read(source_ref)
         if hashlib.sha256(data).hexdigest() != fingerprint:
             raise PublicError(422, "SOURCE_INTEGRITY", "Original source integrity check failed.")
-        parsed = parse_text(data, source_format)
+        parsed, normalization = parse_source(data, source_format, parser_revision)
     except PublicError as error:
         error_code = error.code
     except (OSError, ValueError):
@@ -83,7 +81,7 @@ def execute_locked(engine, job_id):
         elif error_code:
             job.status, job.stage, job.error_code = "failed", "failed", error_code
         else:
-            publish_passages(db, document_id, parsed)
+            publish_passages(db, document_id, parsed, parser_revision, normalization)
             job.status, job.stage, job.warnings, job.error_code = "succeeded", "parsed", list(parsed.warnings), None
         finish_attempt(db, job, job.status)
         job.completed_at, job.revision = datetime.now(UTC), job.revision + 1

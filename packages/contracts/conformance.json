@@ -226,7 +226,8 @@
       "highlight_end": 2,
       "original_start": 111,
       "original_end": 112,
-      "chapter_id": null
+      "chapter_id": null,
+      "pages": null
     }
   },
   {
@@ -248,7 +249,59 @@
       "highlight_end": 2,
       "original_start": 111,
       "original_end": 112,
-      "chapter_id": null
+      "chapter_id": null,
+      "pages": null
+    }
+  },
+  {
+    "model": "EvidenceView",
+    "valid": true,
+    "value": {
+      "span": {
+        "document_revision_id": "r",
+        "passage_id": "p",
+        "start": 11,
+        "end": 12,
+        "quote": "🦊",
+        "offset_unit": "unicode_code_point"
+      },
+      "parser_revision": "pdf-docling-v1",
+      "excerpt": "é🦊é",
+      "excerpt_start": 10,
+      "highlight_start": 1,
+      "highlight_end": 2,
+      "original_start": 111,
+      "original_end": 112,
+      "chapter_id": null,
+      "pages": [
+        4,
+        5
+      ]
+    }
+  },
+  {
+    "model": "EvidenceView",
+    "valid": false,
+    "value": {
+      "span": {
+        "document_revision_id": "r",
+        "passage_id": "p",
+        "start": 11,
+        "end": 12,
+        "quote": "🦊",
+        "offset_unit": "unicode_code_point"
+      },
+      "parser_revision": "pdf-docling-v1",
+      "excerpt": "é🦊é",
+      "excerpt_start": 10,
+      "highlight_start": 1,
+      "highlight_end": 2,
+      "original_start": 111,
+      "original_end": 112,
+      "chapter_id": null,
+      "pages": [
+        0
+      ]
     }
   }
 ]

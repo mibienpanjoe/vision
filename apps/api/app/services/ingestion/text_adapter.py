@@ -20,6 +20,7 @@ class ParsedChapter:
     title: str
     start: int
     end: int
+    locator: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,7 @@ class ParsedPassage:
     start: int
     end: int
     text: str
+    locator: dict | None = None
 
 
 @dataclass(frozen=True)

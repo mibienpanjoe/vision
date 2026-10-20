@@ -33,6 +33,7 @@
 | DEC-25 | Local-only application; external hosting/deployment is outside delivery scope; private local storage is the active baseline | Maintainer decision, 2026-10-19; [operations](../operations/development-and-operations.md#delivery-scope) |
 | DEC-26 | Local CLI-provisioned accounts, scrypt passwords and 12-hour opaque DB sessions; same-origin loopback web proxy, HttpOnly/SameSite Strict cookie and explicit mutation Origin checks | T07 implementation choice under local-only scope; [API authentication](../api/api-contract.md#local-authentication--t07) |
 | DEC-27 | First upload boundary: UTF-8 TXT/Markdown, 8 MiB/source, 60-second transfer, private opaque originals; title 256 code points and page size 100 | T10 engineering limits under OPEN-05; [ingestion](../ingestion/ingestion-contract.md#first-upload-input-boundary--t10) |
+| DEC-28 | PDF via Docling 2.140.0 (pypdfium2 backend, local Heron layout model, CPU-only PyTorch); OCR and table structure disabled; text-layer-free PDFs fail explicitly | T14 under maintainer selection, 2026-10-20; [ingestion](../ingestion/ingestion-contract.md#pdf-parser-revision--t14) |
 
 ## Proposed elaborations
 
@@ -53,7 +54,7 @@ documents fixed all details.
 | OPEN-03 | First language resolved by DEC-22 (English); broader languages/configurations remain open | Lexical indexing and multilingual claims |
 | OPEN-04 | Resolved for the first slice by DEC-22; revisit only with an explicit changed decision | Temporal reconstruction implementation |
 | OPEN-05 | Concrete upload/expansion/time/token/cost/candidate limits and performance targets | Accepting untrusted workloads; then calibrate with measurements |
-| OPEN-06 | Runtime/package choices resolved by DEC-19; parser execution/OCR coverage, embedding dimension and ANN settings remain open | Reproducible development environment |
+| OPEN-06 | Runtime/package choices resolved by DEC-19 and PDF parsing by DEC-28; OCR coverage, embedding dimension and ANN settings remain open | Reproducible development environment |
 | OPEN-07 | Shared revision/idempotency resolved by DEC-23; route payloads, pagination, deletion and retention remain open | Executable API and persistent lifecycle |
 | OPEN-08 | External deployment excluded by DEC-25; local recovery, retention and deletion remain required | External deployment |
 | OPEN-09 | Project license, exact component selections, final wordmark/vector assets, and any future optically simplified favicon | Redistribution or relevant implementation increment |

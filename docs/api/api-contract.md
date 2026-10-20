@@ -231,7 +231,7 @@ long-running ingestion stages, failures/cancellation and broader recovery.
 
 | Endpoint | Implemented behavior |
 |---|---|
-| `POST /v1/works` | Authenticated multipart `title`, `format` (`txt`/`md`), and one `file`; required `Idempotency-Key`; `202` with work and ingestion reference |
+| `POST /v1/works` | Authenticated multipart `title`, `format` (`txt`/`md`/`pdf`), and one `file`; required `Idempotency-Key`; `202` with work and ingestion reference |
 | `GET /v1/works` | Owner-scoped UUID-ascending keyset page; `limit` 1–100 (default 20), optional UUID `after`; `items` and nullable `next_cursor` |
 | `GET /v1/works/{id}` | Owned work metadata and its first immutable document revision |
 | `GET /v1/works/{id}/original` | Owned original bytes as a nosniff attachment with a fixed safe filename; no public storage URL |
@@ -279,8 +279,11 @@ revision; unassigned passages fail closed. Whole-book mode permits passages with
 unknown chapter structure. Quote mismatch and invalid ranges return `422`.
 
 The response retains the validated span, parser revision, optional eligible
-chapter ID, a passage-local excerpt, excerpt/highlight code-point coordinates
-and original-text code-point coordinates. Quotes are at most 2,000 code points;
+chapter ID, a passage-local excerpt, excerpt/highlight code-point coordinates,
+original-text code-point coordinates and nullable `pages`. For PDF sources the
+original coordinates index the parser's canonical text and `pages` lists the
+containing passage's pages; see the
+[PDF parser revision](../ingestion/ingestion-contract.md#pdf-parser-revision--t14). Quotes are at most 2,000 code points;
 context is bounded to the same passage, with at most 3,000 returned code points.
 No neighbor IDs, future chapter titles, storage paths or original filenames leak
 through the response. Requests are bounded to 32 KiB of actual received JSON and

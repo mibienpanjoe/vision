@@ -188,6 +188,22 @@
           "title": "Original Start",
           "type": "integer"
         },
+        "pages": {
+          "anyOf": [
+            {
+              "items": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Source pages of the containing passage, when the format has pages",
+          "title": "Pages"
+        },
         "parser_revision": {
           "title": "Parser Revision",
           "type": "string"
@@ -205,7 +221,8 @@
         "highlight_end",
         "original_start",
         "original_end",
-        "chapter_id"
+        "chapter_id",
+        "pages"
       ],
       "title": "EvidenceView",
       "type": "object"
@@ -804,7 +821,8 @@
         "format": {
           "enum": [
             "txt",
-            "md"
+            "md",
+            "pdf"
           ],
           "title": "Format",
           "type": "string"
@@ -854,7 +872,8 @@
         "format": {
           "enum": [
             "txt",
-            "md"
+            "md",
+            "pdf"
           ],
           "title": "Format",
           "type": "string"

@@ -70,9 +70,9 @@ A binary-only Linux x86_64/Python 3.12 dependency-resolution probe includes
 FastAPI 0.147.0, SQLAlchemy 2.1.5, Alembic 1.20.0 and Dramatiq/Redis 2.2.1.
 The probe passed with binary distributions for the selected target; this is
 metadata resolution, not an API lock, installation or parser execution.
-Resolve and commit actual dependencies with their first consumer. Keep Docling's heavy conversion dependencies out of the API bootstrap
-until its parser task requires them. PDF extraction/OCR and EPUB mapping still
-need T14/T15 format fixtures; no OCR engine or model assets are approved here.
+Resolve and commit actual dependencies with their first consumer. T14 added
+Docling for PDF parsing without OCR; see [PDF parser runtime](#pdf-parser-runtime--t14).
+EPUB mapping still needs its T15 fixtures; no OCR engine is approved.
 Embedding dimension/model, ANN tuning, provider choices and resource budgets
 remain open at their owning gates. There is no existing database to migrate.
 
@@ -303,3 +303,20 @@ It is interrupted-upload cleanup, not reader-requested deletion or retention.
 Those lifecycles remain with their later tasks. Text-ingestion intents use their
 own queue/consumer; `make dispatch` reconciles both probe and ingestion
 publication. The worker verifies the retained source fingerprint before parsing.
+
+
+## PDF parser runtime — T14
+
+The API project's default `pdf` dependency group installs Docling 2.140.0 with
+CPU-only PyTorch from the PyTorch CPU index, so no CUDA wheels are installed.
+The environment grows to about 1.5 GB. Only the worker imports Docling.
+
+`make setup` downloads Docling's Heron layout model (about 330 MB, Apache-2.0)
+once into ignored `.local/docling-models`. Workers read it from
+`VISION_DOCLING_ARTIFACTS` (default: that directory) and never download at
+parse time. If a download was interrupted, delete the directory and rerun
+`make setup`. Conversions run one at a time per worker process. On the
+development CPU a five-page fixture takes about 10 seconds, including model
+load; book-length timing is not yet measured. CI allows 25 minutes for the
+larger install. The model files are fetched by Docling's own downloader and not
+redistributed by this repository.

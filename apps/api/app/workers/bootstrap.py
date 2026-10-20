@@ -14,6 +14,8 @@ def probe(job_id: str) -> None:
     execute_probe(job_id)
 
 
-@dramatiq.actor(queue_name="ingestion", max_retries=2, min_backoff=1000, max_backoff=5000, time_limit=10000)
+# PDF layout extraction is CPU-bound; Docling's own document timeout (600 s)
+# fails it first, so this limit only catches a stuck worker.
+@dramatiq.actor(queue_name="ingestion", max_retries=2, min_backoff=1000, max_backoff=5000, time_limit=900_000)
 def ingest(job_id: str) -> None:
     execute_ingestion(job_id)

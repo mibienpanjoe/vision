@@ -113,8 +113,9 @@ belong to [development and operations](../operations/development-and-operations.
 
 The first upload slice accepts UTF-8 TXT and Markdown, retaining the exact bytes
 without Unicode or newline normalization. Empty text, invalid UTF-8, binary
-control characters and obvious PDF/ZIP disguises are rejected. PDF and EPUB
-acceptance follows the dedicated format-adapter tasks; a text upload does not
+control characters and obvious PDF/ZIP disguises are rejected. PDF acceptance
+is described in the [PDF parser revision](#pdf-parser-revision--t14); EPUB
+follows its format-adapter task; a text upload does not
 establish parser or narrative success.
 
 Initial limits are 8 MiB per source, a 60-second transfer deadline, titles up to
@@ -197,3 +198,54 @@ Parser outputs retain document/parser/normalization revisions, source-order
 ordinals and explicit neighboring ordinals. Chapter and passage IDs are stable
 within that exact document/parser revision. A changed parser/text revision must
 produce a new output set rather than overwriting cited passage text.
+
+
+## PDF parser revision — T14
+
+Uploads accept `pdf` alongside `txt`/`md` under the same 8 MiB/60-second
+boundary; a PDF upload must start with the `%PDF-` signature and a text upload
+must not. The job records `pdf-docling-v1` at upload time.
+
+`pdf-docling-v1` runs Docling 2.140.0 with its pypdfium2 backend, the Heron
+layout model (Apache-2.0) loaded from a local artifacts directory, and no OCR or
+table-structure model. The pypdfium2 backend was selected after docling-parse
+moved line fragments across paragraphs in the synthetic fixture. Docling is
+imported only by the worker. An explicit artifacts path keeps conversion
+offline; missing models fail as retryable `PARSER_UNAVAILABLE` instead of
+downloading. Remote services are disabled and embedded links are not fetched.
+
+A PDF carries no authored paragraph text, so passages are Docling text blocks in
+reading order. Their `source_start`/`source_end` index this revision's canonical
+text: chapter headings and passages joined by blank lines. These offsets do not
+locate bytes in the original file. Each chapter and passage stores a `locator`
+with its pages and `[page, left, top, right, bottom]` block boxes in PDF points
+from the page's top-left corner;
+evidence responses return the containing passage's `pages`. Chapters use the same
+`Chapter N` rule as TXT on Docling headings; other headings are not passages.
+
+Normalization `pdf-punct-v1` removes the single space Docling inserts before a
+line-final period or comma (`roof .`). Spaces before `?`, `!`, `;` and `:` are
+retained because French typography uses them. No other text is rewritten.
+
+| Outcome | Behavior |
+|---|---|
+| Encrypted or password-protected | `PDF_ENCRYPTED` before layout work |
+| Malformed or unreadable | `INVALID_SOURCE` |
+| No extractable text layer (scanned or outlined text) | `TEXT_LAYER_UNAVAILABLE`; OCR is not enabled |
+| More than 2,000 pages | `PARSER_LIMIT` before layout work |
+| Docling 600-second document timeout or page errors | `PARTIAL_EXTRACTION`; never a partial success |
+| Some pages without text | Succeeds with `pages_without_text` |
+| Pictures or tables present | Succeeds with `non_text_content_skipped` |
+
+Every successful PDF carries the `inferred_paragraphs` warning. TXT passage,
+chapter and code-point limits also apply. The worker actor's 15-minute limit
+only catches a stuck process; Docling's own timeout fails first.
+
+Measured on the Chromium-rendered synthetic corpus (one chapter per A5 page):
+31 of 33 annotated spans are exact substrings of a single passage, and every
+annotated sentence appears on its chapter's page and no other. One miss is a
+paragraph the layout model split in two. The other is `left-cheek`: the PDF text
+layer itself drops a line-break hyphen (`pdftotext` agrees). Layout segmentation
+may also merge authored paragraphs. Quotes must therefore come from stored
+passage text, not from the author's original. Real books with columns, footnotes,
+drop caps or ligatures are not yet measured.

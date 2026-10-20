@@ -7,7 +7,7 @@ from pydantic import Field, field_validator
 
 class UploadMetadata(ContractModel):
     title: str = Field(min_length=1, max_length=256)
-    format: Literal["txt", "md"]
+    format: Literal["txt", "md", "pdf"]
 
     @field_validator("title")
     @classmethod
@@ -22,7 +22,7 @@ class WorkView(ContractModel):
     title: str
     document_id: uuid.UUID
     revision: int = Field(ge=1)
-    format: Literal["txt", "md"]
+    format: Literal["txt", "md", "pdf"]
     byte_count: int = Field(ge=1)
     sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
 
