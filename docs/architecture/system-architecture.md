@@ -73,6 +73,29 @@ Deterministic adapters make contract tests reproducible; they are not proof of
 live extraction quality. Every live role needs source handling, timeout, retry,
 and budget choices before use. Do not select models implicitly in documentation.
 
+### Provider envelope — T17
+
+`app/providers/contracts.py` defines a frozen `ProviderRequest` (role, purpose,
+prompt version, system-owned instructions, up to 64 quoted `SourceItem`s and
+`Limits`) and rejects unknown fields, so a request cannot carry tools,
+credentials or scope. `compose` puts the instructions plus a fixed
+untrusted-data notice in the system text and the sources only in a JSON data
+block; an adapter receives that `ProviderCall` (system, data, output schema,
+output-token and time bounds) and nothing else. Outputs subclass
+`StructuredOutput` (`extra="forbid"`, strict types, a `schema_version`).
+
+`app/providers/execution.py` returns either the validated output with outcome
+`succeeded` or no value with one of `invalid_output`, `timeout`,
+`budget_exhausted`, `cancelled`, `provider_unavailable` or `input_too_large`.
+Oversized input and cancellation before the call skip the adapter; cancellation,
+elapsed time or token budget exceeded after the call discard the response.
+Execution has no side effects: the caller persists the safe `RunRecord` with
+`persist_run` in the same transaction as any canonical write, so malformed or
+discarded output cannot reach canon. Default limits (60 s, 48,000 input
+characters, 2,048 output and 16,000 total tokens) are T17 engineering bounds
+under OPEN-05. `ScriptedAdapter` and `RuleAdapter` are the deterministic
+adapters; no live adapter or model is selected yet (D3/OPEN-02).
+
 ## Repository layout and remaining modules
 
 ```text
@@ -90,9 +113,10 @@ docs/                        working specifications
 ```
 
 The shell, access boundary, durable probe-job service, worker entry points,
-Alembic migrations, generated contracts and foundation tests exist. Ingestion,
-narrative, retrieval, reconstruction, verification, visualization and provider
-adapters remain planned. See the
+Alembic migrations, generated contracts and foundation tests exist, as do
+ingestion and the provider envelope with deterministic adapters. Narrative,
+retrieval, reconstruction, visualization and live provider adapters remain
+planned. See the
 [operations guide](../operations/development-and-operations.md) for the runnable
 foundation and its verification commands.
 

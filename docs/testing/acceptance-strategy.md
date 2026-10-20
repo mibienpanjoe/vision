@@ -1,8 +1,9 @@
 # Acceptance and verification strategy
 
 **Status:** corpus, local foundation and TXT/Markdown upload → parser → authorized
-evidence checks are implemented; narrative/provider
-acceptance scenarios below remain pending.
+evidence checks are implemented; the provider envelope has deterministic
+contract tests (T17); narrative and live-provider acceptance scenarios below
+remain pending.
 The [requirements](../product/requirements-and-acceptance.md) own product promises;
 this page owns how to demonstrate them without relying on attractive output.
 
