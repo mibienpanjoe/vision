@@ -106,6 +106,16 @@ with 0 misses, 0 false merges, 0 splits and 0 ambiguity violations against the
 annotations, plus unannotated object entities. Routed models varied per call
 (e.g. qwen3.8-27b, gpt-oss-120b, Gemini variants), so results are not
 reproducible by model name; a pinned model was unavailable upstream at the time.
+A second live run of the full entity → event → fact chain succeeded on the
+synthetic corpus (bounded retries absorbed three unavailable routes and two
+invalid outputs). Review: rumor, metaphor and dream claims stayed
+non-canonical, the sword stayed Brann's, the childhood memory kept its
+modality, and the war scar was attributed correctly. Gaps: seven facts were
+rejected because their subject did not match an entity label exactly (most of
+the house roof history was lost), one of the two conflicting eye colours was
+not extracted so no conflict was recorded, attribute names varied
+(`left_cheek` vs `left_cheek_scar`), and one entity split recurred ("Captain
+Brann" / "Brann"). Live quality is therefore partial and not a release claim.
 
 ## Repository layout and remaining modules
 

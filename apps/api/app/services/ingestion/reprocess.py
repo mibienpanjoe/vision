@@ -3,6 +3,7 @@
 from app.core.errors import PublicError
 from app.core.security import owned_object
 from app.models.generations import SourceGeneration
+from app.models.narrative_jobs import NarrativeJob
 from app.models.works import Document, IngestionJob, Work
 from app.schemas.works import GenerationPage, GenerationView
 from app.services.dispatch import dispatch_ingestions
@@ -13,10 +14,12 @@ STATUS = {"queued": "building", "running": "building", "succeeded": "available",
           "failed": "failed", "cancelled": "cancelled"}
 
 
-def generation_view(generation, job, current_id):
+def generation_view(generation, job, current_id, narrative=None):
     return GenerationView(id=generation.id, ordinal=generation.ordinal, parser_revision=generation.parser_revision,
                           status=STATUS[job.status], current=generation.id == current_id,
                           parsed=job.status == "succeeded", narrative_ready=generation.narrative_ready_at is not None,
+                          narrative_status=narrative.status if narrative else "not_started",
+                          narrative_error=narrative.error_code if narrative else None,
                           search_ready=generation.search_ready_at is not None, job_id=job.id, warnings=job.warnings)
 
 
@@ -34,8 +37,12 @@ def rows(db, document):
 
 def list_generations(db, actor, work_id):
     document = owned_document(db, actor, work_id)
-    return GenerationPage(items=[generation_view(generation, job, document.current_generation_id)
-                                 for generation, job in rows(db, document)])
+    found = rows(db, document)
+    narratives = {n.generation_id: n for n in db.scalars(select(NarrativeJob).where(
+        NarrativeJob.generation_id.in_([generation.id for generation, _ in found])))}
+    return GenerationPage(items=[generation_view(generation, job, document.current_generation_id,
+                                                 narratives.get(generation.id))
+                                 for generation, job in found])
 
 
 def create_generation(db, actor, work_id, key, correlation_id):

@@ -2,7 +2,9 @@
 
 **Status:** executable local foundation and checked synthetic corpus, 2026-10-19.
 TXT, Markdown, PDF (no OCR) and EPUB ingestion with retry/cancellation and
-bounded evidence reads are implemented; narrative reconstruction remains planned.
+bounded evidence reads are implemented, as are source-grounded entity, event and
+visual-fact derivation with spoiler-safe browse; retrieval and reconstruction
+remain planned.
 
 The structure follows FIRA's separation of product scope, domain contracts,
 canonical data, operations, and architecture decisions. FIRA's financial domain,

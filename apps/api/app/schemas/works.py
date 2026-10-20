@@ -60,6 +60,8 @@ class GenerationView(ContractModel):
     current: bool
     parsed: bool
     narrative_ready: bool
+    narrative_status: Literal["not_started", "queued", "running", "succeeded", "failed"]
+    narrative_error: str | None = Field(max_length=64, description="Safe error code of the last narrative attempt")
     search_ready: bool
     job_id: uuid.UUID
     warnings: list[str]

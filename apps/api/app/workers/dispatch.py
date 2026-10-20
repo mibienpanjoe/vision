@@ -1,6 +1,11 @@
 from app.db.session import configured_engine
-from app.services.dispatch import dispatch_ingestions, dispatch_pending
+from app.services.dispatch import (
+    dispatch_ingestions,
+    dispatch_narratives,
+    dispatch_pending,
+)
 from app.services.ingestion.jobs import recover_ingestions
+from app.services.narrative.pipeline import recover_narratives
 
 
 def main() -> None:
@@ -10,10 +15,13 @@ def main() -> None:
     try:
         recovered = recover_ingestions(engine)
         print(f"Reconciled {recovered} interrupted ingestion job(s).")
+        print(f"Reconciled {recover_narratives(engine)} interrupted narrative job(s).")
         total = 0
         while count := dispatch_pending(engine):
             total += count
         while count := dispatch_ingestions(engine):
+            total += count
+        while count := dispatch_narratives(engine):
             total += count
         print(f"Published {total} pending job(s).")
     finally:

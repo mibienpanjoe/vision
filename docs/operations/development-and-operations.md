@@ -277,7 +277,7 @@ binds loopback 8000, PostgreSQL 55432 and Redis 56379. The command is local-only
 |---|---|
 | `make services migrate` | Start/check PostgreSQL/Redis and apply migrations |
 | `make api`, `make worker`, `make web` | Run one service separately in its own terminal |
-| `make dispatch` | Reconcile pending probe and ingestion queue publication after a broker outage |
+| `make dispatch` | Reconcile pending probe, ingestion and narrative queue publication after a broker outage; requeue interrupted narrative jobs |
 | `make reconcile-sources` | Remove old, unreferenced interrupted originals; preserve active/linked sources |
 | `make browsers` | Install the isolated Chromium browser; OS browser prerequisites may be required |
 | `make check` | Repository lint, non-infrastructure tests, deterministic contract regeneration, Node/type checks, web build and shell browser checks, documentation checks |
@@ -317,8 +317,10 @@ active leases, and checks PostgreSQL before removing unreferenced files at least
 one hour old. Run it after interrupted uploads or uncertain database commits.
 It is interrupted-upload cleanup, not reader-requested deletion or retention.
 Those lifecycles remain with their later tasks. Text-ingestion intents use their
-own queue/consumer; `make dispatch` reconciles both probe and ingestion
-publication. The worker verifies the retained source fingerprint before parsing.
+own queue/consumer; `make dispatch` reconciles probe, ingestion and narrative
+publication. Set `VISION_NARRATIVE_PROVIDER=live` in `.env` to let the worker
+run narrative extraction through the gateway (synthetic text only until OPEN-02
+records provider data handling). The worker verifies the retained source fingerprint before parsing.
 
 
 ## PDF parser runtime — T14

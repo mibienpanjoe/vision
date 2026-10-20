@@ -1,6 +1,7 @@
 import dramatiq
 from app.services.dispatch import configured_broker
 from app.services.ingestion.parse import execute_ingestion
+from app.services.narrative.pipeline import execute_narrative
 from app.services.probe import execute_probe
 
 broker = configured_broker()
@@ -19,3 +20,10 @@ def probe(job_id: str) -> None:
 @dramatiq.actor(queue_name="ingestion", max_retries=2, min_backoff=1000, max_backoff=5000, time_limit=900_000)
 def ingest(job_id: str) -> None:
     execute_ingestion(job_id)
+
+
+# Provider calls are individually bounded (120 s, three calls per batch); this
+# limit only catches a stuck worker. Stages are idempotent under redelivery.
+@dramatiq.actor(queue_name="narrative", max_retries=2, min_backoff=1000, max_backoff=5000, time_limit=3_600_000)
+def narrate(job_id: str) -> None:
+    execute_narrative(job_id)

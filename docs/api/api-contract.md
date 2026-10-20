@@ -338,3 +338,5 @@ Every returned record passes the
 spans use the `SourceSpan` contract and can be resolved through the evidence
 route under the same boundary. Entity detail returns at most 200 mentions with
 `mentions_truncated`. Generated types: `EntityPage`, `EntityDetail`.
+`GenerationView` adds `narrative_status` (`not_started`, `queued`, `running`,
+`succeeded`, `failed`) and the safe `narrative_error` code (T22).

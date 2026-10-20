@@ -327,3 +327,23 @@ generation is published.
 `search_ready` stay false until the narrative (T22) and search (T25) stages
 record their own completion for that generation. Migration 0008 turns each
 existing job into generation 1 and makes succeeded ones current.
+
+## Narrative completion — T22
+
+When a parse succeeds, the same transaction that publishes its passages records
+a `narrative_jobs` row for the generation; the worker enqueues it on the
+`narrative` queue after commit, and `make dispatch` publishes any job left
+pending by a broker failure and requeues jobs interrupted mid-run (three
+attempts). The job runs the entity, event and visual-fact derivations in order,
+recording the stage it reached. Only when all three succeed does it set the
+generation's `narrative_ready_at` and finish `succeeded`; otherwise it ends
+`failed` with a safe code (for example `PROVIDER_INVALID_OUTPUT`,
+`PROVIDER_NOT_ENABLED`, `ATTEMPTS_EXHAUSTED`). Derivations are idempotent, so
+redelivery or a requeued job reuses succeeded stages and never duplicates rows.
+The generation view reports `narrative_status` and `narrative_error`.
+
+The worker uses the live gateway only when `VISION_NARRATIVE_PROVIDER=live`.
+Without it, jobs fail visibly as `PROVIDER_NOT_ENABLED`, because live extraction
+sends passage text to upstream providers whose data handling is not yet
+recorded (OPEN-02). No owner-facing retry route exists yet; a failed job
+completes again only through a new generation or operator requeue.
