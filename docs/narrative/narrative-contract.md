@@ -15,6 +15,28 @@ about another person, and negation must retain their actual owner and meaning.
 A fact about a sword does not become a trait of its wielder unless an explicit
 relationship makes that distinction clear in the output.
 
+### Entity derivation — T18
+
+`services/narrative/entities.py` derives entities for one source generation
+as a versioned `derivations` row (stage `entities`, processing version =
+prompt/schema/provider/model). A changed prompt, schema or model creates a new
+derivation; earlier derivations and their rows are never rewritten. Passages are
+sent in chapter-aligned batches within the provider limits.
+
+The model returns quotes, not offsets. Each mention, alias and relation is kept
+only when its quote is found verbatim in the referenced passage (alias labels
+must also appear in the quote) and its entity keys were declared; otherwise it is
+counted by reason in `derivations.rejections` without storing text. Entities
+without a grounded mention are dropped. Entities from different batches unify
+only on identical kind and case-folded label; titles never merge identities.
+A mention with no supported identity keeps `entity_id` null and lists its
+candidates; an identity link such as Wren = Arthur is a `same_as` relation
+carrying its own chapter-five span, so T21 can apply it only within scope.
+
+Publication is all-or-nothing under the derivation row lock and an attempt
+counter: a failed, cancelled or superseded attempt stores only its model runs.
+A failed derivation can be retried; a succeeded one is returned unchanged.
+
 ## Two independent axes of time
 
 Source position identifies where information is revealed. Story time identifies

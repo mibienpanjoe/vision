@@ -94,7 +94,12 @@ Execution has no side effects: the caller persists the safe `RunRecord` with
 discarded output cannot reach canon. Default limits (60 s, 48,000 input
 characters, 2,048 output and 16,000 total tokens) are T17 engineering bounds
 under OPEN-05. `ScriptedAdapter` and `RuleAdapter` are the deterministic
-adapters; no live adapter or model is selected yet (D3/OPEN-02).
+adapters. T18 adds `ChatGateway` (`app/providers/openai_compatible.py`), an
+OpenAI-compatible chat adapter for the local FreeLLM gateway (DEC-24): JSON
+object mode, temperature 0, the output schema appended to the system text, no
+tools, and HTTP/timeout failures mapped to the typed outcomes. It is disabled
+unless `VISION_LLM_API_KEY` is set; the routed model name returned by the
+gateway is recorded as `model_version`. Live verification is pending (OPEN-02).
 
 ## Repository layout and remaining modules
 

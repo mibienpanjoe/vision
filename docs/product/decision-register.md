@@ -36,6 +36,7 @@
 | DEC-28 | PDF via Docling 2.140.0 (pypdfium2 backend, local Heron layout model, CPU-only PyTorch); OCR and table structure disabled; text-layer-free PDFs fail explicitly | T14 under maintainer selection, 2026-10-20; [ingestion](../ingestion/ingestion-contract.md#pdf-parser-revision--t14) |
 | DEC-29 | EPUB via a project XHTML adapter (container validation before parsing, defusedxml for package XML, network-free lxml HTML for spine documents) rather than Docling's EPUB backend; spine order with document/fragment anchors | T15; [ingestion](../ingestion/ingestion-contract.md#epub-parser-revision--t15) |
 | DEC-30 | Provider envelope: frozen tool-free requests, sources only as a quoted JSON data block, strict schema-versioned outputs, seven distinct outcomes, side-effect-free execution persisted with canon; default 60 s / 48,000 chars / 2,048 output / 16,000 total tokens | T17 engineering bounds under OPEN-05; [architecture](../architecture/system-architecture.md#provider-envelope--t17) |
+| DEC-31 | Entity derivation: versioned per-generation derivations, chapter-aligned batches, verbatim quote grounding with counted rejections, kind+label unification only, explicit candidates and `same_as` links, attempt-guarded atomic publication | T18; [narrative contract](../narrative/narrative-contract.md#entity-derivation--t18) |
 
 ## Proposed elaborations
 
@@ -52,7 +53,7 @@ documents fixed all details.
 | ID | Question | Needed before |
 |---|---|---|
 | OPEN-01 | Resolved by DEC-26; later work consumes the validated ActorScope | Any network-accessible real upload flow |
-| OPEN-02 | Gateway selected by DEC-24; role/model capabilities, credentials, budgets and source handling remain to verify | Live model integration |
+| OPEN-02 | Gateway selected by DEC-24; T18 adapter reads `VISION_LLM_*` (default model `auto`, proposed); live model capability, upstream source-text handling, retry and cost ceilings remain to verify | Live model integration and any real-book extraction |
 | OPEN-03 | First language resolved by DEC-22 (English); broader languages/configurations remain open | Lexical indexing and multilingual claims |
 | OPEN-04 | Resolved for the first slice by DEC-22; revisit only with an explicit changed decision | Temporal reconstruction implementation |
 | OPEN-05 | Concrete upload/expansion/time/token/cost/candidate limits and performance targets | Accepting untrusted workloads; then calibrate with measurements |

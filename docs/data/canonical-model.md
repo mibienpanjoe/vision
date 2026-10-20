@@ -31,9 +31,10 @@ Physical IDs are opaque; their final storage type is an implementation choice.
 | `chapters` | Source-order section; document, ordinal, title, anchors, structure quality |
 | `scenes` | Optional scene grouping; source range, participants/context, boundary uncertainty |
 | `passages` | Immutable parsed text; document/parser revision, chapter/scene where known, source anchors, neighboring passages |
-| `entities` | Identity within a work; kind, preferred label, resolution status |
+| `derivations` | T18: one versioned derivation stage of a source generation; processing version, status, attempt, rejection counts |
+| `entities` | Identity within a work; kind, preferred label, resolution status; T18 scopes each row to a derivation |
 | `entity_aliases` | Candidate or supported names/titles; entity, scope, provenance, ambiguity |
-| `entity_mentions` | Exact source occurrence; span, candidate entities, resolved identity if justified |
+| `entity_mentions` | Exact source occurrence; span, candidate entities (`mention_candidates`), resolved identity if justified, model run |
 | `entity_relations` | Source-supported relationship between identities; type, temporal scope, evidence |
 | `events` | Narrative event; label, participants, place, source evidence, temporal status |
 | `event_relations` | Before/after/during/overlap/unknown/inconsistent relation; linked events and support |

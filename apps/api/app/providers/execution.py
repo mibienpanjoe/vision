@@ -96,9 +96,9 @@ def execute(adapter: ProviderAdapter, request: ProviderRequest, output: type[Str
     return finish("succeeded")
 
 
-def persist_run(db, owner_id, record: RunRecord, generation_id=None) -> ModelRun:
+def persist_run(db, owner_id, record: RunRecord, generation_id=None, derivation_id=None) -> ModelRun:
     usage = record.usage
-    run = ModelRun(owner_id=owner_id, generation_id=generation_id, role=record.role, purpose=record.purpose,
+    run = ModelRun(owner_id=owner_id, generation_id=generation_id, derivation_id=derivation_id, role=record.role, purpose=record.purpose,
                    provider=record.provider, model=record.model, model_version=record.model_version,
                    prompt_version=record.prompt_version, schema_version=record.schema_version,
                    config=record.config, input_refs=record.input_refs, input_sha256=record.input_sha256,

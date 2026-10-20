@@ -135,6 +135,14 @@ verification before their first consumer. Reuse this installation; no replacemen
 gateway or external provider account is required. No model call is needed for
 Phase 1. Keep configuration/secrets private and record safe model/gateway lineage.
 
+Vision reads `VISION_LLM_API_KEY` (the gateway's unified key, from its Keys
+page), `VISION_LLM_BASE_URL` (default `http://127.0.0.1:3001/v1`) and
+`VISION_LLM_MODEL` (default `auto`) from the private `.env`. Without the key no
+live adapter is constructed and the opt-in live extraction test is skipped. The
+gateway forwards requests to whichever upstream free provider it routes to, so
+any text sent leaves the machine; only the synthetic corpus may be sent until
+provider data handling is recorded (SECURITY.md, OPEN-02).
+
 ## Delivery scope
 
 The application will run locally, per DEC-25. Bind services to loopback and use
