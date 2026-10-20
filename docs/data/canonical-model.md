@@ -1,6 +1,8 @@
 # Canonical narrative data model
 
-**Status:** conceptual baseline from overview §7; physical schema not implemented.
+**Status:** conceptual baseline from overview §7; T10 implements works,
+immutable original documents and queued ingestion jobs. Derived narrative
+schemas remain planned.
 This page owns object meaning, provenance, and relationship constraints.
 
 ## Source and derived layers

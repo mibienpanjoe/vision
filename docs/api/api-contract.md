@@ -1,8 +1,8 @@
 # HTTP API contract draft
 
 **Status:** shared outcomes and mutation conventions selected in DEC-23.
-Health, authentication and probe-job routes exist as detailed below; the
-book and reconstruction resource surface remains illustrative. T06 implements
+Health, authentication, probe jobs, private text-upload/library and bounded
+evidence routes exist as detailed below; reconstruction resources remain illustrative. T06 implements
 strict shared Pydantic models and generated JSON Schema/TypeScript, independently
 of the illustrative resource payloads below.
 
@@ -123,10 +123,9 @@ prior ETag; If-Match applies only where an existing resource revision is mutated
 
 ## Unresolved wire details
 
-Authentication and probe-job submission/polling are implemented below. Before
-each remaining consumer, define multipart/upload encoding and pagination (T10),
-authorized source-span retrieval (T12), ingestion retry/cancellation (T13),
-refinement (T38), deletion (T46), and streaming/version evolution where needed.
+Authentication, probe jobs, multipart uploads/library pagination, authorized
+source-span retrieval and ingestion retry/cancellation are implemented below.
+Before each remaining consumer, define refinement (T38), deletion (T46), and streaming/version evolution where needed.
 The overview's endpoint list alone does not cover the complete
 library/evidence/job product flow.
 
@@ -226,3 +225,99 @@ lock and transaction. Duplicate delivery cannot duplicate its committed result.
 The instantaneous probe exposes queued/succeeded, not a simulated long-running
 stage. Its attempt record retains stage, outcome and timestamps. T13 introduces
 long-running ingestion stages, failures/cancellation and broader recovery.
+
+
+## Private uploads and library — T10
+
+| Endpoint | Implemented behavior |
+|---|---|
+| `POST /v1/works` | Authenticated multipart `title`, `format` (`txt`/`md`/`pdf`/`epub`), and one `file`; required `Idempotency-Key`; `202` with work and ingestion reference |
+| `GET /v1/works` | Owner-scoped UUID-ascending keyset page; `limit` 1–100 (default 20), optional UUID `after`; `items` and nullable `next_cursor` |
+| `GET /v1/works/{id}` | Owned work metadata, its first immutable document revision and `current_parser_revision` (null until a generation is published) |
+| `GET /v1/works/{id}/original` | Owned original bytes as a nosniff attachment with a fixed safe filename; no public storage URL |
+| `GET /v1/works/{id}/ingestions/{job_id}` | Job resolved through the owned work/document; lifecycle state, `revision` (also the `ETag`), cancel request, attempts, safe error code and structure warnings |
+| `POST /v1/works/{id}/ingestions/{job_id}/retry` and `.../cancel` | Owned conditional mutation; see [ingestion recovery](#ingestion-retry-and-cancellation--t13) |
+| `GET /v1/works/{id}/generations` | Owned source generations in ordinal order: parser revision, derived status, `current`, `parsed`, `narrative_ready`, `search_ready`, job ID and warnings |
+| `POST /v1/works/{id}/generations` | Rebuild with the format's current parser revision; required `Idempotency-Key`, no body; `202` with the new generation |
+
+Upload authentication and Origin checks precede body consumption. The boundary
+counts actual received bytes, permits at most 64 KiB of multipart overhead,
+limits fields/files and enforces the [input policy](../ingestion/ingestion-contract.md#first-upload-input-boundary--t10).
+Names, MIME claims and caller-supplied ownership never establish source type,
+storage path or authority. Metadata belongs in multipart fields, not URL queries;
+unknown/duplicate fields and extra files fail safely. Errors use the common
+safe envelope: invalid content/metadata `422`, malformed multipart `400`, size
+`413`, media type `415`, transfer timeout `408`, unavailable storage `503`.
+
+Creation keys are scoped to authenticated owner and work creation. Exact title,
+format and original SHA-256 define request identity; replay returns the same
+work/document/job, while changed input gives `409`. Keys currently persist with
+the work without expiry. A lost acknowledgement can return `503` after SQL
+committed: replay recovers the persisted reference without deleting its source.
+Pagination cursors are positions, not authority; every page reapplies owner scope.
+Response models are generated from `schemas/works.py`; storage references,
+private filesystem paths, owner identifiers and original filenames are excluded.
+
+T11 publishes text-ingestion intents through Redis to the real parser worker.
+An unavailable broker leaves SQL intent visibly pending for `make dispatch`.
+Successful parsing persists exact paragraph text and chapter anchors; `parsed`
+does not mean the full narrative/search generation is ready.
+
+
+## Authorized evidence — T12
+
+`POST /v1/works/{work_id}/evidence` is a read-only lookup using a JSON body so
+source quotes do not enter URL/access logs. It requires authentication and the
+usual mutation-method Origin check, but no business idempotency key: it creates
+no durable object or provider effect. The generated `EvidenceRequest` carries
+a bounded `SourceSpan`, exact `parser_revision`, `reading_boundary`, and optional
+`context_before`/`context_after` (0–500, default 100).
+
+The service resolves owner → work → document revision → parser revision → passage
+and chapter eligibility before validating the quote. Missing/inaccessible,
+wrong-revision/parser and out-of-cutoff references return the same safe `404`.
+Through-chapter mode requires an actual chapter in that exact document/parser
+revision; unassigned passages fail closed. Whole-book mode permits passages with
+unknown chapter structure. Quote mismatch and invalid ranges return `422`.
+
+The response retains the validated span, parser revision, optional eligible
+chapter ID, a passage-local excerpt, excerpt/highlight code-point coordinates,
+original-text code-point coordinates, and nullable `pages` and `section`. For
+PDF and EPUB sources the original coordinates index the parser's canonical
+text. `pages` lists a PDF passage's pages. `section` gives an EPUB passage's
+content document and fragment. See the
+[PDF](../ingestion/ingestion-contract.md#pdf-parser-revision--t14) and
+[EPUB](../ingestion/ingestion-contract.md#epub-parser-revision--t15) parser revisions. Quotes are at most 2,000 code points;
+context is bounded to the same passage, with at most 3,000 returned code points.
+No neighbor IDs, future chapter titles, storage paths or original filenames leak
+through the response. Requests are bounded to 32 KiB of actual received JSON and
+a 10-second deadline (`413`/`408`); the common error envelope never echoes quotes.
+This endpoint does not render HTML or establish narrative-generation readiness.
+
+
+## Ingestion retry and cancellation — T13
+
+Both mutations require authentication, the mutation Origin check, an
+`Idempotency-Key` and `If-Match` carrying the job's current strong ETag
+(`"<revision>"`). The job resolves through the owned work and document, so
+another owner receives the common `404`. A missing precondition returns `428`,
+a stale or malformed revision `412`, and an action invalid for the current state
+`409 STATE_CONFLICT`. Each response returns the job view and its new `ETag`.
+
+Keys are scoped to one job. Replaying the same key, action and expected revision
+returns the job's current view without a second effect; reusing a key for a
+different action or revision returns `409 IDEMPOTENCY_CONFLICT`.
+
+| Action | Allowed from | Effect |
+|---|---|---|
+| `cancel` | `queued` | Immediately confirmed `cancelled`; no worker has started it |
+| `cancel` | `running` | Sets `cancel_requested`; status stays `running` until the worker or recovery confirms `cancelled` without publishing passages |
+| `retry` | `failed`, `cancelled` | Returns to `queued`, clears the safe error and publishes dispatch intent; `429 ATTEMPTS_EXHAUSTED` after three attempts |
+
+A cancel request is therefore distinct from confirmed cancellation.
+
+A rebuild key is scoped to the document: replaying it returns that generation's
+current view. A refused rebuild returns `409` with `GENERATION_IN_PROGRESS`,
+`GENERATION_CURRENT` or `GENERATION_EXISTS`, as defined by the
+[source generation rules](../ingestion/ingestion-contract.md#source-generations--t16). Retry and
+cancel never delete or rewrite passages already published by a succeeded job.

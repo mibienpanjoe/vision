@@ -56,6 +56,10 @@ def setup():
     else:
         print("Preserved existing private .env.")
     run(["uv", "sync", "--project", "apps/api", "--locked"])
+    models = ROOT / ".local/docling-models"
+    if not models.is_dir():
+        # One-time layout model fetch; the PDF worker itself never downloads.
+        run(["uv", "run", "--locked", "docling-tools", "models", "download", "layout", "-o", str(models)], cwd=API)
     run(["pnpm", "install", "--frozen-lockfile", "--ignore-scripts"])
 
 
@@ -99,6 +103,8 @@ def main():
             ],
             cwd=API,
         )
+    elif command == "reconcile-sources":
+        run(["uv", "run", "--locked", "python", "-m", "app.services.ingestion.reconcile"], cwd=API)
     elif command in {"worker", "dispatch"}:
         run(["uv", "run", "--locked", "python", "-m", "app.workers.dispatch"], cwd=API)
         if command == "worker":

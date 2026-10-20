@@ -1,4 +1,4 @@
-.PHONY: setup services migrate api worker dispatch web dev stop browsers lint unit contracts web-check docs check integration browser-session
+.PHONY: setup services migrate api worker dispatch web dev stop browsers lint unit contracts web-check docs check integration browser-session reconcile-sources
 setup:
 	python3 scripts/local.py setup
 services:
@@ -39,3 +39,6 @@ integration:
 	python3 scripts/local.py integration
 browser-session:
 	uv run --project apps/api --locked python scripts/browser_session.py
+
+reconcile-sources:
+	python3 scripts/local.py reconcile-sources

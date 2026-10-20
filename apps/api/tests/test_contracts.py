@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
-from app.schemas import access, common, scope
+from app.schemas import access, common, evidence, scope
 from pydantic import ValidationError
 
 CASES = json.loads(
@@ -10,6 +10,7 @@ CASES = json.loads(
 )
 MODELS = {
     "SourceSpan": scope.SourceSpan,
+    "EvidenceView": evidence.EvidenceView,
     "PrincipalView": access.PrincipalView,
     "RequestScope": scope.RequestScope,
     "ErrorEnvelope": common.ErrorEnvelope,

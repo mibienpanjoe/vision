@@ -39,6 +39,208 @@
       "title": "ErrorEnvelope",
       "type": "object"
     },
+    "EvidenceRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "context_after": {
+          "default": 100,
+          "maximum": 500,
+          "minimum": 0,
+          "title": "Context After",
+          "type": "integer"
+        },
+        "context_before": {
+          "default": 100,
+          "maximum": 500,
+          "minimum": 0,
+          "title": "Context Before",
+          "type": "integer"
+        },
+        "parser_revision": {
+          "maxLength": 32,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "title": "Parser Revision",
+          "type": "string"
+        },
+        "reading_boundary": {
+          "discriminator": {
+            "mapping": {
+              "through_chapter": "#/$defs/ThroughChapter",
+              "whole_book": "#/$defs/WholeBook"
+            },
+            "propertyName": "mode"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/WholeBook"
+            },
+            {
+              "$ref": "#/$defs/ThroughChapter"
+            }
+          ],
+          "title": "Reading Boundary"
+        },
+        "span": {
+          "$ref": "#/$defs/EvidenceSpan"
+        }
+      },
+      "required": [
+        "span",
+        "parser_revision",
+        "reading_boundary"
+      ],
+      "title": "EvidenceRequest",
+      "type": "object"
+    },
+    "EvidenceSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "document_revision_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Document Revision Id",
+          "type": "string"
+        },
+        "end": {
+          "exclusiveMinimum": 0,
+          "title": "End",
+          "type": "integer"
+        },
+        "offset_unit": {
+          "const": "unicode_code_point",
+          "default": "unicode_code_point",
+          "title": "Offset Unit",
+          "type": "string"
+        },
+        "passage_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Passage Id",
+          "type": "string"
+        },
+        "quote": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "document_revision_id",
+        "passage_id",
+        "start",
+        "end",
+        "quote"
+      ],
+      "title": "EvidenceSpan",
+      "type": "object"
+    },
+    "EvidenceView": {
+      "additionalProperties": false,
+      "properties": {
+        "chapter_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Chapter Id"
+        },
+        "excerpt": {
+          "maxLength": 3000,
+          "title": "Excerpt",
+          "type": "string"
+        },
+        "excerpt_start": {
+          "minimum": 0,
+          "title": "Excerpt Start",
+          "type": "integer"
+        },
+        "highlight_end": {
+          "exclusiveMinimum": 0,
+          "title": "Highlight End",
+          "type": "integer"
+        },
+        "highlight_start": {
+          "minimum": 0,
+          "title": "Highlight Start",
+          "type": "integer"
+        },
+        "original_end": {
+          "exclusiveMinimum": 0,
+          "title": "Original End",
+          "type": "integer"
+        },
+        "original_start": {
+          "minimum": 0,
+          "title": "Original Start",
+          "type": "integer"
+        },
+        "pages": {
+          "anyOf": [
+            {
+              "items": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Source pages of the containing passage, when the format has pages",
+          "title": "Pages"
+        },
+        "parser_revision": {
+          "title": "Parser Revision",
+          "type": "string"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "maxLength": 1024,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Content document and fragment of the containing passage, for EPUB",
+          "title": "Section"
+        },
+        "span": {
+          "$ref": "#/$defs/SourceSpan"
+        }
+      },
+      "required": [
+        "span",
+        "parser_revision",
+        "excerpt",
+        "excerpt_start",
+        "highlight_start",
+        "highlight_end",
+        "original_start",
+        "original_end",
+        "chapter_id",
+        "pages",
+        "section"
+      ],
+      "title": "EvidenceView",
+      "type": "object"
+    },
     "Failed": {
       "additionalProperties": false,
       "properties": {
@@ -62,6 +264,98 @@
         "error"
       ],
       "title": "Failed",
+      "type": "object"
+    },
+    "IngestionView": {
+      "additionalProperties": false,
+      "properties": {
+        "attempts": {
+          "minimum": 0,
+          "title": "Attempts",
+          "type": "integer"
+        },
+        "cancel_requested": {
+          "title": "Cancel Requested",
+          "type": "boolean"
+        },
+        "correlation_id": {
+          "title": "Correlation Id",
+          "type": "string"
+        },
+        "dispatch_pending": {
+          "title": "Dispatch Pending",
+          "type": "boolean"
+        },
+        "document_id": {
+          "format": "uuid",
+          "title": "Document Id",
+          "type": "string"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error Code"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "stage": {
+          "enum": [
+            "awaiting_parser",
+            "parse",
+            "parsed",
+            "failed",
+            "cancelled"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed",
+            "cancelled"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "document_id",
+        "status",
+        "stage",
+        "revision",
+        "cancel_requested",
+        "attempts",
+        "error_code",
+        "warnings",
+        "dispatch_pending",
+        "correlation_id"
+      ],
+      "title": "IngestionView",
       "type": "object"
     },
     "InsufficientEvidence": {
@@ -158,6 +452,36 @@
         "dispatch_pending"
       ],
       "title": "JobView",
+      "type": "object"
+    },
+    "LibraryPage": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/WorkView"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Cursor"
+        }
+      },
+      "required": [
+        "items",
+        "next_cursor"
+      ],
+      "title": "LibraryPage",
       "type": "object"
     },
     "LoginRequest": {
@@ -488,6 +812,50 @@
       "title": "ThroughChapter",
       "type": "object"
     },
+    "UploadAccepted": {
+      "additionalProperties": false,
+      "properties": {
+        "job": {
+          "$ref": "#/$defs/IngestionView"
+        },
+        "work": {
+          "$ref": "#/$defs/WorkView"
+        }
+      },
+      "required": [
+        "work",
+        "job"
+      ],
+      "title": "UploadAccepted",
+      "type": "object"
+    },
+    "UploadMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "enum": [
+            "txt",
+            "md",
+            "pdf",
+            "epub"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "format"
+      ],
+      "title": "UploadMetadata",
+      "type": "object"
+    },
     "WholeBook": {
       "additionalProperties": false,
       "properties": {
@@ -502,6 +870,73 @@
       ],
       "title": "WholeBook",
       "type": "object"
+    },
+    "WorkView": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_count": {
+          "minimum": 1,
+          "title": "Byte Count",
+          "type": "integer"
+        },
+        "current_parser_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Current Parser Revision"
+        },
+        "document_id": {
+          "format": "uuid",
+          "title": "Document Id",
+          "type": "string"
+        },
+        "format": {
+          "enum": [
+            "txt",
+            "md",
+            "pdf",
+            "epub"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "document_id",
+        "revision",
+        "format",
+        "byte_count",
+        "sha256",
+        "current_parser_revision"
+      ],
+      "title": "WorkView",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -510,8 +945,20 @@
     "error": {
       "$ref": "#/$defs/ErrorEnvelope"
     },
+    "evidence": {
+      "$ref": "#/$defs/EvidenceView"
+    },
+    "evidence_request": {
+      "$ref": "#/$defs/EvidenceRequest"
+    },
+    "ingestion": {
+      "$ref": "#/$defs/IngestionView"
+    },
     "job": {
       "$ref": "#/$defs/JobView"
+    },
+    "library_page": {
+      "$ref": "#/$defs/LibraryPage"
     },
     "login_request": {
       "$ref": "#/$defs/LoginRequest"
@@ -530,6 +977,15 @@
     },
     "span_outcome": {
       "$ref": "#/$defs/SpanResolution"
+    },
+    "upload_accepted": {
+      "$ref": "#/$defs/UploadAccepted"
+    },
+    "upload_metadata": {
+      "$ref": "#/$defs/UploadMetadata"
+    },
+    "work": {
+      "$ref": "#/$defs/WorkView"
     }
   },
   "required": [
@@ -537,6 +993,13 @@
     "principal",
     "probe_request",
     "job",
+    "upload_metadata",
+    "upload_accepted",
+    "work",
+    "library_page",
+    "ingestion",
+    "evidence_request",
+    "evidence",
     "source_span",
     "scope",
     "error",

@@ -1,6 +1,7 @@
 import os
 import socket
 import subprocess
+import tempfile
 import time
 import urllib.request
 import uuid
@@ -27,11 +28,13 @@ with admin.connect() as db:
 test_url = url.set(database=name).render_as_string(hide_password=False)
 api = None
 log = None
+source_directory = tempfile.TemporaryDirectory(prefix="vision-session-")
 try:
     env = {
         **os.environ,
         "DATABASE_URL": test_url,
         "VISION_WEB_ORIGINS": "http://127.0.0.1:13000",
+        "VISION_SOURCE_ROOT": str(Path(source_directory.name) / "originals"),
     }
     os.environ["DATABASE_URL"] = test_url
     command.upgrade(Config(str(root / "apps/api/alembic.ini")), "head")
@@ -99,3 +102,4 @@ finally:
         )
         db.execute(text(f'DROP DATABASE "{name}"'))
     admin.dispose()
+    source_directory.cleanup()

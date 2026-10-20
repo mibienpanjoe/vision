@@ -1,13 +1,14 @@
 # Development and operations
 
-**Status:** executable local foundation verified; book ingestion/reconstruction pending.
+**Status:** executable local foundation and TXT/Markdown source-ingestion/evidence
+checks implemented; narrative reconstruction and richer formats pending.
 The CI workflow checks the same foundation commands without deployment or model calls.
 
 ## Current repository
 
 The repository contains working specifications, brand assets, a synthetic corpus,
 a locked API, generated contracts, local accounts/sessions, a themed web shell,
-and a durable probe worker. PostgreSQL/pgvector and Redis use dedicated loopback
+private text uploads/library/evidence, and durable probe/text-parser workers. PostgreSQL/pgvector and Redis use dedicated loopback
 services. The [documentation map](../documentation-map.md) remains the entrypoint
 for the product contracts; the commands below own the executable setup.
 
@@ -16,9 +17,9 @@ for the product contracts; the commands below own the executable setup.
 | Component | Selected technology | Current boundary |
 |---|---|---|
 | Web | Next.js, TypeScript, Tailwind, shadcn/ui | Themed shell implemented; library/reconstruction screens pending |
-| API | Python, FastAPI, Pydantic | Locked health/auth/job API implemented; domain endpoints pending |
-| Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Principals, sessions, jobs/attempts and vector extension; narrative tables pending |
-| Jobs | Redis, Dramatiq | Actual bounded probe; long-running ingestion/recovery remains T13 |
+| API | Python, FastAPI, Pydantic | Health/auth/probe and text upload/library/evidence implemented; narrative endpoints pending |
+| Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Access, work/document, ingestion, chapters/passages and vector extension; narrative tables pending |
+| Jobs | Redis, Dramatiq | Real probe and text parser with bounded retry, cancellation and interrupted-job reconciliation |
 | Sources/assets | Private local filesystem | Storage root, permissions, quota and retention |
 | Models | Role-specific provider adapters | Installed FreeLLM selected; role/model checks remain before first live consumer |
 | Integration | Docker Compose | Pinned private local services and verification commands below |
@@ -69,9 +70,9 @@ A binary-only Linux x86_64/Python 3.12 dependency-resolution probe includes
 FastAPI 0.147.0, SQLAlchemy 2.1.5, Alembic 1.20.0 and Dramatiq/Redis 2.2.1.
 The probe passed with binary distributions for the selected target; this is
 metadata resolution, not an API lock, installation or parser execution.
-Resolve and commit actual dependencies with their first consumer. Keep Docling's heavy conversion dependencies out of the API bootstrap
-until its parser task requires them. PDF extraction/OCR and EPUB mapping still
-need T14/T15 format fixtures; no OCR engine or model assets are approved here.
+Resolve and commit actual dependencies with their first consumer. T14 added
+Docling for PDF parsing without OCR; see [PDF parser runtime](#pdf-parser-runtime--t14).
+EPUB parsing (T15) uses lxml and defusedxml from the same group; no OCR engine is approved.
 Embedding dimension/model, ANN tuning, provider choices and resource budgets
 remain open at their owning gates. There is no existing database to migrate.
 
@@ -260,7 +261,8 @@ binds loopback 8000, PostgreSQL 55432 and Redis 56379. The command is local-only
 |---|---|
 | `make services migrate` | Start/check PostgreSQL/Redis and apply migrations |
 | `make api`, `make worker`, `make web` | Run one service separately in its own terminal |
-| `make dispatch` | Reconcile pending queue publication after a broker outage |
+| `make dispatch` | Reconcile pending probe and ingestion queue publication after a broker outage |
+| `make reconcile-sources` | Remove old, unreferenced interrupted originals; preserve active/linked sources |
 | `make browsers` | Install the isolated Chromium browser; OS browser prerequisites may be required |
 | `make check` | Repository lint, non-infrastructure tests, deterministic contract regeneration, Node/type checks, web build and shell browser checks, documentation checks |
 | `make integration` | Real authenticated PostgreSQL/Redis/worker tests in disposable databases and unique queue namespaces |
@@ -283,3 +285,39 @@ are absent. Only its own ephemeral CI volumes are removed at job end. A separate
 local clone with distinct ports/service project passed the documented clean-setup
 sequence; exact run evidence remains in the task/PR record. No external deployment,
 provider quality or book reconstruction follows from these foundation checks.
+
+
+## Private original storage — T10
+
+Originals default to ignored `storage/originals/` outside public web roots.
+`VISION_SOURCE_ROOT` can select another private local directory for API and
+future ingestion workers; use the same path for both roles. The directory must
+have no group/other permissions (0700); files are created 0600. Generated random
+references never include uploaded filenames. Do not point this root at a web
+server's public directory or a shared/private-book directory owned by another app.
+
+`make reconcile-sources` scans only generated source names, skips symlinks and
+active leases, and checks PostgreSQL before removing unreferenced files at least
+one hour old. Run it after interrupted uploads or uncertain database commits.
+It is interrupted-upload cleanup, not reader-requested deletion or retention.
+Those lifecycles remain with their later tasks. Text-ingestion intents use their
+own queue/consumer; `make dispatch` reconciles both probe and ingestion
+publication. The worker verifies the retained source fingerprint before parsing.
+
+
+## PDF parser runtime — T14
+
+The API project's default `pdf` dependency group installs Docling 2.140.0,
+lxml and defusedxml, with CPU-only PyTorch from the PyTorch CPU index, so no
+CUDA wheels are installed.
+The environment grows to about 1.5 GB. Only the worker imports Docling.
+
+`make setup` downloads Docling's Heron layout model (about 330 MB, Apache-2.0)
+once into ignored `.local/docling-models`. Workers read it from
+`VISION_DOCLING_ARTIFACTS` (default: that directory) and never download at
+parse time. If a download was interrupted, delete the directory and rerun
+`make setup`. Conversions run one at a time per worker process. On the
+development CPU a five-page fixture takes about 10 seconds, including model
+load; book-length timing is not yet measured. CI allows 25 minutes for the
+larger install. The model files are fetched by Docling's own downloader and not
+redistributed by this repository.
