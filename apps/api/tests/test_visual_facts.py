@@ -1,14 +1,16 @@
 import json
+import os
 
 import pytest
 from app.models.entities import Entity
 from app.models.events import Event
-from app.models.model_runs import Derivation
+from app.models.model_runs import Derivation, ModelRun
 from app.models.passages import Passage
 from app.models.visual_facts import FactConflict, FactEvent, FactEvidence, VisualFact
-from app.providers.contracts import ProviderRequest
+from app.providers.contracts import Limits, ProviderRequest
 from app.providers.deterministic import RuleAdapter, ScriptedAdapter
 from app.providers.execution import execute
+from app.providers.openai_compatible import ChatGateway
 from app.providers.visual_facts import KNOWN_REF, FactExtraction
 from app.services.narrative.entities import derive_entities
 from app.services.narrative.events import derive_events
@@ -176,3 +178,38 @@ def test_fixture_facts_keep_owner_scope_modality_and_conflicts(database, generat
             "attire": ("known", "plain linen shirt"), "left_cheek": ("known", "scar still visible")}
         house = summarize(claims, "house by the ash tree", "dinner", ["roof", "lighting"])
         assert house == {"roof": ("known", "missing"), "lighting": ("unknown", None)}
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(os.environ.get("VISION_LIVE_PROVIDER") != "1" or not os.environ.get("VISION_LLM_API_KEY"),
+                    reason="Set VISION_LIVE_PROVIDER=1 and VISION_LLM_API_KEY to send the synthetic corpus to the gateway")
+def test_live_gateway_events_and_facts_on_the_synthetic_fixture(database, generation):  # noqa: F811
+    adapter, limits = ChatGateway.from_environment(), Limits(timeout_seconds=120, max_output_tokens=8_192)
+    stages = []
+    for derive in (lambda: derive_entities(database, generation, adapter, limits),
+                   lambda: derive_events(database, generation, stages[-1], adapter, limits),
+                   lambda: derive_visual_facts(database, generation, stages[-1], adapter, limits)):
+        stages.append(derive())
+        with Session(database) as db:
+            if db.get(Derivation, stages[-1]).status != "succeeded":
+                break  # a later stage only runs on a succeeded input
+    with Session(database) as db:
+        derivations = [db.get(Derivation, d) for d in stages]
+        runs = db.execute(select(ModelRun.derivation_id, ModelRun.outcome, ModelRun.model_version)
+                          .where(ModelRun.derivation_id.in_(stages)).order_by(ModelRun.started_at)).all()
+        rows = db.execute(select(VisualFact, Entity.label).join(Entity, Entity.id == VisualFact.subject_id)
+                          .where(VisualFact.derivation_id == stages[-1])).all()
+        disputes = db.scalars(select(FactConflict).where(FactConflict.derivation_id == stages[-1])).all()
+        for evidence in db.scalars(select(FactEvidence).join(VisualFact).where(VisualFact.derivation_id == stages[-1])):
+            assert db.get(Passage, evidence.passage_id).text[evidence.start:evidence.end]
+        names = {d.id: d.stage for d in derivations}
+        report = {
+            "stages": [(d.stage, d.status, d.error_code, d.rejections) for d in derivations],
+            "runs": [(names[d], outcome, model) for d, outcome, model in runs],
+            "facts": sorted(f"{label} | {f.attribute} = {f.value} | {f.kind}/{f.support}/{f.modality}/{f.polarity}"
+                            f"{' | canonical' if f.canonical else ''}" for f, label in rows),
+            "conflicts": sorted(sorted([db.get(VisualFact, d.fact_a_id).value, db.get(VisualFact, d.fact_b_id).value])
+                                for d in disputes),
+        }
+    print(json.dumps(report, ensure_ascii=False, indent=1))
+    assert derivations[0].status == "succeeded"

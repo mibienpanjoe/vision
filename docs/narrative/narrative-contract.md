@@ -145,6 +145,21 @@ filtered only by the final displayed citation is insufficient. When provenance
 cannot prove a derived record eligible, recompute from in-scope inputs or omit
 the assertion. Never use a whole-book state as a cutoff-specific cache hit.
 
+### Reading-boundary implementation — T21
+
+`services/narrative/eligibility.py` builds the visible narrative for one
+generation and cutoff chapter (or the whole book). Passages qualify by chapter
+ordinal. A mention is visible when its passage is; an entity when it has a
+visible mention (resolved or as a candidate), with candidates restricted to
+visible entities. The displayed label must be used by a visible mention,
+otherwise the earliest visible mention text is shown, so a label chosen from a
+later chapter cannot leak. Aliases and entity relations need a visible span and
+visible endpoints, so a `same_as` link revealed later stays hidden and both
+identities remain separate. Events need all evidence visible; participants,
+anchors and relations are filtered the same way. Facts need all evidence, the
+subject and every linked event visible; conflicts need both facts. Rows without
+provenance do not exist by construction, so nothing is shown on trust.
+
 ## Discriminated outcomes
 
 Conceptual outcomes are `resolved`, `needs_context`, `insufficient_evidence`, and

@@ -3,8 +3,8 @@
 **Status:** corpus, local foundation and TXT/Markdown upload → parser → authorized
 evidence checks are implemented; the provider envelope has deterministic
 contract tests (T17); entity, event and visual-fact derivation, ambiguity,
-chronology, modality, attribution gates and conflicts have deterministic fixture
-and PostgreSQL evidence (T18–T20). Live
+chronology, modality, attribution gates, conflicts and cutoff-filtered browse
+have deterministic fixture, PostgreSQL and API evidence (T18–T21). Live
 extraction quality and the remaining scenarios below remain pending.
 The [requirements](../product/requirements-and-acceptance.md) own product promises;
 this page owns how to demonstrate them without relying on attractive output.

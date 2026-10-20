@@ -39,6 +39,7 @@
 | DEC-31 | Entity derivation: versioned per-generation derivations, chapter-aligned batches, verbatim quote grounding with counted rejections, kind+label unification only, explicit candidates and `same_as` links, attempt-guarded atomic publication | T18; [narrative contract](../narrative/narrative-contract.md#entity-derivation--t18) |
 | DEC-32 | Events depend on an explicit entity derivation; modality kept per event; stated relations only; partial order over fact/memory events with cycle and overlap conflicts reported as inconsistent; earlier events passed as non-citable `k:n` data | T19; [narrative contract](../narrative/narrative-contract.md#event-derivation-and-partial-chronology--t19) |
 | DEC-33 | Visual facts: explicit/inferred support only, polarity and modality kept, lexical attribution/owner/negation/question gates before storage, canonical = explicit+affirmed+fact/memory, conflicts recorded unresolved at shared events | T20; [narrative contract](../narrative/narrative-contract.md#visual-fact-derivation--t20) |
+| DEC-34 | Narrative browse reads the latest succeeded derivation chain of the current generation and filters every derived record by dependency closure at the chapter cutoff; labels must come from visible mentions; `409 NARRATIVE_NOT_READY` before extraction | T21; [API](../api/api-contract.md#narrative-browse--t21) |
 
 ## Proposed elaborations
 

@@ -2,6 +2,87 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:vision:contracts:1.0",
   "$defs": {
+    "AliasView": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "span": {
+          "$ref": "#/$defs/SourceSpan"
+        },
+        "status": {
+          "enum": [
+            "supported",
+            "candidate"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "status",
+        "span"
+      ],
+      "title": "AliasView",
+      "type": "object"
+    },
+    "AnchorView": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "age",
+            "date",
+            "relative"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "span": {
+          "$ref": "#/$defs/SourceSpan"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "value",
+        "span"
+      ],
+      "title": "AnchorView",
+      "type": "object"
+    },
+    "ConflictView": {
+      "additionalProperties": false,
+      "properties": {
+        "fact_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Fact Ids",
+          "type": "array"
+        },
+        "status": {
+          "const": "unresolved",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fact_ids",
+        "status"
+      ],
+      "title": "ConflictView",
+      "type": "object"
+    },
     "ContextChoice": {
       "additionalProperties": false,
       "properties": {
@@ -26,6 +107,144 @@
       "title": "ContextChoice",
       "type": "object"
     },
+    "EntityDetail": {
+      "additionalProperties": false,
+      "properties": {
+        "conflicts": {
+          "items": {
+            "$ref": "#/$defs/ConflictView"
+          },
+          "title": "Conflicts",
+          "type": "array"
+        },
+        "entity": {
+          "$ref": "#/$defs/EntitySummary"
+        },
+        "event_relations": {
+          "items": {
+            "$ref": "#/$defs/EventRelationView"
+          },
+          "title": "Event Relations",
+          "type": "array"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/$defs/EventView"
+          },
+          "title": "Events",
+          "type": "array"
+        },
+        "facts": {
+          "items": {
+            "$ref": "#/$defs/FactView"
+          },
+          "title": "Facts",
+          "type": "array"
+        },
+        "mentions": {
+          "items": {
+            "$ref": "#/$defs/MentionView"
+          },
+          "maxItems": 200,
+          "title": "Mentions",
+          "type": "array"
+        },
+        "mentions_truncated": {
+          "title": "Mentions Truncated",
+          "type": "boolean"
+        },
+        "relations": {
+          "items": {
+            "$ref": "#/$defs/RelationView"
+          },
+          "title": "Relations",
+          "type": "array"
+        },
+        "scope": {
+          "$ref": "#/$defs/NarrativeScope"
+        }
+      },
+      "required": [
+        "scope",
+        "entity",
+        "mentions",
+        "mentions_truncated",
+        "relations",
+        "events",
+        "event_relations",
+        "facts",
+        "conflicts"
+      ],
+      "title": "EntityDetail",
+      "type": "object"
+    },
+    "EntityPage": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/EntitySummary"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "scope": {
+          "$ref": "#/$defs/NarrativeScope"
+        }
+      },
+      "required": [
+        "scope",
+        "items"
+      ],
+      "title": "EntityPage",
+      "type": "object"
+    },
+    "EntitySummary": {
+      "additionalProperties": false,
+      "properties": {
+        "aliases": {
+          "items": {
+            "$ref": "#/$defs/AliasView"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "character",
+            "place",
+            "object",
+            "organization"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "description": "A name used by an eligible mention",
+          "title": "Label",
+          "type": "string"
+        },
+        "mention_count": {
+          "minimum": 1,
+          "title": "Mention Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "label",
+        "aliases",
+        "mention_count"
+      ],
+      "title": "EntitySummary",
+      "type": "object"
+    },
     "ErrorEnvelope": {
       "additionalProperties": false,
       "properties": {
@@ -37,6 +256,93 @@
         "error"
       ],
       "title": "ErrorEnvelope",
+      "type": "object"
+    },
+    "EventRelationView": {
+      "additionalProperties": false,
+      "properties": {
+        "relation": {
+          "enum": [
+            "before",
+            "after",
+            "during",
+            "overlaps",
+            "unknown"
+          ],
+          "title": "Relation",
+          "type": "string"
+        },
+        "source_id": {
+          "format": "uuid",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "span": {
+          "$ref": "#/$defs/SourceSpan"
+        },
+        "target_id": {
+          "format": "uuid",
+          "title": "Target Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "relation",
+        "target_id",
+        "span"
+      ],
+      "title": "EventRelationView",
+      "type": "object"
+    },
+    "EventView": {
+      "additionalProperties": false,
+      "properties": {
+        "anchors": {
+          "items": {
+            "$ref": "#/$defs/AnchorView"
+          },
+          "title": "Anchors",
+          "type": "array"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/SourceSpan"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "modality": {
+          "title": "Modality",
+          "type": "string"
+        },
+        "participant_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Participant Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "modality",
+        "evidence",
+        "participant_ids",
+        "anchors"
+      ],
+      "title": "EventView",
       "type": "object"
     },
     "EvidenceRequest": {
@@ -239,6 +545,111 @@
         "section"
       ],
       "title": "EvidenceView",
+      "type": "object"
+    },
+    "FactView": {
+      "additionalProperties": false,
+      "properties": {
+        "assumption": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Assumption"
+        },
+        "attribute": {
+          "title": "Attribute",
+          "type": "string"
+        },
+        "canonical": {
+          "title": "Canonical",
+          "type": "boolean"
+        },
+        "event_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Event Ids",
+          "type": "array"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/SourceSpan"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "identity",
+            "acquired",
+            "interval",
+            "scene"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "modality": {
+          "title": "Modality",
+          "type": "string"
+        },
+        "perspective": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Perspective"
+        },
+        "polarity": {
+          "enum": [
+            "affirmed",
+            "negated"
+          ],
+          "title": "Polarity",
+          "type": "string"
+        },
+        "support": {
+          "enum": [
+            "explicit",
+            "inferred"
+          ],
+          "title": "Support",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "attribute",
+        "value",
+        "kind",
+        "support",
+        "modality",
+        "polarity",
+        "perspective",
+        "assumption",
+        "canonical",
+        "evidence",
+        "event_ids"
+      ],
+      "title": "FactView",
       "type": "object"
     },
     "Failed": {
@@ -506,6 +917,76 @@
       "title": "LoginRequest",
       "type": "object"
     },
+    "MentionView": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Candidate Ids",
+          "type": "array"
+        },
+        "entity_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Set only when the source supports one identity",
+          "title": "Entity Id"
+        },
+        "span": {
+          "$ref": "#/$defs/SourceSpan"
+        }
+      },
+      "required": [
+        "span",
+        "entity_id",
+        "candidate_ids"
+      ],
+      "title": "MentionView",
+      "type": "object"
+    },
+    "NarrativeScope": {
+      "additionalProperties": false,
+      "properties": {
+        "generation_id": {
+          "format": "uuid",
+          "title": "Generation Id",
+          "type": "string"
+        },
+        "parser_revision": {
+          "title": "Parser Revision",
+          "type": "string"
+        },
+        "through_chapter_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Reading cutoff; null means the whole book",
+          "title": "Through Chapter Id"
+        }
+      },
+      "required": [
+        "generation_id",
+        "parser_revision",
+        "through_chapter_id"
+      ],
+      "title": "NarrativeScope",
+      "type": "object"
+    },
     "NeedsContext": {
       "additionalProperties": false,
       "properties": {
@@ -574,6 +1055,36 @@
         }
       },
       "title": "ProbeRequest",
+      "type": "object"
+    },
+    "RelationView": {
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "format": "uuid",
+          "title": "Object Id",
+          "type": "string"
+        },
+        "relation": {
+          "title": "Relation",
+          "type": "string"
+        },
+        "span": {
+          "$ref": "#/$defs/SourceSpan"
+        },
+        "subject_id": {
+          "format": "uuid",
+          "title": "Subject Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subject_id",
+        "relation",
+        "object_id",
+        "span"
+      ],
+      "title": "RelationView",
       "type": "object"
     },
     "RequestScope": {
@@ -942,6 +1453,12 @@
   "additionalProperties": false,
   "description": "Build-time export root only; this is not an HTTP request/response.",
   "properties": {
+    "entity_detail": {
+      "$ref": "#/$defs/EntityDetail"
+    },
+    "entity_page": {
+      "$ref": "#/$defs/EntityPage"
+    },
     "error": {
       "$ref": "#/$defs/ErrorEnvelope"
     },
@@ -1003,7 +1520,9 @@
     "source_span",
     "scope",
     "error",
-    "span_outcome"
+    "span_outcome",
+    "entity_page",
+    "entity_detail"
   ],
   "title": "SchemaCatalog",
   "type": "object"
