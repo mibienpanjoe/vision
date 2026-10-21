@@ -53,6 +53,7 @@ documents fixed all details.
 | PROP-04 | First vertical slice uses a small synthetic TXT/Markdown narrative before format expansion | First implementation increment; [roadmap](implementation-roadmap.md) |
 | PROP-05 | Cache identity includes creative mode and locked-fact revision in addition to source/retrieval scope | Reconstruction implementation |
 | PROP-06 | Owner-facing narrative retry route with `If-Match` and `Idempotency-Key`, mirroring ingestion retry | Before real-book narrative use |
+| PROP-07 | Local ingestion (GLiNER2, fastcoref, patterns, EmbeddingGemma) and query-time consolidation of cutoff-filtered excerpts through Groq with ZDR; FreeLLM gateway limited to synthetic fixtures | Maintainer acceptance of [ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md) |
 
 ## Open decisions
 

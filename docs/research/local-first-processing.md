@@ -311,7 +311,8 @@ Windowing is not needed for memory at this chapter size; it stays as a guard for
 very long chapters (proposed cap: 40,000 characters). Lowering GLiNER2's batch
 size is the lever if memory must drop.
 
-All checks needed before an ADR are complete.
+All checks needed before an ADR are complete; the proposal is recorded as
+[ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md).
 
 ## Sources
 

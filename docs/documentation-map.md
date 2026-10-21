@@ -35,6 +35,8 @@ Supporting owners:
   asset inventory, and proposed export targets.
 - [ADR-0001](adr/0001-modular-monolith.md): backend and persistence baseline.
 - [ADR-0002](adr/0002-temporal-hybrid-retrieval.md): retrieval rationale and exclusions.
+- [ADR-0003](adr/0003-local-ingestion-minimal-disclosure.md): proposed local ingestion and
+  minimal-disclosure query-time consolidation; not adopted until accepted.
 - [Local-first processing research](research/local-first-processing.md): proposed,
   unadopted review of on-device extraction, minimal-disclosure retrieval and quantization.
 - [Contributing](../CONTRIBUTING.md): workflow and documentation maintenance.
