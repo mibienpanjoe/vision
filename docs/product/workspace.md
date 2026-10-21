@@ -46,5 +46,22 @@ boundary. Unparsed sources return a visible not-ready result. Choosing a cutoff
 must clear the prior entity selection, detail and context before loading eligible
 data; whole-book and chapter scope remain distinct from story-time inputs.
 
-Entity/context exploration, source reading, reconstruction/export and refinement
-remain the subsequent T35–T38 browser increments.
+## Entity and context explorer — T35
+
+Opening a book requires an explicit reading boundary before requesting entities.
+Characters, places, objects and organizations come from the eligible API response.
+Search filters only those eligible labels and aliases. Supported aliases and
+candidate identities remain distinct; an ambiguous source mention offers named
+candidate selections and never silently chooses an identity.
+
+Changing boundary remounts the scoped explorer, clearing detail, subject, moment,
+context and previous request results. Responses from the abandoned view cannot
+populate its replacement. Generation mismatches require reloading the book.
+
+Moment and scene context are user phrases, not an invented precomputed timeline:
+DEC-38 derives events per question. The context form submits the selected entity,
+moment and scene under the exact cutoff to the stored-visualization endpoint.
+Only a resolved server result displays a saved revision receipt. Other outcomes
+explain what is missing or failed. This initial context consumer proves stored
+request scope; the full profile, evidence inspector, export and refinement are
+T36–T38.

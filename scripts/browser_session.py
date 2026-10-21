@@ -20,6 +20,7 @@ values = dict(
     if line and not line.startswith("#")
 )
 library = os.environ.get("VISION_TEST_LIBRARY") == "1"
+workspace = os.environ.get("VISION_TEST_WORKSPACE") == "1"
 url = make_url(os.environ.get("DATABASE_URL", values["DATABASE_URL"]))
 name = "vision_test_" + uuid.uuid4().hex
 with socket.socket() as port_probe:
@@ -41,19 +42,19 @@ try:
         "VISION_SOURCE_ROOT": str(Path(source_directory.name) / "originals"),
         "REDIS_URL": values["REDIS_URL"],
         "VISION_QUEUE_NAMESPACE": name,
-        "VISION_NARRATIVE_PROVIDER": "off",
+        "VISION_NARRATIVE_PROVIDER": "local" if workspace else "off",
         "VISION_TEST_PARSE_GATE": str(Path(source_directory.name) / "parse-gate"),
     }
     os.environ["DATABASE_URL"] = test_url
     command.upgrade(Config(str(root / "apps/api/alembic.ini")), "head")
-    if library:
+    if library or workspace:
         subprocess.run(
             [str(root / "apps/api/.venv/bin/python"), "-m", "app.cli", "create-user", "other_reader", "--password-stdin"],
             input="synthetic session transport passphrase\n", text=True, cwd=root / "apps/api", env=env, check=True,
         )
         worker_log = (root / ".local/library-worker.log").open("w")
         worker = subprocess.Popen(
-            [str(root / "apps/api/.venv/bin/dramatiq"), "tests.browser_worker", "--processes", "1", "--threads", "1", "--queues", "ingestion"],
+            [str(root / "apps/api/.venv/bin/dramatiq"), "tests.browser_worker", "--processes", "1", "--threads", "1", "--queues", "ingestion", *( ["narrative"] if workspace else [] )],
             cwd=root / "apps/api", env=env, stdout=worker_log, stderr=worker_log, start_new_session=True,
         )
         env["VISION_TEST_WORKER_PID"] = str(worker.pid)
@@ -79,7 +80,7 @@ try:
             "run",
             "--locked",
             "uvicorn",
-            "app.main:app",
+            "tests.browser_app:app" if workspace else "app.main:app",
             "--host",
             "127.0.0.1",
             "--port",
@@ -102,7 +103,7 @@ try:
     else:
         raise RuntimeError("Isolated API did not become ready")
     subprocess.run(
-        ["pnpm", "--dir", "apps/web", "test", "tests/library.spec.ts" if library else "tests/session.spec.ts", "--workers=1"],
+        ["pnpm", "--dir", "apps/web", "test", "tests/explorer.spec.ts" if workspace else "tests/library.spec.ts" if library else "tests/session.spec.ts", "--workers=1"],
         env={**env, "VISION_TEST_WEB_SESSION": "1"},
         check=True,
     )

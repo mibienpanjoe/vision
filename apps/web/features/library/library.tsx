@@ -73,6 +73,7 @@ function PrivateLibrary({ actor, signedOut }: { actor: PrincipalView; signedOut:
         {works.map(work => <article className="panel book" key={work.id} aria-label={work.title}>
           <div className="book-heading"><h3>{work.title}</h3><span className="book-format">{work.format.toUpperCase()} · {new Intl.NumberFormat().format(work.byte_count)} bytes</span></div>
           <JobStatus workId={work.id} onUnauthorized={signedOut} />
+          <a href={`/works/${work.id}`}>Open book</a>
         </article>)}
         {cursor && <button className="secondary" onClick={() => void more()} disabled={busy}>Load more books</button>}
       </section>

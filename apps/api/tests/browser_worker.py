@@ -6,6 +6,14 @@ from pathlib import Path
 
 from app.services.ingestion import parse
 
+if os.environ.get("VISION_TEST_WORKSPACE") == "1":
+    from app.providers.embeddings import HashedEmbeddings
+    from app.services.narrative import pipeline
+    from tests.test_entity_extraction import fixture_adapter
+
+    pipeline.local_adapter = fixture_adapter
+    pipeline.local_embedder = HashedEmbeddings
+
 actual_parse = parse.parse_source
 
 

@@ -378,3 +378,9 @@ The harness removes its database, sources and Redis keys afterward. It does not
 modify the developer's library or run external models. Logs and screenshots stay
 in `.local/`. The standard `make browser-session` retains its session-transport
 check; the library option adds the controls and lifecycle acceptance cases.
+
+For scoped exploration and persisted context checks, use
+`VISION_TEST_WORKSPACE=1 make browser-session`. This starts both worker queues
+with deterministic model adapters, and a test-only API bootstrap supplies
+deterministic consolidation/adjudication. Production code has no fixture switch;
+the test modules are selected explicitly by the harness. No live model is called.

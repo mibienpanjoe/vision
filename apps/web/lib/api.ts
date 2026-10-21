@@ -1,7 +1,4 @@
-export type {
-  WorkView, LibraryPage, IngestionView, GenerationView, GenerationPage,
-  PrincipalView, UploadAccepted,
-} from "../../../packages/contracts";
+export type * from "../../../packages/contracts";
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) {

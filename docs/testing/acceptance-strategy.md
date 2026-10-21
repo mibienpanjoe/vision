@@ -182,3 +182,16 @@ not proof of extraction quality or the G5 reconstruction/export path. The suite
 also checks both themes and horizontal overflow at 320, 768, 1024 and 1440 pixels.
 Screenshots remain local. Run the isolated harness as described in
 [operations](../operations/development-and-operations.md#library-browser-harness--t34).
+
+## Scoped explorer browser checks — T35
+
+`tests/explorer.spec.ts` uploads the synthetic story through the real browser,
+waits for the real worker to publish entities/appearance/search, selects a
+boundary and inspects API-derived entity detail. It verifies late alias removal,
+clearing abandoned detail and context inputs, explicit ambiguous-identity choices,
+narrow layout and a stored request whose entity, moment, scene and cutoff match
+the browser selections. The API and PostgreSQL persistence are real; model
+adapters are deterministic fixtures, including consolidation and adjudication.
+This does not establish live model quality or the complete G5 profile/export path.
+Chapter-catalog API tests additionally prove current-parser isolation, safe
+metadata, pagination, owner denial and unparsed-source failure.
