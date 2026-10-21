@@ -29,6 +29,8 @@ roles, delivery deadlines, and branch model do not apply to Vision.
 
 Supporting owners:
 
+- [Product workspace](product/workspace.md): browser library, upload and processing
+  controls, with subsequent exploration and reconstruction increments distinguished.
 - [Development and operations](operations/development-and-operations.md): current
   local setup, runtime topology, job visibility, and remaining operational gates.
 - [Visual identity](design/visual-identity.md): logo direction, component sources,

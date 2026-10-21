@@ -257,6 +257,8 @@ committed: replay recovers the persisted reference without deleting its source.
 Pagination cursors are positions, not authority; every page reapplies owner scope.
 Response models are generated from `schemas/works.py`; storage references,
 private filesystem paths, owner identifiers and original filenames are excluded.
+The shared TypeScript catalog also exports `GenerationPage` and `GenerationView`,
+including narrative status/error and separate parse, narrative and search readiness.
 
 T11 publishes text-ingestion intents through Redis to the real parser worker.
 An unavailable broker leaves SQL intent visibly pending for `make dispatch`.

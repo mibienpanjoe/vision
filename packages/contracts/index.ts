@@ -103,37 +103,53 @@ export type OffsetUnit1 = "unicode_code_point";
 export type PassageId1 = string;
 export type Quote1 = string;
 export type Start1 = number;
+export type Current = boolean;
+export type Id3 = string;
+export type JobId = string;
+/**
+ * Safe error code of the last narrative attempt
+ */
+export type NarrativeError = string | null;
+export type NarrativeReady = boolean;
+export type NarrativeStatus = "not_started" | "queued" | "running" | "succeeded" | "failed";
+export type Ordinal = number;
+export type Parsed = boolean;
+export type ParserRevision3 = string;
+export type SearchReady = boolean;
+export type Status2 = "building" | "available" | "failed" | "cancelled";
+export type Warnings = string[];
+export type Items1 = GenerationView[];
 export type Attempts = number;
 export type CancelRequested = boolean;
 export type CorrelationId1 = string;
 export type DispatchPending = boolean;
 export type DocumentId = string;
 export type ErrorCode = string | null;
-export type Id3 = string;
+export type Id4 = string;
 export type Revision = number;
 export type Stage = "awaiting_parser" | "parse" | "parsed" | "failed" | "cancelled";
-export type Status2 = "queued" | "running" | "succeeded" | "failed" | "cancelled";
-export type Warnings = string[];
+export type Status3 = "queued" | "running" | "succeeded" | "failed" | "cancelled";
+export type Warnings1 = string[];
 export type Attempts1 = number;
 export type CorrelationId2 = string;
 export type DispatchPending1 = boolean;
-export type Id4 = string;
+export type Id5 = string;
 export type Result = number | null;
 export type Stage1 = "queued" | "complete";
-export type Status3 = "queued" | "succeeded";
+export type Status4 = "queued" | "succeeded";
 export type ByteCount = number;
 export type CurrentParserRevision = string | null;
 export type DocumentId1 = string;
 export type Format = "txt" | "md" | "pdf" | "epub";
-export type Id5 = string;
+export type Id6 = string;
 export type Revision1 = number;
 export type Sha256 = string;
 export type Title = string;
-export type Items1 = WorkView[];
+export type Items2 = WorkView[];
 export type NextCursor = string | null;
 export type Password = string;
 export type Username = string;
-export type Id6 = string;
+export type Id7 = string;
 export type Username1 = string;
 export type Kind3 = "probe";
 export type Value2 = number;
@@ -141,8 +157,8 @@ export type ConsolidationId = string;
 export type CreatedAt = string;
 export type GenerationId1 = string;
 export type Number = number;
-export type ParserRevision3 = string;
-export type Items2 = RevisionSummary[];
+export type ParserRevision4 = string;
+export type Items3 = RevisionSummary[];
 export type CreativeMode = "canon_first" | "interpretation";
 export type DocumentRevisionId2 = string;
 export type GenerationId2 = string;
@@ -160,7 +176,7 @@ export type Choices = [ContextChoice, ...ContextChoice[]];
  * Which request field the choice fills; a moment choice is resubmitted as its label
  */
 export type Field = ("subject" | "moment" | "context") | null;
-export type Id7 = string;
+export type Id8 = string;
 export type Label3 = string;
 export type Outcome1 = "needs_context";
 export type SchemaVersion1 = "1.0";
@@ -175,7 +191,7 @@ export type SchemaVersion3 = "1.0";
 export type Format1 = "txt" | "md" | "pdf" | "epub";
 export type Title1 = string;
 export type CreatedAt1 = string;
-export type Id8 = string;
+export type Id9 = string;
 /**
  * Scene context such as "at home"
  */
@@ -219,7 +235,7 @@ export type Evidence2 = SourceSpan[];
  * Why an inferred trait is not canonical
  */
 export type Reason2 = string | null;
-export type Status4 = "canonical" | "disputed" | "inferred";
+export type Status5 = "canonical" | "disputed" | "inferred";
 /**
  * @minItems 1
  */
@@ -234,7 +250,7 @@ export type Context1 = string | null;
 export type CreativeMode2 = "canon_first" | "interpretation";
 export type GenerationId3 = string;
 export type Moment1 = (AgeMoment | PhraseMoment) | null;
-export type ParserRevision4 = string;
+export type ParserRevision5 = string;
 /**
  * The event the text anchors the moment to
  */
@@ -261,10 +277,10 @@ export type Revision2 = number;
 export type WorkId1 = string;
 export type VisualizationResult = ResolvedSpecification | NeedsContext | InsufficientEvidence | Failed;
 export type CreatedAt2 = string;
-export type Id9 = string;
+export type Id10 = string;
 export type Revision3 = number;
 export type Subject = string;
-export type Items3 = VisualizationSummary[];
+export type Items4 = VisualizationSummary[];
 
 /**
  * Build-time export root only; this is not an HTTP request/response.
@@ -275,6 +291,7 @@ export interface SchemaCatalog {
   error: ErrorEnvelope;
   evidence: EvidenceView;
   evidence_request: EvidenceRequest;
+  generations: GenerationPage;
   ingestion: IngestionView;
   job: JobView;
   library_page: LibraryPage;
@@ -426,6 +443,23 @@ export interface EvidenceSpan {
   quote: Quote1;
   start: Start1;
 }
+export interface GenerationPage {
+  items: Items1;
+}
+export interface GenerationView {
+  current: Current;
+  id: Id3;
+  job_id: JobId;
+  narrative_error: NarrativeError;
+  narrative_ready: NarrativeReady;
+  narrative_status: NarrativeStatus;
+  ordinal: Ordinal;
+  parsed: Parsed;
+  parser_revision: ParserRevision3;
+  search_ready: SearchReady;
+  status: Status2;
+  warnings: Warnings;
+}
 export interface IngestionView {
   attempts: Attempts;
   cancel_requested: CancelRequested;
@@ -433,23 +467,23 @@ export interface IngestionView {
   dispatch_pending: DispatchPending;
   document_id: DocumentId;
   error_code: ErrorCode;
-  id: Id3;
+  id: Id4;
   revision: Revision;
   stage: Stage;
-  status: Status2;
-  warnings: Warnings;
+  status: Status3;
+  warnings: Warnings1;
 }
 export interface JobView {
   attempts: Attempts1;
   correlation_id: CorrelationId2;
   dispatch_pending: DispatchPending1;
-  id: Id4;
+  id: Id5;
   result: Result;
   stage: Stage1;
-  status: Status3;
+  status: Status4;
 }
 export interface LibraryPage {
-  items: Items1;
+  items: Items2;
   next_cursor: NextCursor;
 }
 export interface WorkView {
@@ -457,7 +491,7 @@ export interface WorkView {
   current_parser_revision: CurrentParserRevision;
   document_id: DocumentId1;
   format: Format;
-  id: Id5;
+  id: Id6;
   revision: Revision1;
   sha256: Sha256;
   title: Title;
@@ -467,7 +501,7 @@ export interface LoginRequest {
   username: Username;
 }
 export interface PrincipalView {
-  id: Id6;
+  id: Id7;
   username: Username1;
 }
 export interface ProbeRequest {
@@ -475,14 +509,14 @@ export interface ProbeRequest {
   value?: Value2;
 }
 export interface RevisionPage {
-  items: Items2;
+  items: Items3;
 }
 export interface RevisionSummary {
   consolidation_id: ConsolidationId;
   created_at: CreatedAt;
   generation_id: GenerationId1;
   number: Number;
-  parser_revision: ParserRevision3;
+  parser_revision: ParserRevision4;
 }
 export interface RequestScope {
   creative_mode: CreativeMode;
@@ -504,7 +538,7 @@ export interface NeedsContext {
 }
 export interface ContextChoice {
   field?: Field;
-  id: Id7;
+  id: Id8;
   label: Label3;
 }
 export interface InsufficientEvidence {
@@ -527,7 +561,7 @@ export interface UploadMetadata {
 }
 export interface VisualizationView {
   created_at: CreatedAt1;
-  id: Id8;
+  id: Id9;
   request: VisualizationRequest;
   result: ResolvedSpecification;
   revision: Revision2;
@@ -612,7 +646,7 @@ export interface TraitView {
   attribute: Attribute2;
   evidence: Evidence2;
   reason?: Reason2;
-  status: Status4;
+  status: Status5;
   values: Values;
 }
 export interface ScopeView {
@@ -620,7 +654,7 @@ export interface ScopeView {
   creative_mode: CreativeMode2;
   generation_id: GenerationId3;
   moment: Moment1;
-  parser_revision: ParserRevision4;
+  parser_revision: ParserRevision5;
   resolved_moment: ResolvedMoment;
   through_chapter_id: ThroughChapterId2;
 }
@@ -637,11 +671,11 @@ export interface VisualizationCreated {
   visualization: VisualizationView | null;
 }
 export interface VisualizationPage {
-  items: Items3;
+  items: Items4;
 }
 export interface VisualizationSummary {
   created_at: CreatedAt2;
-  id: Id9;
+  id: Id10;
   revision: Revision3;
   subject: Subject;
 }

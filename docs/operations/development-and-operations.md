@@ -358,3 +358,23 @@ development CPU a five-page fixture takes about 10 seconds, including model
 load; book-length timing is not yet measured. CI allows 25 minutes for the
 larger install. The model files are fetched by Docling's own downloader and not
 redistributed by this repository.
+
+## Library browser harness — T34
+
+After `make services` and a current `pnpm --dir apps/web build`, run:
+
+```sh
+VISION_TEST_LIBRARY=1 make browser-session
+```
+
+The harness creates a disposable database, private source directory and unique
+Redis namespace, provisions two synthetic accounts, and starts an isolated API
+on port 8000 plus a real ingestion-only Dramatiq worker. Playwright serves the
+built web app on port 13000. These ports must be free. The suite pauses only its
+own worker process group for queued cancellation, then resumes it in cleanup.
+A test-only bootstrap adds a file gate before the real parse call for running
+cancellation; no test hook enters production code.
+The harness removes its database, sources and Redis keys afterward. It does not
+modify the developer's library or run external models. Logs and screenshots stay
+in `.local/`. The standard `make browser-session` retains its session-transport
+check; the library option adds the controls and lifecycle acceptance cases.

@@ -24,6 +24,7 @@ from app.schemas.visualization import (
     VisualizationView,
 )
 from app.schemas.works import (
+    GenerationPage,
     IngestionView,
     LibraryPage,
     UploadAccepted,
@@ -54,6 +55,7 @@ class SchemaCatalog(ContractModel):
     work: WorkView
     library_page: LibraryPage
     ingestion: IngestionView
+    generations: GenerationPage
     evidence_request: EvidenceRequest
     evidence: EvidenceView
     source_span: SourceSpan

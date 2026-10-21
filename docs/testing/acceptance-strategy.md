@@ -163,3 +163,22 @@ PROP-07 proposes targets.
 
 This evidence covers the API and the real pipeline. A browser product flow is
 Phase 5.
+
+## Library browser checks — T34
+
+`apps/web/tests/library.spec.ts` runs through actual sign-in and upload controls
+against the isolated API, PostgreSQL, Redis and a Dramatiq ingestion worker.
+It checks persisted originals and library reload, empty/other-owner libraries,
+safe owner denials, distinct readiness, stale-revision rejection, queued cancel
+and retry, malformed-PDF failure/retry, and running cancellation pending worker
+confirmation. A stopped worker makes queued state observable; a test-owned parser gate
+pauses the real worker before its parse call to exercise pending cancellation.
+Latency is controlled by this fixture; parser output is not mocked. One intercepted stale
+job read preserves the other tab's old view while mutations still reach the
+real API. The unauthenticated form-only check simulates a 401 separately.
+
+The ingestion-only worker intentionally leaves narrative work queued; this is
+not proof of extraction quality or the G5 reconstruction/export path. The suite
+also checks both themes and horizontal overflow at 320, 768, 1024 and 1440 pixels.
+Screenshots remain local. Run the isolated harness as described in
+[operations](../operations/development-and-operations.md#library-browser-harness--t34).

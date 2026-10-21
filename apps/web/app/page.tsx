@@ -2,6 +2,7 @@ import Image from "next/image";
 import lightMark from "../../../assets/brand/vision-mark.png";
 import darkMark from "../../../assets/brand/vision-mark-dark-tile.png";
 import { ThemeControl } from "@/components/theme-provider";
+import { Library } from "@/features/library/library";
 
 export default function LibraryPage() {
   return (
@@ -19,18 +20,7 @@ export default function LibraryPage() {
           <h1>Your library</h1>
           <p className="intro">Keep your books close. Bring their worlds into focus.</p>
         </div>
-        <section className="empty-library" aria-labelledby="empty-title">
-          <div className="library-mark" aria-hidden="true">
-            <Image className="mark-light" src={lightMark} alt="" width={128} height={128} unoptimized />
-            <Image className="mark-dark" src={darkMark} alt="" width={128} height={128} unoptimized />
-          </div>
-          <div>
-            <p className="eyebrow">The first page</p>
-            <h2 id="empty-title">A place for your next world.</h2>
-            <p>Book uploads are not available yet.</p>
-            <p className="muted-copy">This is where your books and their source-linked discoveries will live.</p>
-          </div>
-        </section>
+        <Library />
         <p className="library-note">Every detail begins with a passage.</p>
       </main>
       <footer><span>Vision</span><span>Read the words. See the world.</span></footer>

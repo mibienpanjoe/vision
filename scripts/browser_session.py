@@ -1,4 +1,5 @@
 import os
+import signal
 import socket
 import subprocess
 import tempfile
@@ -18,6 +19,7 @@ values = dict(
     for line in (root / ".env").read_text().splitlines()
     if line and not line.startswith("#")
 )
+library = os.environ.get("VISION_TEST_LIBRARY") == "1"
 url = make_url(os.environ.get("DATABASE_URL", values["DATABASE_URL"]))
 name = "vision_test_" + uuid.uuid4().hex
 with socket.socket() as port_probe:
@@ -27,6 +29,8 @@ with admin.connect() as db:
     db.execute(text(f'CREATE DATABASE "{name}"'))
 test_url = url.set(database=name).render_as_string(hide_password=False)
 api = None
+worker = None
+worker_log = None
 log = None
 source_directory = tempfile.TemporaryDirectory(prefix="vision-session-")
 try:
@@ -35,9 +39,24 @@ try:
         "DATABASE_URL": test_url,
         "VISION_WEB_ORIGINS": "http://127.0.0.1:13000",
         "VISION_SOURCE_ROOT": str(Path(source_directory.name) / "originals"),
+        "REDIS_URL": values["REDIS_URL"],
+        "VISION_QUEUE_NAMESPACE": name,
+        "VISION_NARRATIVE_PROVIDER": "off",
+        "VISION_TEST_PARSE_GATE": str(Path(source_directory.name) / "parse-gate"),
     }
     os.environ["DATABASE_URL"] = test_url
     command.upgrade(Config(str(root / "apps/api/alembic.ini")), "head")
+    if library:
+        subprocess.run(
+            [str(root / "apps/api/.venv/bin/python"), "-m", "app.cli", "create-user", "other_reader", "--password-stdin"],
+            input="synthetic session transport passphrase\n", text=True, cwd=root / "apps/api", env=env, check=True,
+        )
+        worker_log = (root / ".local/library-worker.log").open("w")
+        worker = subprocess.Popen(
+            [str(root / "apps/api/.venv/bin/dramatiq"), "tests.browser_worker", "--processes", "1", "--threads", "1", "--queues", "ingestion"],
+            cwd=root / "apps/api", env=env, stdout=worker_log, stderr=worker_log, start_new_session=True,
+        )
+        env["VISION_TEST_WORKER_PID"] = str(worker.pid)
     subprocess.run(
         [
             str(root / "apps/api/.venv/bin/python"),
@@ -83,11 +102,30 @@ try:
     else:
         raise RuntimeError("Isolated API did not become ready")
     subprocess.run(
-        ["pnpm", "--dir", "apps/web", "test", "tests/session.spec.ts", "--workers=1"],
+        ["pnpm", "--dir", "apps/web", "test", "tests/library.spec.ts" if library else "tests/session.spec.ts", "--workers=1"],
         env={**env, "VISION_TEST_WEB_SESSION": "1"},
         check=True,
     )
+    if library:
+        fixture_db = create_engine(test_url)
+        try:
+            with fixture_db.connect() as db:
+                status, passages = db.execute(text(
+                    "SELECT j.status, (SELECT count(*) FROM passages p WHERE p.document_id = d.id) "
+                    "FROM works w JOIN documents d ON d.work_id = w.id "
+                    "JOIN ingestion_jobs j ON j.document_id = d.id WHERE w.title = :title"
+                ), {"title": "Slow parsing"}).one()
+                assert (status, passages) == ("cancelled", 0)
+                print("Running cancellation persisted: cancelled, zero published passages.")
+        finally:
+            fixture_db.dispose()
 finally:
+    if worker is not None:
+        os.killpg(worker.pid, signal.SIGCONT)
+        worker.terminate()
+        worker.wait(timeout=20)
+    if worker_log is not None:
+        worker_log.close()
     if api is not None:
         api.terminate()
         api.wait(timeout=10)
@@ -102,4 +140,11 @@ finally:
         )
         db.execute(text(f'DROP DATABASE "{name}"'))
     admin.dispose()
+    from redis import Redis
+
+    broker = Redis.from_url(values["REDIS_URL"])
+    keys = list(broker.scan_iter(match=name + ":*"))
+    if keys:
+        broker.delete(*keys)
+    broker.close()
     source_directory.cleanup()

@@ -56,6 +56,15 @@
 | DEC-48 | Stored visualizations: only resolved results are stored (201 + ETag); other outcomes 200 without reservation; key scoped to owner+work with request fingerprint (replay / 409); immutable revisions keep full result, generation, parser revision and consolidation; owner-scoped list/read/history with 404 otherwise | T32a; [API](../api/api-contract.md#stored-visualizations--t32a) |
 | DEC-49 | Adopt PROP-05: resolved results cached per owner under the hash of work, generation, cutoff, subject/participants, moment, context, creative mode, style, locks and every processing version (derivations in use, prompts, models, gates, spec, fusion weights); lookup only after the plan re-checks ownership and current generation | T32b; [architecture](../architecture/system-architecture.md#scoped-result-cache--t32b) |
 
+## Workspace implementation
+
+T34 consumes DEC-23/26/27 without changing lifecycle policy: native project forms,
+same-origin session requests, two-second processing polling, server-confirmed
+retry/cancel, and separate parse/extraction/index states. No Agents Kit source is
+copied, so D4 has no imported-component license selection in this increment.
+The [workspace contract](workspace.md) owns these controls. Narrative retry remains
+PROP-06; parsing retry does not claim to retry a failed narrative job.
+
 ## Proposed elaborations
 
 These make implementation discussions concrete without pretending the source

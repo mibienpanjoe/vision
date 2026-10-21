@@ -850,6 +850,120 @@
       "title": "GenerationIntent",
       "type": "object"
     },
+    "GenerationPage": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/GenerationView"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "GenerationPage",
+      "type": "object"
+    },
+    "GenerationView": {
+      "additionalProperties": false,
+      "properties": {
+        "current": {
+          "title": "Current",
+          "type": "boolean"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "job_id": {
+          "format": "uuid",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "narrative_error": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Safe error code of the last narrative attempt",
+          "title": "Narrative Error"
+        },
+        "narrative_ready": {
+          "title": "Narrative Ready",
+          "type": "boolean"
+        },
+        "narrative_status": {
+          "enum": [
+            "not_started",
+            "queued",
+            "running",
+            "succeeded",
+            "failed"
+          ],
+          "title": "Narrative Status",
+          "type": "string"
+        },
+        "ordinal": {
+          "minimum": 1,
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "parsed": {
+          "title": "Parsed",
+          "type": "boolean"
+        },
+        "parser_revision": {
+          "title": "Parser Revision",
+          "type": "string"
+        },
+        "search_ready": {
+          "title": "Search Ready",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "building",
+            "available",
+            "failed",
+            "cancelled"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "ordinal",
+        "parser_revision",
+        "status",
+        "current",
+        "parsed",
+        "narrative_ready",
+        "narrative_status",
+        "narrative_error",
+        "search_ready",
+        "job_id",
+        "warnings"
+      ],
+      "title": "GenerationView",
+      "type": "object"
+    },
     "IngestionView": {
       "additionalProperties": false,
       "properties": {
@@ -2347,6 +2461,9 @@
     "evidence_request": {
       "$ref": "#/$defs/EvidenceRequest"
     },
+    "generations": {
+      "$ref": "#/$defs/GenerationPage"
+    },
     "ingestion": {
       "$ref": "#/$defs/IngestionView"
     },
@@ -2412,6 +2529,7 @@
     "work",
     "library_page",
     "ingestion",
+    "generations",
     "evidence_request",
     "evidence",
     "source_span",
