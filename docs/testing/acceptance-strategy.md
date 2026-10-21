@@ -119,3 +119,47 @@ and transport coverage; product upload/reader controls are still planned.
 Broader worker interruption/retry/cancellation, PDF/EPUB adapters and reprocessing
 remain separate acceptance tasks. Parsed source evidence is not proof of live
 narrative extraction, hybrid retrieval or grounded visual reconstruction.
+
+## Grounded reconstruction evaluation — T33
+
+`tests/reconstruction_eval.py` scores stored specifications against every
+annotated case of the synthetic corpus. Missing and incorrect inclusions are
+kept apart. A canonical trait that matches a fact the case excludes
+(temporal, attribution or modality errors), and any cited span beyond the
+reading boundary, are **blocking**. Canonical traits matching no annotation
+are reported as unannotated extras and are not scored.
+
+| Run | Path | Outcomes | Canonical found | Incorrect | Leaks |
+|---|---|---|---|---|---|
+| Deterministic regression (`test_reconstruction_integration.py`) | API → PostgreSQL → ideal rule consolidation → gates → stored revision | 16 / 17 | 22 / 23 | 0 | 0 |
+| Live (`test_live_reconstruction.py`, 2026-10-21) | Upload → real Dramatiq worker (GLiNER2, fastcoref, appearance cues, EmbeddingGemma) → API → Groq `gpt-oss-120b` consolidation and adjudication → stored revision | 13 / 17 | 14 / 23 | 0 | 0 |
+
+The deterministic run's one miss is the dinner candlelight: "Warm candlelight
+lit the room" never names the house, so the attribution gate refuses it. Its
+one outcome difference is the journey-attire case, which resolves with an
+inferred scar and attire unknown, where the annotation expects insufficient
+evidence. Both are pinned.
+
+The live run (ingestion 23 s; 17 requests, about one a minute for Groq's free
+8,000 tokens per minute) made 13 consolidation and 9 adjudication calls,
+about 87,000 tokens in all. A compose took 2–15 s; consolidations used
+3,800–4,300 input and 600–3,200 output tokens, adjudications 760–1,060 input
+and 90–210 output. No temporal, spoiler or attribution failure reached a
+canonical field. What it lost was recall:
+
+- Four cases came back `insufficient_evidence` where the annotations resolve:
+  journey, the chapter-four eye conflict, the house at the return, and the
+  compass in childhood. The model either anchored no moment or tied no fact to
+  it.
+- The war and dinner scars and the sword and compass materials were not
+  extracted as canonical at their moments.
+- Two unannotated extras appeared: the house "beside ash tree", and "Brann"
+  as the sword's holder, which the scorer reads as a value.
+
+Run-to-run variance was visible earlier (T31). These figures are one live
+sample on a 14-passage fixture. They are not whole-book recall and not a
+quality target. OPEN-05 records them as the first measured baseline, and
+PROP-07 proposes targets.
+
+This evidence covers the API and the real pipeline. A browser product flow is
+Phase 5.
