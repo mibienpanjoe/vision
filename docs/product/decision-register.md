@@ -64,6 +64,9 @@ retry/cancel, and separate parse/extraction/index states. No Agents Kit source i
 copied, so D4 has no imported-component license selection in this increment.
 The [workspace contract](workspace.md) owns these controls. Narrative retry remains
 PROP-06; parsing retry does not claim to retry a failed narrative job.
+T35's chapter catalog is an owned, paginated current-generation read exposing
+numbers and IDs without narrative titles. This implements DEC-10's reading boundary
+without disclosing future chapter labels; it does not enumerate story chronology.
 
 ## Proposed elaborations
 

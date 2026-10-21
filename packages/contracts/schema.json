@@ -80,6 +80,74 @@
       "title": "AnchorView",
       "type": "object"
     },
+    "ChapterNumber": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "ordinal": {
+          "minimum": 1,
+          "title": "Ordinal",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "ordinal"
+      ],
+      "title": "ChapterNumber",
+      "type": "object"
+    },
+    "ChapterPage": {
+      "additionalProperties": false,
+      "properties": {
+        "document_revision_id": {
+          "format": "uuid",
+          "title": "Document Revision Id",
+          "type": "string"
+        },
+        "generation_id": {
+          "format": "uuid",
+          "title": "Generation Id",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ChapterNumber"
+          },
+          "maxItems": 100,
+          "title": "Items",
+          "type": "array"
+        },
+        "next_after": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next After"
+        },
+        "parser_revision": {
+          "title": "Parser Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_revision_id",
+        "generation_id",
+        "parser_revision",
+        "items",
+        "next_after"
+      ],
+      "title": "ChapterPage",
+      "type": "object"
+    },
     "ConflictView": {
       "additionalProperties": false,
       "properties": {
@@ -2446,6 +2514,9 @@
   "additionalProperties": false,
   "description": "Build-time export root only; this is not an HTTP request/response.",
   "properties": {
+    "chapters": {
+      "$ref": "#/$defs/ChapterPage"
+    },
     "entity_detail": {
       "$ref": "#/$defs/EntityDetail"
     },
@@ -2530,6 +2601,7 @@
     "library_page",
     "ingestion",
     "generations",
+    "chapters",
     "evidence_request",
     "evidence",
     "source_span",

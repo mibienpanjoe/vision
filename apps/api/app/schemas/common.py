@@ -24,6 +24,7 @@ from app.schemas.visualization import (
     VisualizationView,
 )
 from app.schemas.works import (
+    ChapterPage,
     GenerationPage,
     IngestionView,
     LibraryPage,
@@ -56,6 +57,7 @@ class SchemaCatalog(ContractModel):
     library_page: LibraryPage
     ingestion: IngestionView
     generations: GenerationPage
+    chapters: ChapterPage
     evidence_request: EvidenceRequest
     evidence: EvidenceView
     source_span: SourceSpan

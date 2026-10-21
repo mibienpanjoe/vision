@@ -69,3 +69,16 @@ class GenerationView(ContractModel):
 
 class GenerationPage(ContractModel):
     items: list[GenerationView]
+
+
+class ChapterNumber(ContractModel):
+    id: uuid.UUID
+    ordinal: int = Field(ge=1)
+
+
+class ChapterPage(ContractModel):
+    document_revision_id: uuid.UUID
+    generation_id: uuid.UUID
+    parser_revision: str
+    items: list[ChapterNumber] = Field(max_length=100)
+    next_after: int | None

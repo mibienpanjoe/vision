@@ -1,5 +1,15 @@
 /* Generated from Python Pydantic models. Run pnpm --dir packages/contracts generate. */
 
+export type DocumentRevisionId = string;
+export type GenerationId = string;
+export type Id = string;
+export type Ordinal = number;
+/**
+ * @maxItems 100
+ */
+export type Items = ChapterNumber[];
+export type NextAfter = number | null;
+export type ParserRevision = string;
 /**
  * @minItems 2
  * @maxItems 2
@@ -8,7 +18,7 @@ export type FactIds = [string, string];
 export type Status = "unresolved";
 export type Conflicts = ConflictView[];
 export type Label = string;
-export type DocumentRevisionId = string;
+export type DocumentRevisionId1 = string;
 export type End = number;
 export type OffsetUnit = "unicode_code_point";
 export type PassageId = string;
@@ -16,7 +26,7 @@ export type Quote = string;
 export type Start = number;
 export type Status1 = "supported" | "candidate";
 export type Aliases = AliasView[];
-export type Id = string;
+export type Id1 = string;
 export type Kind = "character" | "place" | "object" | "organization";
 /**
  * A name used by an eligible mention
@@ -31,7 +41,7 @@ export type Kind1 = "age" | "date" | "relative";
 export type Value = string;
 export type Anchors = AnchorView[];
 export type Evidence = SourceSpan[];
-export type Id1 = string;
+export type Id2 = string;
 export type Label2 = string;
 export type Modality = string;
 export type ParticipantIds = string[];
@@ -41,7 +51,7 @@ export type Attribute = string;
 export type Canonical = boolean;
 export type EventIds = string[];
 export type Evidence1 = SourceSpan[];
-export type Id2 = string;
+export type Id3 = string;
 export type Kind2 = "identity" | "acquired" | "interval" | "scene";
 export type Modality1 = string;
 export type Perspective = string | null;
@@ -63,13 +73,13 @@ export type ObjectId = string;
 export type Relation1 = string;
 export type SubjectId = string;
 export type Relations = RelationView[];
-export type GenerationId = string;
-export type ParserRevision = string;
+export type GenerationId1 = string;
+export type ParserRevision1 = string;
 /**
  * Reading cutoff; null means the whole book
  */
 export type ThroughChapterId = string | null;
-export type Items = EntitySummary[];
+export type Items1 = EntitySummary[];
 export type Code = string;
 export type CorrelationId = string;
 export type Message = string;
@@ -85,26 +95,26 @@ export type OriginalStart = number;
  * Source pages of the containing passage, when the format has pages
  */
 export type Pages = number[] | null;
-export type ParserRevision1 = string;
+export type ParserRevision2 = string;
 /**
  * Content document and fragment of the containing passage, for EPUB
  */
 export type Section = string | null;
 export type ContextAfter = number;
 export type ContextBefore = number;
-export type ParserRevision2 = string;
+export type ParserRevision3 = string;
 export type ReadingBoundary = WholeBook | ThroughChapter;
 export type Mode = "whole_book";
 export type ChapterId1 = string;
 export type Mode1 = "through_chapter";
-export type DocumentRevisionId1 = string;
+export type DocumentRevisionId2 = string;
 export type End1 = number;
 export type OffsetUnit1 = "unicode_code_point";
 export type PassageId1 = string;
 export type Quote1 = string;
 export type Start1 = number;
 export type Current = boolean;
-export type Id3 = string;
+export type Id4 = string;
 export type JobId = string;
 /**
  * Safe error code of the last narrative attempt
@@ -112,20 +122,20 @@ export type JobId = string;
 export type NarrativeError = string | null;
 export type NarrativeReady = boolean;
 export type NarrativeStatus = "not_started" | "queued" | "running" | "succeeded" | "failed";
-export type Ordinal = number;
+export type Ordinal1 = number;
 export type Parsed = boolean;
-export type ParserRevision3 = string;
+export type ParserRevision4 = string;
 export type SearchReady = boolean;
 export type Status2 = "building" | "available" | "failed" | "cancelled";
 export type Warnings = string[];
-export type Items1 = GenerationView[];
+export type Items2 = GenerationView[];
 export type Attempts = number;
 export type CancelRequested = boolean;
 export type CorrelationId1 = string;
 export type DispatchPending = boolean;
 export type DocumentId = string;
 export type ErrorCode = string | null;
-export type Id4 = string;
+export type Id5 = string;
 export type Revision = number;
 export type Stage = "awaiting_parser" | "parse" | "parsed" | "failed" | "cancelled";
 export type Status3 = "queued" | "running" | "succeeded" | "failed" | "cancelled";
@@ -133,7 +143,7 @@ export type Warnings1 = string[];
 export type Attempts1 = number;
 export type CorrelationId2 = string;
 export type DispatchPending1 = boolean;
-export type Id5 = string;
+export type Id6 = string;
 export type Result = number | null;
 export type Stage1 = "queued" | "complete";
 export type Status4 = "queued" | "succeeded";
@@ -141,27 +151,27 @@ export type ByteCount = number;
 export type CurrentParserRevision = string | null;
 export type DocumentId1 = string;
 export type Format = "txt" | "md" | "pdf" | "epub";
-export type Id6 = string;
+export type Id7 = string;
 export type Revision1 = number;
 export type Sha256 = string;
 export type Title = string;
-export type Items2 = WorkView[];
+export type Items3 = WorkView[];
 export type NextCursor = string | null;
 export type Password = string;
 export type Username = string;
-export type Id7 = string;
+export type Id8 = string;
 export type Username1 = string;
 export type Kind3 = "probe";
 export type Value2 = number;
 export type ConsolidationId = string;
 export type CreatedAt = string;
-export type GenerationId1 = string;
-export type Number = number;
-export type ParserRevision4 = string;
-export type Items3 = RevisionSummary[];
-export type CreativeMode = "canon_first" | "interpretation";
-export type DocumentRevisionId2 = string;
 export type GenerationId2 = string;
+export type Number = number;
+export type ParserRevision5 = string;
+export type Items4 = RevisionSummary[];
+export type CreativeMode = "canon_first" | "interpretation";
+export type DocumentRevisionId3 = string;
+export type GenerationId3 = string;
 export type ReadingBoundary1 = WholeBook | ThroughChapter;
 export type StoryEventId = string | null;
 export type WorkId = string;
@@ -176,7 +186,7 @@ export type Choices = [ContextChoice, ...ContextChoice[]];
  * Which request field the choice fills; a moment choice is resubmitted as its label
  */
 export type Field = ("subject" | "moment" | "context") | null;
-export type Id8 = string;
+export type Id9 = string;
 export type Label3 = string;
 export type Outcome1 = "needs_context";
 export type SchemaVersion1 = "1.0";
@@ -191,7 +201,7 @@ export type SchemaVersion3 = "1.0";
 export type Format1 = "txt" | "md" | "pdf" | "epub";
 export type Title1 = string;
 export type CreatedAt1 = string;
-export type Id9 = string;
+export type Id10 = string;
 /**
  * Scene context such as "at home"
  */
@@ -248,9 +258,9 @@ export type Unknown = string[];
 export type Participants = MemberView[];
 export type Context1 = string | null;
 export type CreativeMode2 = "canon_first" | "interpretation";
-export type GenerationId3 = string;
+export type GenerationId4 = string;
 export type Moment1 = (AgeMoment | PhraseMoment) | null;
-export type ParserRevision5 = string;
+export type ParserRevision6 = string;
 /**
  * The event the text anchors the moment to
  */
@@ -277,15 +287,16 @@ export type Revision2 = number;
 export type WorkId1 = string;
 export type VisualizationResult = ResolvedSpecification | NeedsContext | InsufficientEvidence | Failed;
 export type CreatedAt2 = string;
-export type Id10 = string;
+export type Id11 = string;
 export type Revision3 = number;
 export type Subject = string;
-export type Items4 = VisualizationSummary[];
+export type Items5 = VisualizationSummary[];
 
 /**
  * Build-time export root only; this is not an HTTP request/response.
  */
 export interface SchemaCatalog {
+  chapters: ChapterPage;
   entity_detail: EntityDetail;
   entity_page: EntityPage;
   error: ErrorEnvelope;
@@ -311,6 +322,17 @@ export interface SchemaCatalog {
   visualization_result: VisualizationResult;
   work: WorkView;
 }
+export interface ChapterPage {
+  document_revision_id: DocumentRevisionId;
+  generation_id: GenerationId;
+  items: Items;
+  next_after: NextAfter;
+  parser_revision: ParserRevision;
+}
+export interface ChapterNumber {
+  id: Id;
+  ordinal: Ordinal;
+}
 export interface EntityDetail {
   conflicts: Conflicts;
   entity: EntitySummary;
@@ -328,7 +350,7 @@ export interface ConflictView {
 }
 export interface EntitySummary {
   aliases: Aliases;
-  id: Id;
+  id: Id1;
   kind: Kind;
   label: Label1;
   mention_count: MentionCount;
@@ -339,7 +361,7 @@ export interface AliasView {
   status: Status1;
 }
 export interface SourceSpan {
-  document_revision_id: DocumentRevisionId;
+  document_revision_id: DocumentRevisionId1;
   end: End;
   offset_unit?: OffsetUnit;
   passage_id: PassageId;
@@ -355,7 +377,7 @@ export interface EventRelationView {
 export interface EventView {
   anchors: Anchors;
   evidence: Evidence;
-  id: Id1;
+  id: Id2;
   label: Label2;
   modality: Modality;
   participant_ids: ParticipantIds;
@@ -371,7 +393,7 @@ export interface FactView {
   canonical: Canonical;
   event_ids: EventIds;
   evidence: Evidence1;
-  id: Id2;
+  id: Id3;
   kind: Kind2;
   modality: Modality1;
   perspective: Perspective;
@@ -391,12 +413,12 @@ export interface RelationView {
   subject_id: SubjectId;
 }
 export interface NarrativeScope {
-  generation_id: GenerationId;
-  parser_revision: ParserRevision;
+  generation_id: GenerationId1;
+  parser_revision: ParserRevision1;
   through_chapter_id: ThroughChapterId;
 }
 export interface EntityPage {
-  items: Items;
+  items: Items1;
   scope: NarrativeScope;
 }
 export interface ErrorEnvelope {
@@ -417,14 +439,14 @@ export interface EvidenceView {
   original_end: OriginalEnd;
   original_start: OriginalStart;
   pages: Pages;
-  parser_revision: ParserRevision1;
+  parser_revision: ParserRevision2;
   section: Section;
   span: SourceSpan;
 }
 export interface EvidenceRequest {
   context_after?: ContextAfter;
   context_before?: ContextBefore;
-  parser_revision: ParserRevision2;
+  parser_revision: ParserRevision3;
   reading_boundary: ReadingBoundary;
   span: EvidenceSpan;
 }
@@ -436,7 +458,7 @@ export interface ThroughChapter {
   mode: Mode1;
 }
 export interface EvidenceSpan {
-  document_revision_id: DocumentRevisionId1;
+  document_revision_id: DocumentRevisionId2;
   end: End1;
   offset_unit?: OffsetUnit1;
   passage_id: PassageId1;
@@ -444,18 +466,18 @@ export interface EvidenceSpan {
   start: Start1;
 }
 export interface GenerationPage {
-  items: Items1;
+  items: Items2;
 }
 export interface GenerationView {
   current: Current;
-  id: Id3;
+  id: Id4;
   job_id: JobId;
   narrative_error: NarrativeError;
   narrative_ready: NarrativeReady;
   narrative_status: NarrativeStatus;
-  ordinal: Ordinal;
+  ordinal: Ordinal1;
   parsed: Parsed;
-  parser_revision: ParserRevision3;
+  parser_revision: ParserRevision4;
   search_ready: SearchReady;
   status: Status2;
   warnings: Warnings;
@@ -467,7 +489,7 @@ export interface IngestionView {
   dispatch_pending: DispatchPending;
   document_id: DocumentId;
   error_code: ErrorCode;
-  id: Id4;
+  id: Id5;
   revision: Revision;
   stage: Stage;
   status: Status3;
@@ -477,13 +499,13 @@ export interface JobView {
   attempts: Attempts1;
   correlation_id: CorrelationId2;
   dispatch_pending: DispatchPending1;
-  id: Id5;
+  id: Id6;
   result: Result;
   stage: Stage1;
   status: Status4;
 }
 export interface LibraryPage {
-  items: Items2;
+  items: Items3;
   next_cursor: NextCursor;
 }
 export interface WorkView {
@@ -491,7 +513,7 @@ export interface WorkView {
   current_parser_revision: CurrentParserRevision;
   document_id: DocumentId1;
   format: Format;
-  id: Id6;
+  id: Id7;
   revision: Revision1;
   sha256: Sha256;
   title: Title;
@@ -501,7 +523,7 @@ export interface LoginRequest {
   username: Username;
 }
 export interface PrincipalView {
-  id: Id7;
+  id: Id8;
   username: Username1;
 }
 export interface ProbeRequest {
@@ -509,19 +531,19 @@ export interface ProbeRequest {
   value?: Value2;
 }
 export interface RevisionPage {
-  items: Items3;
+  items: Items4;
 }
 export interface RevisionSummary {
   consolidation_id: ConsolidationId;
   created_at: CreatedAt;
-  generation_id: GenerationId1;
+  generation_id: GenerationId2;
   number: Number;
-  parser_revision: ParserRevision4;
+  parser_revision: ParserRevision5;
 }
 export interface RequestScope {
   creative_mode: CreativeMode;
-  document_revision_id: DocumentRevisionId2;
-  generation_id: GenerationId2;
+  document_revision_id: DocumentRevisionId3;
+  generation_id: GenerationId3;
   reading_boundary: ReadingBoundary1;
   story_event_id?: StoryEventId;
   work_id: WorkId;
@@ -538,7 +560,7 @@ export interface NeedsContext {
 }
 export interface ContextChoice {
   field?: Field;
-  id: Id8;
+  id: Id9;
   label: Label3;
 }
 export interface InsufficientEvidence {
@@ -561,7 +583,7 @@ export interface UploadMetadata {
 }
 export interface VisualizationView {
   created_at: CreatedAt1;
-  id: Id9;
+  id: Id10;
   request: VisualizationRequest;
   result: ResolvedSpecification;
   revision: Revision2;
@@ -652,9 +674,9 @@ export interface TraitView {
 export interface ScopeView {
   context: Context1;
   creative_mode: CreativeMode2;
-  generation_id: GenerationId3;
+  generation_id: GenerationId4;
   moment: Moment1;
-  parser_revision: ParserRevision5;
+  parser_revision: ParserRevision6;
   resolved_moment: ResolvedMoment;
   through_chapter_id: ThroughChapterId2;
 }
@@ -671,11 +693,11 @@ export interface VisualizationCreated {
   visualization: VisualizationView | null;
 }
 export interface VisualizationPage {
-  items: Items4;
+  items: Items5;
 }
 export interface VisualizationSummary {
   created_at: CreatedAt2;
-  id: Id10;
+  id: Id11;
   revision: Revision3;
   subject: Subject;
 }

@@ -234,6 +234,7 @@ long-running ingestion stages, failures/cancellation and broader recovery.
 | `POST /v1/works` | Authenticated multipart `title`, `format` (`txt`/`md`/`pdf`/`epub`), and one `file`; required `Idempotency-Key`; `202` with work and ingestion reference |
 | `GET /v1/works` | Owner-scoped UUID-ascending keyset page; `limit` 1–100 (default 20), optional UUID `after`; `items` and nullable `next_cursor` |
 | `GET /v1/works/{id}` | Owned work metadata, its first immutable document revision and `current_parser_revision` (null until a generation is published) |
+| `GET /v1/works/{id}/chapters` | Current published source generation's chapter numbers and IDs, without titles; ordinal-ascending page, `after` >= 0 (default 0), `limit` 1–100 (default 100); `next_after` or null; source/generation/parser lineage retained |
 | `GET /v1/works/{id}/original` | Owned original bytes as a nosniff attachment with a fixed safe filename; no public storage URL |
 | `GET /v1/works/{id}/ingestions/{job_id}` | Job resolved through the owned work/document; lifecycle state, `revision` (also the `ETag`), cancel request, attempts, safe error code and structure warnings |
 | `POST /v1/works/{id}/ingestions/{job_id}/retry` and `.../cancel` | Owned conditional mutation; see [ingestion recovery](#ingestion-retry-and-cancellation--t13) |
@@ -259,6 +260,9 @@ Response models are generated from `schemas/works.py`; storage references,
 private filesystem paths, owner identifiers and original filenames are excluded.
 The shared TypeScript catalog also exports `GenerationPage` and `GenerationView`,
 including narrative status/error and separate parse, narrative and search readiness.
+The chapter catalog returns `409 SOURCE_NOT_READY` until a source generation is
+published, and the common owned `404` otherwise. It requires parsing, not narrative
+readiness. It never returns chapter titles, source text or obsolete parser chapters.
 
 T11 publishes text-ingestion intents through Redis to the real parser worker.
 An unavailable broker leaves SQL intent visibly pending for `make dispatch`.

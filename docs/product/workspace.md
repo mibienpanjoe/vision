@@ -37,5 +37,14 @@ project components use the approved tokens and bundled fonts. Browser coverage
 and its infrastructure boundary are recorded in the
 [acceptance strategy](../testing/acceptance-strategy.md#library-browser-checks--t34).
 
+## Reading boundary — T35
+
+The chapter picker uses the owned current-generation chapter-number catalog.
+Titles and excerpts do not appear in its options, including later chapters.
+Its source revision, generation and parser revision identify the available
+boundary. Unparsed sources return a visible not-ready result. Choosing a cutoff
+must clear the prior entity selection, detail and context before loading eligible
+data; whole-book and chapter scope remain distinct from story-time inputs.
+
 Entity/context exploration, source reading, reconstruction/export and refinement
-remain the subsequent T35–T38 increments.
+remain the subsequent T35–T38 browser increments.
