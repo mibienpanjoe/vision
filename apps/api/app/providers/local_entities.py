@@ -16,7 +16,7 @@ from functools import cache
 from app.providers.contracts import ProviderCall, ProviderResult, Usage
 from app.providers.extraction import KNOWN_REF
 
-RULES_VERSION = "rules-v1"
+RULES_VERSION = "rules-v2"
 GLINER = ("fastino/gliner2-base-v1", "f9634218e53580c56edf0de97ca1a7d3f1c2354e")
 COREF = ("biu-nlp/f-coref", "e91dfff12879495d882ba9460d0c5d5dd44ade59")
 LABELS = {"character": "a person or creature in the story, named or described",
@@ -32,6 +32,8 @@ STOP = {"i", "me", "my", "he", "him", "his", "she", "her", "hers", "they", "them
 # Text between two resolved identities that states they are the same.
 REVEAL_BETWEEN = re.compile(r"^(?:,?\s*who\s+(?:was|is)\s+(?:really|actually)|\s+(?:was|is|had been)"
                             r"(?:\s+(?:really|actually|in fact))?|\s+turned\s+out\s+to\s+be)\s+$", re.I)
+# Resolved references that may stand for a person in a reveal; "this" or "it" may point at anything.
+PERSONAL = {"i", "he", "she", "me", "him", "her"}
 SAME_AFTER = re.compile(r"^\s+(?:were|are)\s+the\s+same\s+(?:person|man|woman|figure)\b", re.I)
 
 Span = tuple[int, int]
@@ -159,7 +161,8 @@ def extract(sources: list[dict], known: list[dict], recognize: Recognize, corefe
     # Explicit reveals between two named identities: "I was Wren", "Wren and Arthur were the same person".
     relations, aliases, by_source = [], [], defaultdict(list)
     for (index, start, end), identity in resolved.items():
-        if identity[0] == "name":
+        named = (index, start, end) in located or texts[index][start:end].casefold() in PERSONAL
+        if identity[0] == "name" and named:
             by_source[index].append((start, end, identity))
     count = Counter(resolved.values())  # the alias goes on the identity the text mentions most
     for index, spans in by_source.items():

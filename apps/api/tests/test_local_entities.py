@@ -101,6 +101,14 @@ def test_explicit_reveals_link_named_identities_but_possessives_do_not():
     assert {(a["label"], a["status"]) for a in output["aliases"]} == {("Wren", "supported")}
 
 
+def test_reveals_ignore_non_personal_references():
+    def this_is_newcomen(text):
+        return [[(text.index("Carew"), text.index("Carew") + 5), (text.index("This"), text.index("This") + 4)]]
+    output = run(["Carew fell. This is Inspector Newcomen."], [("Carew", "character"), ("Inspector Newcomen", "character")],
+                 this_is_newcomen)
+    assert output["relations"] == []
+
+
 def test_later_chapters_reuse_earlier_keys_by_folded_label():
     known = [{"key": "k:0", "kind": "character", "label": "Henry Jekyll"},
              {"key": "k:1", "kind": "place", "label": "the house by the ash tree"}]

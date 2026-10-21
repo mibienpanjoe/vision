@@ -198,8 +198,10 @@ Local entities follow the T18 storage contract with these rules:
   chapter-two cutoff while still covering the identity's earlier mentions once
   it is visible. Locally, links come from explicit reveal patterns ("X was Y",
   "X, who was really Y", "X turned out to be Y", "X and Y were the same
-  person"), where either side may be a pronoun that coreference resolved to one
-  identity; the pattern match is the evidence span. A coreference cluster that
+  person"), where either side may be a personal pronoun (I, he, she) that
+  coreference resolved to one identity, never "this" or "it"; the pattern match
+  is the evidence span. On Jekyll, allowing any resolved reference produced a
+  false link ("This is Inspector Newcomen"). A coreference cluster that
   merely contains two names does not create a link until measured on a novel:
   on the fixture, fastcoref resolved "I" to Arthur but kept "Wren" in its own
   cluster, so the reveal came from the pattern.
@@ -212,7 +214,9 @@ has that exact quote there, so repeated pronouns land on the right occurrence;
 publication, `k:n` continuity and run lineage are the T18 code. On the
 synthetic fixture with the pinned models: 0 misses, 0 false merges, 0 splits,
 0 ambiguity violations, and the Wren = Arthur link stored with chapter-five
-evidence only.
+evidence only. On Jekyll (11 chapter batches, 334 passages) it took 4 minutes 19
+seconds with 3.7 GB peak memory and at most 385 mentions per batch, well under
+the 1,000-mention output bound.
 
 Appearance candidates are pointers, not facts: a sentence span, the matched
 pattern and the mentions it contains. `services/narrative/appearance.py` stores
