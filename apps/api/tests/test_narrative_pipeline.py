@@ -250,3 +250,40 @@ def test_real_upload_worker_gateway_and_scoped_browse(clients, database, monkeyp
     assert other.get(f"/v1/works/{work_id}/entities/{arthur['id']}").status_code == 404
     with Session(database) as db:
         assert set(db.scalars(select(Derivation.status))) == {"succeeded"}
+
+
+@pytest.mark.skipif(os.environ.get("VISION_LOCAL_MODELS") != "1",
+                    reason="Set VISION_LOCAL_MODELS=1 to run the pinned local models in a real worker")
+def test_real_worker_runs_local_models_without_network(clients, database, monkeypatch, tmp_path):
+    redis_url = os.environ.get("VISION_TEST_REDIS_URL")
+    if not redis_url:
+        pytest.skip("Set VISION_TEST_REDIS_URL for the real worker pipeline")
+    monkeypatch.setenv("REDIS_URL", redis_url)
+    monkeypatch.setenv("VISION_QUEUE_NAMESPACE", "vision_test_" + uuid.uuid4().hex)
+    monkeypatch.setenv("VISION_NARRATIVE_PROVIDER", "local")
+    monkeypatch.setenv("HF_HUB_OFFLINE", "1")  # models must already be cached; nothing is fetched
+    monkeypatch.delenv("VISION_LLM_API_KEY", raising=False)
+    owner, _ = clients
+    api = Path(__file__).parents[1]
+    with (tmp_path / "local-worker.log").open("w") as log:
+        worker = subprocess.Popen([str(api / ".venv/bin/dramatiq"), "app.workers.bootstrap", "--processes", "1",
+                                   "--threads", "1"], cwd=api, env=os.environ.copy(), stdout=log, stderr=log)
+        try:
+            accepted = upload(owner, "local-worker-source")
+            work_id = accepted["work"]["id"]
+            dispatch_ingestions(database)
+            for _ in range(1800):
+                generation = generation_of(owner, work_id)
+                if generation["narrative_status"] in {"succeeded", "failed"}:
+                    break
+                time.sleep(0.1)
+            assert (generation["narrative_status"], generation["narrative_ready"]) == ("succeeded", True), \
+                (tmp_path / "local-worker.log").read_text()[-2000:]
+        finally:
+            worker.terminate()
+            worker.wait(timeout=15)
+    arthur = next(e for e in owner.get(f"/v1/works/{work_id}/entities").json()["items"] if e["label"] == "Arthur")
+    assert "Wren" in {a["label"] for a in arthur["aliases"]}
+    with Session(database) as db:
+        assert dict(db.execute(select(Derivation.stage, Derivation.status)).all()) == {
+            "entities": "succeeded", "appearance": "succeeded"}
