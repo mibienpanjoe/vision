@@ -131,6 +131,18 @@ The maintainer selected the installed **FreeLLM API** for LLM calls (DEC-24).
 Since DEC-37 it may process synthetic fixtures only, never a private book;
 private-book processing is local, and query-time excerpts go to Groq with Zero
 Data Retention ([ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md)).
+
+Local extraction installs with the default `narrative` dependency group
+(GLiNER2, fastcoref, sentence-transformers; transformers is held below 5 because
+fastcoref fails on it). The pinned model revisions download once into the
+Hugging Face cache (`HF_HOME`, about 1 GB for entities); only model files are
+fetched, never book text. The real-model test is opt-in:
+
+```sh
+set -a; . ./.env; set +a
+VISION_LOCAL_MODELS=1 VISION_TEST_ADMIN_URL=$DATABASE_URL \
+  uv run --project apps/api --locked pytest apps/api/tests/test_local_entities.py -m integration -s
+```
 The existing gateway was observed healthy on loopback port 3001 during Phase 1
 prerequisite inspection. Its role/model capabilities, structured outputs,
 embeddings, authentication, upstream source-text handling and limits still need

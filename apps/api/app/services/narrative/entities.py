@@ -70,7 +70,7 @@ def publish(db, derivation_id, outputs) -> dict:
         used, mentions, seen = set(), [], set()
         for item in output.mentions:
             passage = by_ref.get(item.ref)
-            span = ground(passage, item.quote) if passage else None
+            span = ground(passage, item.quote, item.start) if passage else None
             keys = list(dict.fromkeys(([item.entity] if item.entity else []) + item.candidates))
             if passage is None or span is None:
                 rejected["ungrounded"] += 1
@@ -105,7 +105,7 @@ def publish(db, derivation_id, outputs) -> dict:
                        for eid in dict.fromkeys(local[key].id for key in keys))
         for item in output.aliases:
             passage = by_ref.get(item.ref)
-            span = ground(passage, item.quote) if passage else None
+            span = ground(passage, item.quote, item.start) if passage else None
             if span is None or item.label.casefold() not in item.quote.casefold():
                 rejected["ungrounded"] += 1
             elif item.entity not in local:
@@ -115,7 +115,7 @@ def publish(db, derivation_id, outputs) -> dict:
                                    passage_id=passage.id, start=span[0], end=span[1], model_run_id=run_id))
         for item in output.relations:
             passage = by_ref.get(item.ref)
-            span = ground(passage, item.quote) if passage else None
+            span = ground(passage, item.quote, item.start) if passage else None
             if span is None:
                 rejected["ungrounded"] += 1
             elif item.subject not in local or item.object not in local or local[item.subject] is local[item.object]:

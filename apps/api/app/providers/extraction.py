@@ -1,7 +1,9 @@
 """Entity-extraction role: request composition and the structured output contract.
 
-The model quotes source text instead of giving offsets; the narrative service
-grounds each quote in its passage and rejects anything it cannot find.
+The model quotes source text; the narrative service grounds each quote in its
+passage and rejects anything it cannot find. Local extractors also give the
+quote's start offset, used only when the passage has that exact quote there, so
+a repeated short mention such as "he" lands on the right occurrence.
 """
 
 from typing import Annotated, Literal
@@ -24,6 +26,7 @@ EntityRef = Annotated[str, Field(pattern=r"^(k:)?[a-z0-9_-]{1,32}$")]
 Quote = Annotated[str, Field(min_length=1, max_length=400)]
 Ref = Annotated[str, Field(min_length=1, max_length=128)]
 Label = Annotated[str, Field(min_length=1, max_length=256)]
+Start = Annotated[int, Field(ge=0)]
 
 INSTRUCTIONS = f"""You extract narrative entities from numbered book passages.
 Return JSON that matches the schema exactly, with no other keys.
@@ -50,6 +53,7 @@ class ExtractedEntity(StructuredOutput):
 class ExtractedMention(StructuredOutput):
     ref: Ref
     quote: Quote
+    start: Start | None = None
     entity: EntityRef | None = None
     candidates: list[EntityRef] = Field(default=[], max_length=8)
 
@@ -60,6 +64,7 @@ class ExtractedAlias(StructuredOutput):
     status: Literal["supported", "candidate"]
     ref: Ref
     quote: Quote
+    start: Start | None = None
 
 
 class ExtractedRelation(StructuredOutput):
@@ -68,10 +73,11 @@ class ExtractedRelation(StructuredOutput):
     object: EntityRef
     ref: Ref
     quote: Quote
+    start: Start | None = None
 
 
 class EntityExtraction(StructuredOutput):
-    schema_version = "entities-schema-v2"
+    schema_version = "entities-schema-v3"
     entities: list[ExtractedEntity] = Field(max_length=200)
     mentions: list[ExtractedMention] = Field(max_length=1_000)
     aliases: list[ExtractedAlias] = Field(default=[], max_length=200)

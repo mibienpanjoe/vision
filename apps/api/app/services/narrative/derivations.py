@@ -45,8 +45,9 @@ def batches(passages, budget: int):
     return groups + [current] if current else groups
 
 
-def ground(passage, quote):
-    start = passage.text.find(quote)
+def ground(passage, quote, start=None):
+    if start is None or passage.text[start:start + len(quote)] != quote:
+        start = passage.text.find(quote)
     return None if start < 0 else (start, start + len(quote))
 
 

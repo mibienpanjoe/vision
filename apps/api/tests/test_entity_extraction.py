@@ -117,7 +117,7 @@ def test_fixture_derivation_keeps_ambiguity_spans_and_lineage(database, generati
     with Session(database) as db:
         derivation = db.get(Derivation, derivation_id)
         assert (derivation.status, derivation.attempt) == ("succeeded", 1)
-        assert derivation.processing_version == "entities-v2/entities-schema-v2/deterministic/rule-v1"
+        assert derivation.processing_version == "entities-v2/entities-schema-v3/deterministic/rule-v1"
         assert derivation.rejections == {"ungrounded": 2, "unknown_entity": 1}
         report = evaluate(db, derivation_id)
         assert report == {"misses": [], "false_merges": [], "splits": [], "unmatched_entities": [],
