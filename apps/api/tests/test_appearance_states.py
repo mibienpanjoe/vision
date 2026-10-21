@@ -115,6 +115,7 @@ def test_model_attribute_names_group_under_core_traits():
                                        "attire_exclusion", "left_cheek")] == [
         "hair", "eyes", "eyes", "attire", "attire", "attire", "left_cheek"]
     assert attribute_key("blade_material") == "material"
+    assert [attribute_key(a) for a in ("wearing", "worn_items", "wears")] == ["attire"] * 3
     assert [part(a) for a in ("left_cheek_scar", "left_cheek", "coat_color", "eye_color", "attire_exclusion")] == [
         "left_cheek", "left_cheek", "coat", "eyes", "attire"]
 

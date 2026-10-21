@@ -63,7 +63,9 @@ from app.services.verification.claims import (
 from app.services.visualization.prompts import compose_prompt
 from sqlalchemy import select as select_rows
 
-RETRYABLE = frozenset({"PROVIDER_RATE_LIMITED", "PROVIDER_TIMEOUT", "PROVIDER_UNAVAILABLE"})
+RULED_OUT = frozenset({"removed", "negated", "superseded at this moment"})
+# A failed consolidation is reclaimed on the next request, so these may succeed when asked again.
+RETRYABLE = frozenset({"PROVIDER_RATE_LIMITED", "PROVIDER_TIMEOUT", "PROVIDER_UNAVAILABLE", "PROVIDER_INVALID_OUTPUT"})
 
 
 def consolidation_adapter() -> ProviderAdapter | None:
@@ -148,7 +150,10 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
     if plan.creative_mode == "interpretation":
         creative += [CreativeAddition(attribute=u, value="artist's choice", reason="Not established by the eligible text.")
                      for u in subject_view.unknown]
-    excluded_ids = [f for m in [*composed.members, *composed.world] for f in m.state.excluded]
+    # Only values the text rules out here belong in the negative prompt; a value from another moment is unknown,
+    # not contradicted ("chestnut" childhood hair says nothing about adult hair).
+    excluded_ids = [f for m in [*composed.members, *composed.world] for f, reason in m.state.excluded.items()
+                    if reason in RULED_OUT]
     excluded_values = list(db.scalars(select_rows(VisualFact.value).where(VisualFact.id.in_(excluded_ids))))
     prompt, negative = compose_prompt(subject_view, participants, world, creative, plan.style,
                                       plan.creative_mode == "interpretation", excluded_values)

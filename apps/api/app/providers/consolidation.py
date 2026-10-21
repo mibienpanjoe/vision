@@ -18,7 +18,7 @@ from app.providers.extraction import Key, Label, Quote, Ref
 from app.providers.visual_facts import FactKind
 from pydantic import Field
 
-PROMPT_VERSION = "consolidate-v3"
+PROMPT_VERSION = "consolidate-v4"
 REQUEST_REF = "request"
 
 INSTRUCTIONS = f"""You consolidate what numbered book passages say about how one subject looks and, when the
@@ -35,10 +35,14 @@ it is derived data, never evidence. Return JSON that matches the schema exactly,
   kind: identity, acquired, interval or scene (scene facts name their event keys); support explicit when a
   quote states it, inferred with the assumption stated; polarity negated when the text denies or removes it;
   modality as the text presents it; perspective when someone other than the narrator describes it.
+  events: the keys of every event at which the fact holds, as the quotes place it. A trait stated for one
+  time (a child's hair, a coat worn that day, armor worn in a battle) is linked to that time's event; leave
+  events empty only for a trait the text presents as timeless.
 - identity_links: only when a quote says two names are the same person or thing; "explicit" when the quote
   states it, otherwise "inferred".
 - requested_event: the key of your event that is the moment or scene the reader asked about, or null when the
-  passages do not establish that moment. Never invent an event to fill it.
+  passages do not establish that moment. Never invent an event to fill it. Facts that hold at that moment list
+  its key.
 Attribute every fact only to the entity the text gives it to, and quote text exactly as written.
 Never add details the passages do not support; leave out what they do not say."""
 

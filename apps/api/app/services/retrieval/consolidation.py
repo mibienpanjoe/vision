@@ -81,13 +81,16 @@ def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limi
     group = sorted((passages[pid] for pid in texts), key=lambda p: p.ordinal)
     request = consolidation_request([SourceItem(ref=f"p{p.ordinal}", text=texts[p.id]) for p in group],
                                     request_item(plan), limits)
-    result = execute(adapter, request, Consolidation)
+    results = [execute(adapter, request, Consolidation)]
+    if results[0].record.outcome == "invalid_output":  # one malformed answer gets one more call, no more
+        results.append(execute(adapter, request, Consolidation))
+    result = results[-1]
 
     with Session(engine) as db, db.begin():
         derivation = db.scalar(select(Derivation).where(Derivation.id == derivation_id).with_for_update())
         if derivation.attempt != attempt or derivation.status != "running":
             return derivation_id
-        run = persist_run(db, owner_id, result.record, plan.generation_id, derivation_id)
+        run = [persist_run(db, owner_id, r.record, plan.generation_id, derivation_id) for r in results][-1]
         db.flush()
         if result.output is None:
             derivation.status = "cancelled" if result.record.outcome == "cancelled" else "failed"

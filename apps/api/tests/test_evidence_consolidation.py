@@ -145,6 +145,23 @@ def test_provider_failure_is_recorded_and_never_falls_back(story):
 
 
 @pytest.mark.integration
+def test_one_malformed_answer_gets_one_more_call(story):
+    plan, expanded, _ = gathered(story, 2, "Arthur during the war")
+    adapter = ScriptedAdapter('{"facts": [{"subject": "Arthur"}]}', json.dumps(consolidation_rule([])))
+    derivation_id = consolidate(story.engine, plan, expanded, adapter)
+    story.db.expire_all()
+    assert story.db.get(Derivation, derivation_id).status == "succeeded" and len(adapter.calls) == 2
+    outcomes = [r.outcome for r in story.db.scalars(query(ModelRun).where(ModelRun.derivation_id == derivation_id)
+                                                    .order_by(ModelRun.started_at))]
+    assert outcomes == ["invalid_output", "succeeded"]
+    twice = ScriptedAdapter("not json", "still not json", "never called")
+    later, later_expanded, _ = gathered(story, 3, "Arthur during the war")
+    failed = consolidate(story.engine, later, later_expanded, twice)
+    story.db.expire_all()
+    assert (story.db.get(Derivation, failed).error_code, len(twice.calls)) == ("PROVIDER_INVALID_OUTPUT", 2)
+
+
+@pytest.mark.integration
 def test_input_outside_the_boundary_is_refused_and_links_stay_scoped(story):
     plan, expanded, infos = gathered(story, 2, "Arthur during the war")
     late = next(pid for pid, info in passage_infos(story.db, story.plan(None, query="Arthur")).items()

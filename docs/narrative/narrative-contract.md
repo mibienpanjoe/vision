@@ -363,6 +363,14 @@ refused the lighting claim. An object's material stated only at another event
 stays unknown at this one. The response schema for scenes is defined with the
 visual specification in T31.
 
+**Live end to end (T31, 2026-10-21).** Through the real compose endpoint with
+Groq consolidation and adjudication on the synthetic fixture, "Arthur at home
+after the war" (chapter 3) resolved after the prompt asked for event keys on
+every fact (`consolidate-v4`). One run kept the linen shirt and the visible scar
+canonical with Mira holding her compass. A second run kept only the shirt, and
+a third failed strict validation once, which led to the single retry. The
+results vary from run to run; T33 measures them over repeats.
+
 ## Discriminated outcomes
 
 Conceptual outcomes are `resolved`, `needs_context`, `insufficient_evidence`, and

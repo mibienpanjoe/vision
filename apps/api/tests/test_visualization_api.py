@@ -66,7 +66,8 @@ def test_resolved_specification_cites_resolvable_in_scope_evidence(api):
     assert set(spec["lineage"]["processing"]) == {"query_plan", "consolidation", "index", "parser"}
     assert spec["lineage"]["processing"]["index"].startswith("index-v1/deterministic/hashed-v1")
     assert "plain linen shirt" in spec["generation"]["prompt"] and "steel armor" not in spec["generation"]["prompt"]
-    assert "steel armor" in spec["generation"]["negative_prompt"]
+    assert "steel armor" in spec["generation"]["negative_prompt"]  # removed before dinner
+    assert "chestnut" not in spec["generation"]["negative_prompt"]  # childhood hair is unknown here, not ruled out
     boundary = {"mode": "through_chapter", "chapter_id": str(story.chapters[3])}
     for member in [spec["subject"], *spec["participants"], *spec["world"]]:
         for trait in member["traits"]:
@@ -136,3 +137,22 @@ def test_access_and_request_validation_fail_closed(api):
     with TestClient(create_app(), base_url="http://127.0.0.1") as anonymous:
         assert anonymous.post(f"/v1/works/{work_id}/visualizations/compose", json={"query": "Arthur"},
                               headers=ORIGIN).status_code == 401
+
+
+@pytest.mark.skipif(__import__("os").environ.get("VISION_LIVE_GROQ") != "1",
+                    reason="Set VISION_LIVE_GROQ=1 and GROQ_API_KEY to compose through Groq")
+def test_live_compose_through_groq(api, monkeypatch):
+    import json
+
+    from app.providers.openai_compatible import GroqGateway
+    compose, *_ = api
+    monkeypatch.setattr(specification, "consolidation_adapter", GroqGateway.from_environment)
+    monkeypatch.setattr(specification, "adjudicator", lambda adapter: adapter)
+    body = outcome(compose(chapter=3, query="Arthur at home after the war"))
+    summary = body if body["outcome"] != "resolved" else {
+        "moment": body["data"]["scope"]["resolved_moment"], "subject": traits(body["data"]["subject"]),
+        "unknown": body["data"]["subject"]["unknown"], "participants": [m["entity"]["label"] for m in body["data"]["participants"]],
+        "world": [m["entity"]["label"] for m in body["data"]["world"]], "verification": body["data"]["verification"],
+        "prompt": body["data"]["generation"]["prompt"], "negative": body["data"]["generation"]["negative_prompt"]}
+    print(json.dumps(summary, indent=1, ensure_ascii=False))
+    assert body["outcome"] in {"resolved", "needs_context", "insufficient_evidence", "failed"}

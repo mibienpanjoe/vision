@@ -23,7 +23,8 @@ CANONICAL_MODALITY = frozenset({"fact", "memory"})
 UNTIMED = frozenset({"identity", "acquired", "interval"})
 CORE = {"character": ("hair", "eyes", "attire"), "place": (), "object": ("material",), "organization": ()}
 SYNONYMS = [(re.compile(r"^(hair|hair_.*|.*_hair)$"), "hair"), (re.compile(r"^(eyes?|eye_.*|.*_eyes?)$"), "eyes"),
-            (re.compile(r"^(attire|cloth.*|clothes|outfit|garment.*|dress|coat|armou?r|shirt)(_.*)?$"), "attire"),
+            (re.compile(r"^(attire|cloth.*|clothes|outfit|garment.*|dress|coat|armou?r|shirt|wear.*|worn)(_.*)?$"),
+             "attire"),
             (re.compile(r"^(material|.*_material)$"), "material")]
 
 

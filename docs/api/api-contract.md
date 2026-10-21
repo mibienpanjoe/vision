@@ -393,9 +393,11 @@ and returns a `VisualizationResult` with status 200 for every domain outcome:
   beyond the boundary, a moment the eligible text does not establish, no
   verified trait);
 - `failed` with a safe error: `PROVIDER_NOT_ENABLED` (no `GROQ_API_KEY`),
-  `PROVIDER_RATE_LIMITED`, `PROVIDER_TIMEOUT` or `PROVIDER_UNAVAILABLE`
-  (retryable), `PROVIDER_INVALID_OUTPUT`, or `PROMPT_GATE_FAILED`. There is no
-  fallback to unverified output.
+  `PROVIDER_RATE_LIMITED`, `PROVIDER_TIMEOUT`, `PROVIDER_UNAVAILABLE` or
+  `PROVIDER_INVALID_OUTPUT` (retryable: the failed consolidation is reclaimed
+  on the next request), or `PROMPT_GATE_FAILED`. Consolidation itself makes one
+  more call after a malformed answer, never more. There is no fallback to
+  unverified output.
 
 Another owner's work or an unknown entity or chapter returns the common `404`,
 an unauthenticated call `401`, an invalid body `422`, and a work without a
@@ -414,7 +416,10 @@ requested and resolved moment, context, creative mode), the `subject`,
 `generation` (style, prompt, negative prompt) and `verification` (adjudication
 state, facts removed, selection outcome). Canonical and disputed traits always
 carry `SourceSpan` evidence, which resolves through the evidence route under the
-same boundary; inferred traits carry their reason. In `interpretation` mode,
+same boundary; inferred traits carry their reason. The negative prompt lists
+only values the text rules out at this moment (removed, negated or superseded),
+never a value that is merely unknown here, such as childhood hair for an adult
+portrait. In `interpretation` mode,
 unknown core traits of the subject become creative additions ("artist's
 choice") and inferred traits enter the prompt as "possibly"; canonical traits
 are identical in both modes. Generated types: `VisualizationRequest`,
