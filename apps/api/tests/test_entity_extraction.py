@@ -254,6 +254,9 @@ def test_batches_follow_chapters_and_input_bounds():
     groups = batches(passages, 40_000)
     assert [[p.ordinal for p in group] for group in groups] == [[0, 1], [2, 3], [4]]
     assert batches([], 1_000) == []
+    # Short passages in one long chapter leave room for the earlier-chapter listing (64 sources at most).
+    many = batches([passage(i, 1, 10) for i in range(130)], 40_000)
+    assert [len(group) for group in many] == [63, 63, 4]
 
 
 class Gateway(BaseHTTPRequestHandler):
