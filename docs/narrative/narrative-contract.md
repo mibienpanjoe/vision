@@ -215,7 +215,11 @@ synthetic fixture with the pinned models: 0 misses, 0 false merges, 0 splits,
 evidence only.
 
 Appearance candidates are pointers, not facts: a sentence span, the matched
-pattern and the mentions it contains. They rank evidence for retrieval and
+pattern and the mentions it contains. `services/narrative/appearance.py` stores
+each cue-matching sentence as an `appearance_candidates` row with its cue words
+and, in `appearance_subjects`, the entities resolved inside it by the entity
+derivation (its recorded input). The cues cover at least 90% of the fixture's
+annotated visual evidence. They rank evidence for retrieval and
 never become visual facts without consolidation. A generation is narrative-ready
 when `entities` and `appearance` succeed.
 

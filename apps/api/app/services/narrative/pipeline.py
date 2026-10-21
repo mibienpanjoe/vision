@@ -1,14 +1,17 @@
-"""Run entities → events → facts for a generation through the worker and publish readiness.
+"""Run the narrative stages for a generation through the worker and publish readiness.
 
 The job is queued in the same transaction that publishes parsed passages. A
-generation becomes narrative-ready only when all three derivations succeeded;
+generation becomes narrative-ready only when every stage of its mode succeeded;
 any failure, cancellation or crash leaves a visible non-ready state. Stages are
 idempotent, so redelivery or recovery reuses succeeded derivations instead of
 duplicating claims.
 
-Live extraction sends passage text to the configured gateway, so it runs only
-when VISION_NARRATIVE_PROVIDER=live; otherwise the job fails as
-PROVIDER_NOT_ENABLED rather than disclosing private books by default.
+VISION_NARRATIVE_PROVIDER selects the mode (DEC-38):
+- `local` (default): on-device entities → appearance candidates; no text leaves
+  the machine, and events and facts are consolidated later per question.
+- `live`: entities → events → facts through the configured gateway; it sends
+  passage text out, so it is for synthetic fixtures only (DEC-37).
+- anything else: the job fails as PROVIDER_NOT_ENABLED.
 """
 
 import os
@@ -20,8 +23,10 @@ from app.models.generations import SourceGeneration
 from app.models.model_runs import Derivation
 from app.models.narrative_jobs import NarrativeJob
 from app.providers.contracts import Limits
+from app.providers.local_entities import LocalEntities
 from app.providers.openai_compatible import ChatGateway
 from app.services.ingestion.jobs import job_lock
+from app.services.narrative.appearance import derive_appearance
 from app.services.narrative.entities import derive_entities
 from app.services.narrative.events import derive_events
 from app.services.narrative.visual_facts import derive_visual_facts
@@ -32,10 +37,31 @@ MAX_ATTEMPTS = 3
 LIMITS = Limits(timeout_seconds=120, max_output_tokens=8_192)
 
 
+def narrative_mode() -> str:
+    return os.environ.get("VISION_NARRATIVE_PROVIDER", "local")
+
+
 def narrative_adapter():
-    if os.environ.get("VISION_NARRATIVE_PROVIDER") != "live":
-        return None
+    """The gateway for `live` mode; None without credentials."""
     return ChatGateway.from_environment()
+
+
+def local_adapter():
+    return LocalEntities()
+
+
+def stages(engine, generation_id, mode):
+    """(stage, derive) pairs; each derive receives the previous stage's derivation id."""
+    if mode == "local":
+        adapter = local_adapter()
+        return [("entities", lambda _: derive_entities(engine, generation_id, adapter, LIMITS)),
+                ("appearance", lambda upstream: derive_appearance(engine, generation_id, upstream))]
+    adapter = narrative_adapter() if mode == "live" else None
+    if adapter is None:
+        return None
+    return [("entities", lambda _: derive_entities(engine, generation_id, adapter, LIMITS)),
+            ("events", lambda upstream: derive_events(engine, generation_id, upstream, adapter, LIMITS)),
+            ("facts", lambda upstream: derive_visual_facts(engine, generation_id, upstream, adapter, LIMITS))]
 
 
 def queue_narrative(db, generation_id, correlation_id) -> NarrativeJob:
@@ -75,17 +101,15 @@ def run_locked(engine, job_id):
             return
         job.attempts += 1
         job.status, job.error_code, generation_id = "running", None, job.generation_id
-    adapter, error = narrative_adapter(), None
-    if adapter is None:
+    plan, error = stages(engine, generation_id, narrative_mode()), None
+    if plan is None:
         error = "PROVIDER_NOT_ENABLED"
     else:
         try:
             upstream = None
-            for stage, derive in (("entities", lambda: derive_entities(engine, generation_id, adapter, LIMITS)),
-                                  ("events", lambda: derive_events(engine, generation_id, upstream, adapter, LIMITS)),
-                                  ("facts", lambda: derive_visual_facts(engine, generation_id, upstream, adapter, LIMITS))):
+            for stage, derive in plan:
                 set_stage(engine, job_id, stage)
-                upstream = derive()
+                upstream = derive(upstream)
                 with Session(engine) as db:
                     derivation = db.get(Derivation, upstream)
                     if derivation.status != "succeeded":

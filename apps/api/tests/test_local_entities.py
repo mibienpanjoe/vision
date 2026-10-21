@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from pathlib import Path
 
 import pytest
 from app.models.entities import Entity, EntityAlias, EntityMention, EntityRelation
@@ -106,6 +107,17 @@ def test_later_chapters_reuse_earlier_keys_by_folded_label():
     output = run(["Jekyll entered the house."], [("Jekyll", "character"), ("the house", "place")], known=known)
     assert output["entities"] == []
     assert [m["entity"] for m in output["mentions"]] == ["k:0", "k:1"]
+
+
+def test_appearance_cues_cover_the_annotated_visual_evidence():
+    from app.services.narrative.appearance import candidates
+    data = json.loads((Path(__file__).parent / "fixtures/narrative/expected.json").read_text(encoding="utf-8"))
+    spans = {s["id"]: s for s in data["spans"]}
+    passages = {p["id"]: p["text"] for p in data["passages"]}
+    quotes = {(spans[e]["passage_id"], spans[e]["quote"]) for f in data["facts"] for e in f["evidence"]}
+    marked = {pid: [text[s:e] for s, e, _ in candidates(text)] for pid, text in passages.items()}
+    covered = [q for pid, q in quotes if any(q in sentence or sentence in q for sentence in marked[pid])]
+    assert len(covered) / len(quotes) >= 0.9, sorted(q for _, q in quotes - {(p, q) for p, q in quotes if q in covered})
 
 
 def test_adapter_reads_the_data_block_and_reports_no_provider_tokens():

@@ -333,9 +333,9 @@ one hour old. Run it after interrupted uploads or uncertain database commits.
 It is interrupted-upload cleanup, not reader-requested deletion or retention.
 Those lifecycles remain with their later tasks. Text-ingestion intents use their
 own queue/consumer; `make dispatch` reconciles probe, ingestion and narrative
-publication. Set `VISION_NARRATIVE_PROVIDER=live` in `.env` to let the worker
-run narrative extraction through the gateway (synthetic text only until OPEN-02
-records provider data handling). The worker verifies the retained source fingerprint before parsing.
+publication. Narrative jobs run locally by default; `VISION_NARRATIVE_PROVIDER=live`
+switches the worker to gateway extraction, which is for synthetic text only
+(DEC-37), and `off` disables narrative jobs. The worker verifies the retained source fingerprint before parsing.
 
 
 ## PDF parser runtime — T14

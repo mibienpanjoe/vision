@@ -11,11 +11,13 @@ import pytest
 from app.core.passwords import hash_password
 from app.main import create_app
 from app.models.access import Principal
+from app.models.appearance import AppearanceCandidate, AppearanceSubject
 from app.models.entities import Entity
 from app.models.model_runs import Derivation
 from app.models.narrative_jobs import NarrativeJob
-from app.models.passages import Chapter
+from app.models.passages import Chapter, Passage
 from app.providers.deterministic import RuleAdapter, ScriptedAdapter
+from app.providers.local_entities import LocalEntities
 from app.services.dispatch import dispatch_ingestions
 from app.services.ingestion.parse import execute_ingestion
 from app.services.narrative import pipeline
@@ -25,6 +27,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 from tests.test_chronology import event_rule
 from tests.test_entity_extraction import fixture_rule
+from tests.test_local_entities import FIXTURE_SPANS, corefer_pronouns, recognizer
 from tests.test_visual_facts import fact_rule
 
 pytestmark = pytest.mark.integration
@@ -93,6 +96,7 @@ def test_parse_queues_narrative_and_success_publishes_readiness_once(clients, da
     assert (generation["narrative_status"], generation["narrative_ready"]) == ("queued", False)
     job = narrative_job(database, generation["id"])
 
+    monkeypatch.setenv("VISION_NARRATIVE_PROVIDER", "live")
     monkeypatch.setattr(pipeline, "narrative_adapter", lambda: FixtureModel())
     execute_narrative(str(job.id))
     generation = generation_of(owner, work_id)
@@ -117,7 +121,7 @@ def test_disabled_provider_and_invalid_extraction_are_never_advertised_ready(cli
     execute_ingestion(accepted["job"]["id"])
     job = narrative_job(database, generation_of(owner, work_id)["id"])
 
-    monkeypatch.delenv("VISION_NARRATIVE_PROVIDER", raising=False)
+    monkeypatch.setenv("VISION_NARRATIVE_PROVIDER", "off")
     execute_narrative(str(job.id))
     generation = generation_of(owner, work_id)
     assert (generation["narrative_status"], generation["narrative_error"], generation["narrative_ready"]) == (
@@ -126,6 +130,7 @@ def test_disabled_provider_and_invalid_extraction_are_never_advertised_ready(cli
 
     with database.begin() as connection:
         connection.execute(update(NarrativeJob).values(status="queued"))
+    monkeypatch.setenv("VISION_NARRATIVE_PROVIDER", "live")
     monkeypatch.setattr(pipeline, "narrative_adapter", lambda: FixtureModel(broken="EventExtraction"))
     execute_narrative(str(job.id))
     stored = narrative_job(database, generation_of(owner, work_id)["id"])
@@ -140,6 +145,30 @@ def test_disabled_provider_and_invalid_extraction_are_never_advertised_ready(cli
     assert generation_of(owner, work_id)["narrative_ready"] is True
     stages, entities = derivation_counts(database)
     assert stages == {"entities": 1, "events": 1, "facts": 1} and entities == 8  # retry reused, not duplicated
+
+
+def test_local_mode_publishes_entities_and_appearance_without_a_provider(clients, database, monkeypatch):
+    owner, _ = clients
+    accepted = upload(owner)
+    work_id = accepted["work"]["id"]
+    execute_ingestion(accepted["job"]["id"])
+    job = narrative_job(database, generation_of(owner, work_id)["id"])
+    monkeypatch.delenv("VISION_NARRATIVE_PROVIDER", raising=False)  # local is the default
+    monkeypatch.delenv("VISION_LLM_API_KEY", raising=False)
+    monkeypatch.setattr(pipeline, "local_adapter",
+                        lambda: LocalEntities(recognizer(FIXTURE_SPANS), corefer_pronouns("Arthur")))
+    execute_narrative(str(job.id))
+    generation = generation_of(owner, work_id)
+    assert (generation["narrative_status"], generation["narrative_ready"]) == ("succeeded", True)
+    assert {"Arthur", "Wren", "Captain Mira"} <= {e["label"] for e in owner.get(f"/v1/works/{work_id}/entities").json()["items"]}
+    with Session(database) as db:
+        assert dict(db.execute(select(Derivation.stage, func.count()).group_by(Derivation.stage)).all()) == {
+            "entities": 1, "appearance": 1}
+        arthur = db.scalar(select(Entity.id).where(Entity.label == "Arthur"))
+        described = db.scalars(select(AppearanceCandidate).join(AppearanceSubject).where(
+            AppearanceSubject.entity_id == arthur)).all()
+        texts = [db.get(Passage, c.passage_id).text[c.start:c.end] for c in described]
+    assert any("scar" in t for t in texts) and any("chestnut hair" in t for t in texts)
 
 
 def test_interrupted_jobs_are_requeued_within_their_attempt_budget(clients, database):

@@ -39,7 +39,7 @@ Physical IDs are opaque; their final storage type is an implementation choice.
 | `events` | Narrative event; label, participants, place, source evidence, temporal status; T19 stores modality, `event_evidence` spans and `event_participants` per derivation |
 | `event_relations` | Before/after/during/overlap/unknown/inconsistent relation; linked events and support |
 | `temporal_anchors` | Date, age, relative event, or uncertain interval; preserve granularity and evidence |
-| `appearance_candidates` | DEC-38: local pointer to a likely description span; passage, span, pattern, mentions contained; ranks evidence, never a fact |
+| `appearance_candidates` | DEC-38: local pointer to a likely description span; passage, span, cue words; `appearance_subjects` lists entities resolved inside it; ranks evidence, never a fact |
 | `visual_facts` | Atomic claim about an entity; value, scope, temporal/context conditions, support/modality/status; T20 adds kind, polarity, perspective, assumption and `fact_events` |
 | `fact_evidence` | Fact-to-source-span support with explicit or inferential role |
 | `fact_conflicts` | Conflicting claims, compatible context distinctions, and unresolved resolution evidence |

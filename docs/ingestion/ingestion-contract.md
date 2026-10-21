@@ -342,8 +342,9 @@ generation's `narrative_ready_at` and finish `succeeded`; otherwise it ends
 redelivery or a requeued job reuses succeeded stages and never duplicates rows.
 The generation view reports `narrative_status` and `narrative_error`.
 
-The worker uses the live gateway only when `VISION_NARRATIVE_PROVIDER=live`.
-Without it, jobs fail visibly as `PROVIDER_NOT_ENABLED`, because live extraction
-sends passage text to upstream providers whose data handling is not yet
-recorded (OPEN-02). No owner-facing retry route exists yet; a failed job
+`VISION_NARRATIVE_PROVIDER` selects the stages (DEC-38). `local`, the default,
+runs on-device entities then appearance candidates, sends no text anywhere and
+marks the generation ready when both succeed. `live` runs entities → events →
+facts through the gateway and is for synthetic fixtures only (DEC-37). Any
+other value fails jobs visibly as `PROVIDER_NOT_ENABLED`. No owner-facing retry route exists yet; a failed job
 completes again only through a new generation or operator requeue.
