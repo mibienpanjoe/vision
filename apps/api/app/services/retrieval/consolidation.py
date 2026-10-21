@@ -50,7 +50,8 @@ def scope_of(plan, expanded: Expanded) -> dict:
 
 
 def request_item(plan) -> str:
-    return json.dumps({"subject": plan.subject.label, "kind": plan.subject.kind,
+    # The reader's own words carry details the planner does not parse ("travelling home after the war").
+    return json.dumps({"request": plan.query, "subject": plan.subject.label, "kind": plan.subject.kind,
                        "participants": [p.label for p in plan.participants],
                        "moment": describe(plan.moment) if plan.moment else None, "scene": plan.context},
                       ensure_ascii=False)

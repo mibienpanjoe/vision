@@ -123,7 +123,9 @@ def test_model_attribute_names_group_under_core_traits():
 QUOTE = {s["id"]: s["quote"] for s in DATA["spans"]}
 NAMES = {"arthur": "Arthur", "elodie": "Élodie", "mira": "Mira", "brann": "Brann", "wren": "Wren",
          "house": "house by the ash tree", "compass": "brass compass", "sword": "silver sword"}
-MOMENTS = {"age 10": "child", "during the war": "war", "after the war": "dinner", "at dinner": "dinner"}
+# Most specific phrase first: "travelling home after the war" is the journey, not the dinner.
+MOMENTS = {"age 10": "child", "during the war": "war", "travelling home": "journey", "spring": "spring",
+           "at dinner": "dinner", "after the war": "dinner"}
 
 
 def annotated_consolidation(sources):
@@ -152,7 +154,7 @@ def annotated_consolidation(sources):
                       "polarity": polarity, "events": [e for e in f["events"] if e in keys],
                       "evidence": evidence(f["evidence"])})
     moment = next((event for phrase, event in MOMENTS.items()
-                   if phrase in f"{request['moment']} {request['scene']}" and event in keys), None)
+                   if phrase in f"{request['request']} {request['moment']} {request['scene']}" and event in keys), None)
     return {"events": events, "relations": relations, "facts": facts, "requested_event": moment}
 
 

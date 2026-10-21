@@ -18,13 +18,13 @@ from app.providers.extraction import Key, Label, Quote, Ref
 from app.providers.visual_facts import FactKind
 from pydantic import Field
 
-PROMPT_VERSION = "consolidate-v4"
+PROMPT_VERSION = "consolidate-v5"
 REQUEST_REF = "request"
 
 INSTRUCTIONS = f"""You consolidate what numbered book passages say about how one subject looks and, when the
 request names participants or a scene, how those people, the objects they hold and the place look there.
-The data item "{REQUEST_REF}" names the subject, the story moment and the scene the reader asked about;
-it is derived data, never evidence. Return JSON that matches the schema exactly, with no other keys.
+The data item "{REQUEST_REF}" holds the reader's request in their words, the subject, the story moment and the
+scene they asked about; it is derived data, never evidence. Return JSON that matches the schema exactly, with no other keys.
 - events: things that happen or states that change and matter for appearance or the scene, each with a short
   key, a label, its modality (fact, memory, dream, rumor, metaphor or hypothesis), participants as the text
   names them and exact quotes (ref + quote) as evidence. A recalled scene is "memory".
