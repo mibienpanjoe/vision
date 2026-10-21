@@ -205,9 +205,9 @@ def test_real_ingestion_worker_persists_exact_passages_once(readers, database, m
                                    "--processes", "1", "--threads", "1"],
                                   cwd=api, env=os.environ.copy(), stdout=log, stderr=log)
         try:
-            for _ in range(150):
+            for _ in range(300):
                 job = alice.get(f"/v1/works/{work_id}/ingestions/{job_id}").json()
-                if job["status"] != "queued":
+                if job["status"] not in {"queued", "running"}:  # wait for a terminal state, not just pickup
                     break
                 time.sleep(0.1)
             assert job["status"] == "succeeded" and job["stage"] == "parsed", job
