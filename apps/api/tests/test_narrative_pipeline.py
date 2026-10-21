@@ -13,10 +13,12 @@ from app.main import create_app
 from app.models.access import Principal
 from app.models.appearance import AppearanceCandidate, AppearanceSubject
 from app.models.entities import Entity
+from app.models.generations import SourceGeneration
 from app.models.model_runs import Derivation
 from app.models.narrative_jobs import NarrativeJob
 from app.models.passages import Chapter, Passage
 from app.providers.deterministic import RuleAdapter, ScriptedAdapter
+from app.providers.embeddings import HashedEmbeddings
 from app.providers.local_entities import LocalEntities
 from app.services.dispatch import dispatch_ingestions
 from app.services.ingestion.parse import execute_ingestion
@@ -157,13 +159,15 @@ def test_local_mode_publishes_entities_and_appearance_without_a_provider(clients
     monkeypatch.delenv("VISION_LLM_API_KEY", raising=False)
     monkeypatch.setattr(pipeline, "local_adapter",
                         lambda: LocalEntities(recognizer(FIXTURE_SPANS), corefer_pronouns("Arthur")))
+    monkeypatch.setattr(pipeline, "local_embedder", HashedEmbeddings)
     execute_narrative(str(job.id))
     generation = generation_of(owner, work_id)
     assert (generation["narrative_status"], generation["narrative_ready"]) == ("succeeded", True)
     assert {"Arthur", "Wren", "Captain Mira"} <= {e["label"] for e in owner.get(f"/v1/works/{work_id}/entities").json()["items"]}
     with Session(database) as db:
         assert dict(db.execute(select(Derivation.stage, func.count()).group_by(Derivation.stage)).all()) == {
-            "entities": 1, "appearance": 1}
+            "entities": 1, "appearance": 1, "index": 1}
+        assert db.get(SourceGeneration, generation["id"]).search_ready_at is not None
         arthur = db.scalar(select(Entity.id).where(Entity.label == "Arthur"))
         described = db.scalars(select(AppearanceCandidate).join(AppearanceSubject).where(
             AppearanceSubject.entity_id == arthur)).all()
@@ -286,4 +290,4 @@ def test_real_worker_runs_local_models_without_network(clients, database, monkey
     assert "Wren" in {a["label"] for a in arthur["aliases"]}
     with Session(database) as db:
         assert dict(db.execute(select(Derivation.stage, Derivation.status)).all()) == {
-            "entities": "succeeded", "appearance": "succeeded"}
+            "entities": "succeeded", "appearance": "succeeded", "index": "succeeded"}

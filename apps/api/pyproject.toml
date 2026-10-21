@@ -11,6 +11,7 @@ dependencies = [
   "alembic==1.20.0",
   "dramatiq[redis]==2.2.1",
   "python-multipart==0.0.32",
+  "pgvector==0.4.1",
 ]
 
 [dependency-groups]

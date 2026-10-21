@@ -85,6 +85,27 @@ boundary before rows are returned:
 each path's rank, protection and anchors, and renders `SourceSpan` quotes from
 the immutable passage text.
 
+### Semantic indexing and retrieval — T25
+
+The local `index` stage (`services/retrieval/semantic.py`) embeds every passage
+of a generation with EmbeddingGemma-300M at the pinned revision `57c266a7`,
+fp32 on CPU, with the model's `document` prompt and a 512-token window, and
+stores 768-dimension vectors in `passage_embeddings` (migration 0016, pgvector)
+under one derivation. Its processing version names the weights, revision,
+precision, window, sentence-transformers and torch versions and the dimension,
+so a model change adds a new derivation, and a query is answered only from the
+derivation built by the same embedder version; vectors never mix. A different
+dimension is refused. Local narrative jobs run `entities → appearance → index`;
+the index success sets `search_ready_at`.
+
+Queries embed appearance-oriented expansions of the subject's visible label (per
+entity kind) plus the requested moment and context with the `query` prompt, and
+order passages by their smallest cosine distance to any expansion. Passages are
+restricted to the plan's document, parser revision and boundary in SQL, and are
+not filtered by entity, so descriptions that never name the subject remain
+reachable. Scans are exact; an ANN index waits for measurements (OPEN-06).
+`HashedEmbeddings` is a deterministic stand-in for tests of scope and versioning.
+
 ## Provider seams
 
 Define narrow operations for extraction, reasoning/consolidation, embeddings,

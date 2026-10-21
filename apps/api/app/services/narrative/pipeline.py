@@ -7,8 +7,9 @@ idempotent, so redelivery or recovery reuses succeeded derivations instead of
 duplicating claims.
 
 VISION_NARRATIVE_PROVIDER selects the mode (DEC-38):
-- `local` (default): on-device entities → appearance candidates; no text leaves
-  the machine, and events and facts are consolidated later per question.
+- `local` (default): on-device entities → appearance candidates → passage
+  vectors; no text leaves the machine, and events and facts are consolidated
+  later per question.
 - `live`: entities → events → facts through the configured gateway; it sends
   passage text out, so it is for synthetic fixtures only (DEC-37).
 - anything else: the job fails as PROVIDER_NOT_ENABLED.
@@ -23,6 +24,7 @@ from app.models.generations import SourceGeneration
 from app.models.model_runs import Derivation
 from app.models.narrative_jobs import NarrativeJob
 from app.providers.contracts import Limits
+from app.providers.embeddings import LocalEmbeddings
 from app.providers.local_entities import LocalEntities
 from app.providers.openai_compatible import ChatGateway
 from app.services.ingestion.jobs import job_lock
@@ -30,6 +32,7 @@ from app.services.narrative.appearance import derive_appearance
 from app.services.narrative.entities import derive_entities
 from app.services.narrative.events import derive_events
 from app.services.narrative.visual_facts import derive_visual_facts
+from app.services.retrieval.semantic import index_passages
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -50,12 +53,18 @@ def local_adapter():
     return LocalEntities()
 
 
+def local_embedder():
+    return LocalEmbeddings()
+
+
 def stages(engine, generation_id, mode):
     """(stage, derive) pairs; each derive receives the previous stage's derivation id."""
     if mode == "local":
         adapter = local_adapter()
+        embedder = local_embedder()
         return [("entities", lambda _: derive_entities(engine, generation_id, adapter, LIMITS)),
-                ("appearance", lambda upstream: derive_appearance(engine, generation_id, upstream))]
+                ("appearance", lambda upstream: derive_appearance(engine, generation_id, upstream)),
+                ("index", lambda _: index_passages(engine, generation_id, embedder))]
     adapter = narrative_adapter() if mode == "live" else None
     if adapter is None:
         return None

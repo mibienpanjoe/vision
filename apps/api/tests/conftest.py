@@ -100,8 +100,8 @@ def story(database, monkeypatch, tmp_path):
             if through is not None:
                 fields["through_chapter_id"] = str(chapters[through])
             return plan_query(db, actors[actor], work_id, visualization_request(**fields))
-        yield SimpleNamespace(plan=plan, ids=ids, chapters=chapters, db=db,
-                              other_document=uuid.UUID(other["work"]["document_id"]))
+        yield SimpleNamespace(plan=plan, ids=ids, chapters=chapters, db=db, engine=database,
+                              generation=uuid.UUID(generation), other_document=uuid.UUID(other["work"]["document_id"]))
 
 
 def visualization_request(**fields) -> VisualizationRequest:

@@ -135,13 +135,17 @@ Data Retention ([ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md)).
 Local extraction installs with the default `narrative` dependency group
 (GLiNER2, fastcoref, sentence-transformers; transformers is held below 5 because
 fastcoref fails on it). The pinned model revisions download once into the
-Hugging Face cache (`HF_HOME`, about 1 GB for entities); only model files are
-fetched, never book text. The real-model test is opt-in:
+Hugging Face cache (`HF_HOME`, about 1 GB for entities and 1.2 GB for
+EmbeddingGemma); only model files are fetched, never book text. EmbeddingGemma
+is gated: accept the Gemma licence on Hugging Face and set `HF_TOKEN` in `.env`
+for the first download, after which `HF_HUB_OFFLINE=1` works. The real-model
+tests are opt-in:
 
 ```sh
 set -a; . ./.env; set +a
 VISION_LOCAL_MODELS=1 VISION_TEST_ADMIN_URL=$DATABASE_URL \
-  uv run --project apps/api --locked pytest apps/api/tests/test_local_entities.py -m integration -s
+  uv run --project apps/api --locked pytest apps/api/tests/test_local_entities.py \
+  apps/api/tests/test_semantic_integration.py -m integration -s
 ```
 The existing gateway was observed healthy on loopback port 3001 during Phase 1
 prerequisite inspection. Its role/model capabilities, structured outputs,
