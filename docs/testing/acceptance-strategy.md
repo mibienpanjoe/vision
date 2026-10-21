@@ -195,3 +195,20 @@ adapters are deterministic fixtures, including consolidation and adjudication.
 This does not establish live model quality or the complete G5 profile/export path.
 Chapter-catalog API tests additionally prove current-parser isolation, safe
 metadata, pagination, owner denial and unparsed-source failure.
+
+## Exact source browser checks — T36
+
+`tests/evidence.spec.ts` uses browser uploads and real worker-persisted passages.
+A source beginning with accented text, an emoji and a decomposed syllable before
+the selected name proves code-point highlight mapping; image-like markup stays
+literal text with no image element. A stored specification's attribute resolves
+through the real evidence endpoint, selects its exact quote, and source selection
+marks the corresponding attribute. A deliberately inaccessible document revision
+is sent to the real server: the safe 404 clears the old excerpt. Reducing the
+reading boundary clears both inspector and result.
+
+`pnpm --dir apps/web test:spans` additionally checks overlapping Unicode spans and
+rejects altered/normalized/out-of-excerpt highlights. Overlap logic is a domain
+test; browser checks use the actual persisted spans. The workspace model adapters
+remain deterministic; this is source-reader/persistence proof, not live-model
+quality evidence.

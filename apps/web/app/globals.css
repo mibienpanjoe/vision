@@ -98,6 +98,17 @@ button.secondary:hover { background: var(--muted); filter: none; }
 .alias-list { font-size: .875rem; padding-left: 1.25rem; }
 .mention { border-top: 1px solid var(--border); padding-block: .75rem; }
 blockquote { font-family: "Source Serif 4", Georgia, serif; margin: 0 0 .75rem; overflow-wrap: anywhere; }
+.source-reader h4 { margin-top: 0; }
+.source-location { font-size: .8125rem; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.source-excerpt { white-space: pre-wrap; overflow-wrap: anywhere; font: 1.125rem/1.75 "Source Serif 4", Georgia, serif; }
+.source-excerpt mark { background: var(--muted); color: var(--foreground); }
+.source-excerpt mark[data-selected=true] { background: var(--accent); color: var(--accent-foreground); }
+button.source-highlight { display: inline; font: inherit; color: inherit; background: transparent; border: 0; border-radius: 0; padding: 0; text-align: inherit; }
+button.source-highlight:hover { text-decoration: underline; filter: none; }
+.evidence-attributes { list-style: none; padding: 0; }
+.evidence-attributes li { margin-bottom: .75rem; }
+.evidence-attributes button { white-space: normal; text-align: left; overflow-wrap: anywhere; }
+.evidence-attributes button[aria-pressed=true] { border-color: var(--ring); background: var(--accent); color: var(--accent-foreground); }
 .library-note { margin-top: 1.25rem; color: var(--muted-foreground); font-family: "Source Serif 4", Georgia, serif; font-style: italic; }
 footer { display: flex; justify-content: space-between; gap: 1rem; padding-block: 1.5rem; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: .8125rem; }
 @media (max-width: 36rem) {

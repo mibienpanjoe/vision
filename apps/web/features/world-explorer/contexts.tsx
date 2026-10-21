@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { api, json, message, type EntitySummary, type VisualizationCreated, type VisualizationRequest } from "@/lib/api";
+import { EvidenceInspector } from "@/features/visualization/evidence-inspector";
 
 export function Contexts({ workId, entity, cutoff }: { workId: string; entity: EntitySummary; cutoff: string | null }) {
   const [moment, setMoment] = useState("");
@@ -35,6 +36,7 @@ export function Contexts({ workId, entity, cutoff }: { workId: string; entity: E
     </form>
     {error && <p role="alert">{error} Review the inputs or submit again to retry.</p>}
     {result?.visualization && <p role="status">Saved visual specification for {result.visualization.result.data.subject.entity.label} · revision {result.visualization.revision} · {result.visualization.result.data.scope.resolved_moment ?? "moment not specified"}.</p>}
+    {result?.visualization && <EvidenceInspector key={result.visualization.id} workId={workId} specification={result.visualization.result.data} cutoff={cutoff} />}
     {result?.result.outcome === "needs_context" && <div><p>Choose more context before creating a specification.</p><ul>{result.result.choices.map(choice => <li key={choice.id}>{choice.label} ({choice.field})</li>)}</ul></div>}
     {result?.result.outcome === "insufficient_evidence" && <div role="status"><p>The source does not establish this request.</p><ul>{result.result.missing.map(item => <li key={item}>{item}</li>)}</ul><p>Try another moment or review the reading boundary.</p></div>}
     {result?.result.outcome === "failed" && <p role="alert">{result.result.error.message} ({result.result.error.code}). {result.result.error.retryable ? "Try again." : "Review the request or return to your library."}</p>}

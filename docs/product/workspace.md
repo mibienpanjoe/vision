@@ -65,3 +65,20 @@ Only a resolved server result displays a saved revision receipt. Other outcomes
 explain what is missing or failed. This initial context consumer proves stored
 request scope; the full profile, evidence inspector, export and refinement are
 T36–T38.
+
+## Exact source reader — T36
+
+An eligible entity mention opens its authorized bounded excerpt. Stored-result
+attributes open their exact supporting spans under the active reading boundary.
+Multiple references remain selectable; selecting highlighted source text selects
+its matching attributes, including overlapping references. Highlights use Unicode
+code points, retaining composed accents, decomposed characters and supplementary
+characters without normalizing or rewriting the source.
+
+The source reader validates returned highlight coordinates against the requested
+span before rendering. Quotes render as text, never HTML. Page/section anchors
+and original character coordinates identify the location when available. A
+failed lookup removes the excerpt and shows the safe denial/mismatch result;
+an old response cannot restore text after a new reference or scope is selected.
+Boundary changes clear the result and open excerpt together. The reader never
+widens scope to recover a missing reference.

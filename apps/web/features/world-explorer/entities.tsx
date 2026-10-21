@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api, message, type ChapterPage, type EntityDetail, type EntityPage } from "@/lib/api";
+import { api, message, type ChapterPage, type EntityDetail, type EntityPage, type SourceSpan } from "@/lib/api";
 import { Contexts } from "./contexts";
+import { SourceReader } from "@/features/reader/source-reader";
 
 export function Entities({ workId, source, cutoff }: { workId: string; source: ChapterPage; cutoff: string | null }) {
   const [page, setPage] = useState<EntityPage | null>(null);
@@ -11,6 +12,7 @@ export function Entities({ workId, source, cutoff }: { workId: string; source: C
   const [filter, setFilter] = useState("");
   const [kind, setKind] = useState("all");
   const [error, setError] = useState("");
+  const [sourceSpan, setSourceSpan] = useState<SourceSpan | null>(null);
   const suffix = cutoff ? `?through_chapter_id=${encodeURIComponent(cutoff)}` : "";
   useEffect(() => {
     let active = true;
@@ -29,7 +31,7 @@ export function Entities({ workId, source, cutoff }: { workId: string; source: C
     }).catch(error => { if (active) setError(message(error)); });
     return () => { active = false; };
   }, [selected, workId, source.generation_id, suffix]);
-  function choose(id: string) { if (id !== selected) { setDetail(null); setError(""); setSelected(id); } }
+  function choose(id: string) { if (id !== selected) { setDetail(null); setSourceSpan(null); setError(""); setSelected(id); } }
   const items = page?.items.filter(entity => (kind === "all" || entity.kind === kind) &&
     [entity.label, ...entity.aliases.map(alias => alias.label)].some(label => label.toLocaleLowerCase().includes(filter.toLocaleLowerCase()))) ?? [];
   return <section className="explorer" aria-labelledby="explorer-title">
@@ -53,6 +55,7 @@ export function Entities({ workId, source, cutoff }: { workId: string; source: C
             <div id="entity-evidence"><h4>Source mentions</h4>
               {detail.mentions.map((mention, index) => <div className="mention" key={index}>
                 <blockquote>{mention.span.quote}</blockquote>
+                <button className="secondary" onClick={() => setSourceSpan(mention.span)}>Read passage {index + 1}</button>
                 {mention.entity_id === null && <div><p>Identity unresolved. Choose a person explicitly:</p><div className="actions">
                   {mention.candidate_ids.map(id => <button key={id} className="secondary" onClick={() => choose(id)}>Choose {page.items.find(entity => entity.id === id)?.label ?? "entity"}</button>)}
                 </div></div>}
@@ -60,6 +63,7 @@ export function Entities({ workId, source, cutoff }: { workId: string; source: C
               {detail.mentions_truncated && <p>Showing the first 200 mentions.</p>}
             </div>
           </section>}
+          {detail && sourceSpan && <SourceReader workId={workId} parserRevision={source.parser_revision} cutoff={cutoff} span={sourceSpan} />}
           {detail && <Contexts key={detail.entity.id} workId={workId} entity={detail.entity} cutoff={cutoff} />}
         </div>
       </div>

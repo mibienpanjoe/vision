@@ -67,6 +67,9 @@ PROP-06; parsing retry does not claim to retry a failed narrative job.
 T35's chapter catalog is an owned, paginated current-generation read exposing
 numbers and IDs without narrative titles. This implements DEC-10's reading boundary
 without disclosing future chapter labels; it does not enumerate story chronology.
+T36 consumes DEC-20/23 through the bounded evidence endpoint: browser highlights
+use code points, text remains escaped, and a failed/stale reference clears its
+excerpt without widening the reading boundary.
 
 ## Proposed elaborations
 
