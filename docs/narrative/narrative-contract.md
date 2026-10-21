@@ -3,8 +3,8 @@
 **Status:** first-slice temporal and cutoff rules selected by T02 (DEC-22).
 DEC-37 ([ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md)) moves
 private-book extraction to local models and consolidation to query time; the
-proposed contract for that change is
-[PROP-08](#local-ingestion-and-query-time-consolidation--prop-08). The T18–T20
+contract for that change is
+[DEC-38](#local-ingestion-and-query-time-consolidation--dec-38). The T18–T20
 LLM derivations below remain the synthetic-fixture path and evaluation baseline.
 **Data owner:** [canonical model](../data/canonical-model.md).
 
@@ -165,9 +165,9 @@ anchors and relations are filtered the same way. Facts need all evidence, the
 subject and every linked event visible; conflicts need both facts. Rows without
 provenance do not exist by construction, so nothing is shown on trust.
 
-## Local ingestion and query-time consolidation — PROP-08
+## Local ingestion and query-time consolidation — DEC-38
 
-Proposed contract for DEC-37. Identity, time, appearance and eligibility rules
+Contract for DEC-37, accepted by the maintainer 2026-10-21. Identity, time, appearance and eligibility rules
 above are unchanged; what changes is which component produces each record and
 when.
 
@@ -193,9 +193,13 @@ Local entities follow the T18 storage contract with these rules:
 - Coreference runs per chapter (windows of whole passages above 40,000
   characters). A pronoun or descriptive mention resolves only when its cluster
   links exactly one identity; otherwise it keeps candidates.
-- A `same_as` relation is created only when one chapter's coreference cluster
-  links two proper-name identities, and it carries the span of the linking
-  mention, so a reveal in chapter five stays invisible at a chapter-two cutoff.
+- An identity link (`same_as`) needs a supporting passage and applies only
+  from that passage onward, so a reveal in chapter five stays invisible at a
+  chapter-two cutoff while still covering the identity's earlier mentions once
+  it is visible. Locally, links come from a coreference cluster that ties two
+  proper-name identities together, or from explicit reveal patterns ("X was Y",
+  "X, who was really Y", "X turned out to be Y"); the linking mention or the
+  pattern match is the evidence span.
 
 Appearance candidates are pointers, not facts: a sentence span, the matched
 pattern and the mentions it contains. They rank evidence for retrieval and
@@ -209,6 +213,12 @@ the digest of the selected passage set. Only eligible passages selected by
 local retrieval (target about 20 passages, about 5,000 tokens) are sent through
 the provider envelope, in one call returning events and facts under a combined
 strict schema to fit the provider's per-minute token budget.
+
+Consolidation may also propose identity links, for example a reveal built up
+across chapters. Each must quote its evidence from the selected passages, is
+labelled inferred unless the quote states the identity, and is stored with the
+consolidation scope, so it never alters the local entity derivation or another
+reader's cutoff.
 
 The response goes through the existing pipeline unchanged: verbatim quote
 grounding, event modality, partial chronology, the visual-fact gates,

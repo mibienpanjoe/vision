@@ -43,6 +43,7 @@
 | DEC-35 | Narrative completion: per-generation job queued with parse publication, entity→event→fact stages through the worker, readiness only on full success, live provider opt-in via `VISION_NARRATIVE_PROVIDER=live` | T22; [ingestion](../ingestion/ingestion-contract.md#narrative-completion--t22) |
 | DEC-36 | Query-time fallback provider for minimal-disclosure consolidation: Groq (`gpt-oss-120b`) with Zero Data Retention, over cutoff-filtered excerpts only | Maintainer decision, 2026-10-20; [research](../research/local-first-processing.md#10-spike-results-2026-10-20) |
 | DEC-37 | Accept ADR-0003: ingestion is local (GLiNER2 entities with deterministic identity rules, fastcoref per chapter, appearance patterns, PostgreSQL FTS plus EmbeddingGemma-300M with measured fusion weights); facts are consolidated at query time from cutoff-filtered excerpts through Groq with ZDR; local models pinned, no unmeasured quantization; the FreeLLM gateway (DEC-24) may process synthetic fixtures only | Maintainer decision, 2026-10-21; [ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md) |
+| DEC-38 | DEC-37 contract: local `entities` and `appearance` ingestion stages with versioned identity rules; identity links need a supporting passage and apply from it onward (local coreference or explicit reveal patterns; consolidation may propose scoped, quoted links); events and visual facts as query-scoped `consolidation` derivations over cutoff-filtered passages in one combined-schema call, reused by scope and passage digest | Maintainer decision, 2026-10-21; [narrative contract](../narrative/narrative-contract.md#local-ingestion-and-query-time-consolidation--dec-38) |
 
 ## Proposed elaborations
 
@@ -54,7 +55,6 @@ documents fixed all details.
 | PROP-04 | First vertical slice uses a small synthetic TXT/Markdown narrative before format expansion | First implementation increment; [roadmap](implementation-roadmap.md) |
 | PROP-05 | Cache identity includes creative mode and locked-fact revision in addition to source/retrieval scope | Reconstruction implementation |
 | PROP-06 | Owner-facing narrative retry route with `If-Match` and `Idempotency-Key`, mirroring ingestion retry | Before real-book narrative use |
-| PROP-08 | DEC-37 contract: local `entities` and `appearance` ingestion stages with versioned identity rules; events and visual facts as query-scoped `consolidation` derivations over cutoff-filtered passages in one combined-schema call, reused by scope and passage digest | Before local adapters are implemented; [narrative contract](../narrative/narrative-contract.md#local-ingestion-and-query-time-consolidation--prop-08) |
 
 ## Open decisions
 
