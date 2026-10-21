@@ -321,3 +321,22 @@ current view. A refused rebuild returns `409` with `GENERATION_IN_PROGRESS`,
 `GENERATION_CURRENT` or `GENERATION_EXISTS`, as defined by the
 [source generation rules](../ingestion/ingestion-contract.md#source-generations--t16). Retry and
 cancel never delete or rewrite passages already published by a succeeded job.
+
+## Narrative browse — T21
+
+`GET /v1/works/{work_id}/entities` and
+`GET /v1/works/{work_id}/entities/{entity_id}` read the latest succeeded entity,
+event and fact derivations of the work's current generation. The optional
+`through_chapter_id` query parameter is a chapter of that generation's parser
+revision; omitting it selects the whole book. An unknown chapter, an entity not
+visible at the cutoff, or another owner's work returns the common `404`. Before
+an entity derivation has succeeded the routes return
+`409 NARRATIVE_NOT_READY`.
+
+Every returned record passes the
+[dependency-closure rule](../narrative/narrative-contract.md#reading-boundary-implementation--t21);
+spans use the `SourceSpan` contract and can be resolved through the evidence
+route under the same boundary. Entity detail returns at most 200 mentions with
+`mentions_truncated`. Generated types: `EntityPage`, `EntityDetail`.
+`GenerationView` adds `narrative_status` (`not_started`, `queued`, `running`,
+`succeeded`, `failed`) and the safe `narrative_error` code (T22).

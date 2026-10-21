@@ -24,6 +24,8 @@ def database(monkeypatch):
         connection.execute(text(f'CREATE DATABASE "{name}"'))
     test_url = make_url(url).set(database=name)
     monkeypatch.setenv("DATABASE_URL", test_url.render_as_string(hide_password=False))
+    # Workers started by tests skip narrative jobs unless a test opts into a mode; local models are heavy.
+    monkeypatch.setenv("VISION_NARRATIVE_PROVIDER", "off")
     engine = create_engine(test_url)
     try:
         config = Config(str(Path(__file__).parents[1] / "alembic.ini"))

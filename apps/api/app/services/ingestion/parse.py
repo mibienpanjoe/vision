@@ -9,9 +9,11 @@ from app.core.storage import PrivateSources
 from app.db.session import configured_engine
 from app.models.passages import Chapter, Passage
 from app.models.works import Document, IngestionAttempt, IngestionJob
+from app.services.dispatch import dispatch_narratives
 from app.services.ingestion.adapters import parse_source
 from app.services.ingestion.jobs import MAX_ATTEMPTS, finish_attempt, job_lock
 from app.services.ingestion.reprocess import publish_generation
+from app.services.narrative.pipeline import queue_narrative
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -38,8 +40,9 @@ def execute_ingestion(job_id: str) -> None:
         raise RuntimeError("Database configuration required")
     try:
         with job_lock(engine, uuid.UUID(job_id)) as acquired:
-            if acquired:
-                execute_locked(engine, uuid.UUID(job_id))
+            if acquired and (narrative_id := execute_locked(engine, uuid.UUID(job_id))):
+                # Intent is already committed; a failed enqueue stays pending for `make dispatch`.
+                dispatch_narratives(engine, narrative_id)
     finally:
         engine.dispose()
 
@@ -63,7 +66,7 @@ def execute_locked(engine, job_id):
         job.attempts += 1
         job.status, job.stage, job.revision = "running", "parse", job.revision + 1
         db.add(IngestionAttempt(job_id=job.id, number=job.attempts, outcome="running", started_at=datetime.now(UTC)))
-    error_code, parsed, normalization = None, None, None
+    error_code, parsed, normalization, narrative_id = None, None, None, None
     try:
         data = PrivateSources().read(source_ref)
         if hashlib.sha256(data).hexdigest() != fingerprint:
@@ -84,6 +87,8 @@ def execute_locked(engine, job_id):
         else:
             publish_passages(db, document_id, parsed, parser_revision, normalization)
             publish_generation(db, job)
+            narrative_id = queue_narrative(db, job.generation_id, job.correlation_id).id
             job.status, job.stage, job.warnings, job.error_code = "succeeded", "parsed", list(parsed.warnings), None
         finish_attempt(db, job, job.status)
         job.completed_at, job.revision = datetime.now(UTC), job.revision + 1
+    return narrative_id

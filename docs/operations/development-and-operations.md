@@ -128,12 +128,43 @@ and fixture tests are not evidence of deployment readiness.
 ## Local model gateway
 
 The maintainer selected the installed **FreeLLM API** for LLM calls (DEC-24).
+Since DEC-37 it may process synthetic fixtures only, never a private book;
+private-book processing is local, and query-time excerpts go to Groq with Zero
+Data Retention ([ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md)).
+
+Local extraction installs with the default `narrative` dependency group
+(GLiNER2, fastcoref, sentence-transformers; transformers is held below 5 because
+fastcoref fails on it). The pinned model revisions download once into the
+Hugging Face cache (`HF_HOME`, about 1 GB for entities); only model files are
+fetched, never book text. The real-model test is opt-in:
+
+```sh
+set -a; . ./.env; set +a
+VISION_LOCAL_MODELS=1 VISION_TEST_ADMIN_URL=$DATABASE_URL \
+  uv run --project apps/api --locked pytest apps/api/tests/test_local_entities.py -m integration -s
+```
 The existing gateway was observed healthy on loopback port 3001 during Phase 1
 prerequisite inspection. Its role/model capabilities, structured outputs,
 embeddings, authentication, upstream source-text handling and limits still need
 verification before their first consumer. Reuse this installation; no replacement
 gateway or external provider account is required. No model call is needed for
 Phase 1. Keep configuration/secrets private and record safe model/gateway lineage.
+
+Vision reads `VISION_LLM_API_KEY` (the gateway's unified key, from its Keys
+page), `VISION_LLM_BASE_URL` (default `http://127.0.0.1:3001/v1`) and
+`VISION_LLM_MODEL` (default `auto`) from the private `.env`. Without the key no
+live adapter is constructed. The live extraction test runs only when explicitly
+requested, so `make integration` never calls the gateway:
+
+```sh
+set -a; . ./.env; set +a
+VISION_LIVE_PROVIDER=1 VISION_TEST_ADMIN_URL=$DATABASE_URL \
+  uv run --project apps/api --locked pytest apps/api/tests/test_entity_extraction.py -k live -m integration -s
+```
+ The
+gateway forwards requests to whichever upstream free provider it routes to, so
+any text sent leaves the machine; only the synthetic corpus may be sent until
+provider data handling is recorded (SECURITY.md, OPEN-02).
 
 ## Delivery scope
 
@@ -261,7 +292,7 @@ binds loopback 8000, PostgreSQL 55432 and Redis 56379. The command is local-only
 |---|---|
 | `make services migrate` | Start/check PostgreSQL/Redis and apply migrations |
 | `make api`, `make worker`, `make web` | Run one service separately in its own terminal |
-| `make dispatch` | Reconcile pending probe and ingestion queue publication after a broker outage |
+| `make dispatch` | Reconcile pending probe, ingestion and narrative queue publication after a broker outage; requeue interrupted narrative jobs |
 | `make reconcile-sources` | Remove old, unreferenced interrupted originals; preserve active/linked sources |
 | `make browsers` | Install the isolated Chromium browser; OS browser prerequisites may be required |
 | `make check` | Repository lint, non-infrastructure tests, deterministic contract regeneration, Node/type checks, web build and shell browser checks, documentation checks |
@@ -301,8 +332,10 @@ active leases, and checks PostgreSQL before removing unreferenced files at least
 one hour old. Run it after interrupted uploads or uncertain database commits.
 It is interrupted-upload cleanup, not reader-requested deletion or retention.
 Those lifecycles remain with their later tasks. Text-ingestion intents use their
-own queue/consumer; `make dispatch` reconciles both probe and ingestion
-publication. The worker verifies the retained source fingerprint before parsing.
+own queue/consumer; `make dispatch` reconciles probe, ingestion and narrative
+publication. Narrative jobs run locally by default; `VISION_NARRATIVE_PROVIDER=live`
+switches the worker to gateway extraction, which is for synthetic text only
+(DEC-37), and `off` disables narrative jobs. The worker verifies the retained source fingerprint before parsing.
 
 
 ## PDF parser runtime — T14

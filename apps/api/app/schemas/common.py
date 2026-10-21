@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 from app.schemas.access import LoginRequest, PrincipalView
 from app.schemas.base import ContractModel, OpaqueId
+from app.schemas.entities import EntityDetail, EntityPage
 from app.schemas.evidence import EvidenceRequest, EvidenceView
 from app.schemas.jobs import JobView, ProbeRequest
 from app.schemas.scope import RequestScope, SourceSpan
@@ -84,3 +85,5 @@ class SchemaCatalog(ContractModel):
     scope: RequestScope
     error: ErrorEnvelope
     span_outcome: SpanResolution
+    entity_page: EntityPage
+    entity_detail: EntityDetail

@@ -2,7 +2,9 @@
 
 **Status:** executable local foundation and checked synthetic corpus, 2026-10-19.
 TXT, Markdown, PDF (no OCR) and EPUB ingestion with retry/cancellation and
-bounded evidence reads are implemented; narrative reconstruction remains planned.
+bounded evidence reads are implemented, as are source-grounded entity, event and
+visual-fact derivation with spoiler-safe browse; retrieval and reconstruction
+remain planned.
 
 The structure follows FIRA's separation of product scope, domain contracts,
 canonical data, operations, and architecture decisions. FIRA's financial domain,
@@ -33,6 +35,10 @@ Supporting owners:
   asset inventory, and proposed export targets.
 - [ADR-0001](adr/0001-modular-monolith.md): backend and persistence baseline.
 - [ADR-0002](adr/0002-temporal-hybrid-retrieval.md): retrieval rationale and exclusions.
+- [ADR-0003](adr/0003-local-ingestion-minimal-disclosure.md): local ingestion and
+  minimal-disclosure query-time consolidation (accepted, DEC-37).
+- [Local-first processing research](research/local-first-processing.md): evidence
+  behind ADR-0003: on-device extraction, minimal-disclosure retrieval and quantization.
 - [Contributing](../CONTRIBUTING.md): workflow and documentation maintenance.
 - [Security](../SECURITY.md): trust, ownership, uploads, providers, and secrets.
 

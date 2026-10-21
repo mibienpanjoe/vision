@@ -31,14 +31,16 @@ Physical IDs are opaque; their final storage type is an implementation choice.
 | `chapters` | Source-order section; document, ordinal, title, anchors, structure quality |
 | `scenes` | Optional scene grouping; source range, participants/context, boundary uncertainty |
 | `passages` | Immutable parsed text; document/parser revision, chapter/scene where known, source anchors, neighboring passages |
-| `entities` | Identity within a work; kind, preferred label, resolution status |
+| `derivations` | T18: one versioned derivation stage of a source generation; processing version, status, attempt, rejection counts. DEC-38 adds local `appearance` and query-scoped `consolidation` stages, the latter keyed also by cutoff, subject, requested scope and selected-passage digest |
+| `entities` | Identity within a work; kind, preferred label, resolution status; T18 scopes each row to a derivation |
 | `entity_aliases` | Candidate or supported names/titles; entity, scope, provenance, ambiguity |
-| `entity_mentions` | Exact source occurrence; span, candidate entities, resolved identity if justified |
+| `entity_mentions` | Exact source occurrence; span, candidate entities (`mention_candidates`), resolved identity if justified, model run |
 | `entity_relations` | Source-supported relationship between identities; type, temporal scope, evidence |
-| `events` | Narrative event; label, participants, place, source evidence, temporal status |
+| `events` | Narrative event; label, participants, place, source evidence, temporal status; T19 stores modality, `event_evidence` spans and `event_participants` per derivation |
 | `event_relations` | Before/after/during/overlap/unknown/inconsistent relation; linked events and support |
 | `temporal_anchors` | Date, age, relative event, or uncertain interval; preserve granularity and evidence |
-| `visual_facts` | Atomic claim about an entity; value, scope, temporal/context conditions, support/modality/status |
+| `appearance_candidates` | DEC-38: local pointer to a likely description span; passage, span, cue words; `appearance_subjects` lists entities resolved inside it; ranks evidence, never a fact |
+| `visual_facts` | Atomic claim about an entity; value, scope, temporal/context conditions, support/modality/status; T20 adds kind, polarity, perspective, assumption and `fact_events` |
 | `fact_evidence` | Fact-to-source-span support with explicit or inferential role |
 | `fact_conflicts` | Conflicting claims, compatible context distinctions, and unresolved resolution evidence |
 | `appearance_states` | Derived scoped reconstruction; input generation, subject/time/context/cutoff/mode, dependencies |
@@ -46,7 +48,7 @@ Physical IDs are opaque; their final storage type is an implementation choice.
 | `visualization_evidence` | Output-attribute links to claims and exact spans used for the decision |
 | `assets` | Original/derived files or rendered artifacts; storage reference, media type, originating document or visualization |
 | `ingestion_jobs` | Durable work attempts; document revision, stage, progress, terminal result, cancellation/retry lineage |
-| `model_runs` | Provider/model role, processing configuration, inputs by safe reference, usage and outcome |
+| `model_runs` | Provider/model role, processing configuration, inputs by safe reference, usage and outcome; T17 stores owner, optional generation, provider/model/version, prompt and schema versions, limits, input refs and SHA-256 digest, outcome/error code, token usage and duration, never source text, responses or credentials |
 
 These names describe logical ownership, not final migrations. Owner identity,
 access sessions, index-generation metadata, and revision representations must be

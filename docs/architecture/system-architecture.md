@@ -73,6 +73,53 @@ Deterministic adapters make contract tests reproducible; they are not proof of
 live extraction quality. Every live role needs source handling, timeout, retry,
 and budget choices before use. Do not select models implicitly in documentation.
 
+### Provider envelope — T17
+
+`app/providers/contracts.py` defines a frozen `ProviderRequest` (role, purpose,
+prompt version, system-owned instructions, up to 64 quoted `SourceItem`s and
+`Limits`) and rejects unknown fields, so a request cannot carry tools,
+credentials or scope. `compose` puts the instructions plus a fixed
+untrusted-data notice in the system text and the sources only in a JSON data
+block; an adapter receives that `ProviderCall` (system, data, output schema,
+output-token and time bounds) and nothing else. Outputs subclass
+`StructuredOutput` (`extra="forbid"`, strict types, a `schema_version`).
+
+`app/providers/execution.py` returns either the validated output with outcome
+`succeeded` or no value with one of `invalid_output`, `timeout`,
+`budget_exhausted`, `cancelled`, `provider_unavailable` or `input_too_large`.
+Oversized input and cancellation before the call skip the adapter; cancellation,
+elapsed time or token budget exceeded after the call discard the response.
+Execution has no side effects: the caller persists the safe `RunRecord` with
+`persist_run` in the same transaction as any canonical write, so malformed or
+discarded output cannot reach canon. Default limits (60 s, 48,000 input
+characters, 2,048 output and 16,000 total tokens) are T17 engineering bounds
+under OPEN-05. `ScriptedAdapter` and `RuleAdapter` are the deterministic
+adapters. T18 adds `ChatGateway` (`app/providers/openai_compatible.py`), an
+OpenAI-compatible chat adapter for the local FreeLLM gateway (DEC-24): JSON
+object mode, temperature 0, the output schema appended to the system text, no
+tools, and HTTP/timeout failures mapped to the typed outcomes. It is disabled
+unless `VISION_LLM_API_KEY` is set; the routed model name returned by the
+gateway is recorded as `model_version`. On 2026-10-20 the opt-in live test ran
+entity extraction on the synthetic corpus through `auto` routing: five chapter
+batches succeeded after bounded retries (one timeout, one unavailable route),
+with 0 misses, 0 false merges, 0 splits and 0 ambiguity violations against the
+annotations, plus unannotated object entities. Routed models varied per call
+(e.g. qwen3.8-27b, gpt-oss-120b, Gemini variants), so results are not
+reproducible by model name; a pinned model was unavailable upstream at the time.
+Under DEC-37 this ingestion-time LLM path is limited to synthetic fixtures;
+[ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md) moves private-book
+extraction to local models and consolidation to query time.
+A second live run of the full entity → event → fact chain succeeded on the
+synthetic corpus (bounded retries absorbed three unavailable routes and two
+invalid outputs). Review: rumor, metaphor and dream claims stayed
+non-canonical, the sword stayed Brann's, the childhood memory kept its
+modality, and the war scar was attributed correctly. Gaps: seven facts were
+rejected because their subject did not match an entity label exactly (most of
+the house roof history was lost), one of the two conflicting eye colours was
+not extracted so no conflict was recorded, attribute names varied
+(`left_cheek` vs `left_cheek_scar`), and one entity split recurred ("Captain
+Brann" / "Brann"). Live quality is therefore partial and not a release claim.
+
 ## Repository layout and remaining modules
 
 ```text
@@ -90,9 +137,10 @@ docs/                        working specifications
 ```
 
 The shell, access boundary, durable probe-job service, worker entry points,
-Alembic migrations, generated contracts and foundation tests exist. Ingestion,
-narrative, retrieval, reconstruction, verification, visualization and provider
-adapters remain planned. See the
+Alembic migrations, generated contracts and foundation tests exist, as do
+ingestion and the provider envelope with deterministic adapters. Narrative,
+retrieval, reconstruction, visualization and live provider adapters remain
+planned. See the
 [operations guide](../operations/development-and-operations.md) for the runnable
 foundation and its verification commands.
 

@@ -35,6 +35,15 @@
 | DEC-27 | First upload boundary: UTF-8 TXT/Markdown, 8 MiB/source, 60-second transfer, private opaque originals; title 256 code points and page size 100 | T10 engineering limits under OPEN-05; [ingestion](../ingestion/ingestion-contract.md#first-upload-input-boundary--t10) |
 | DEC-28 | PDF via Docling 2.140.0 (pypdfium2 backend, local Heron layout model, CPU-only PyTorch); OCR and table structure disabled; text-layer-free PDFs fail explicitly | T14 under maintainer selection, 2026-10-20; [ingestion](../ingestion/ingestion-contract.md#pdf-parser-revision--t14) |
 | DEC-29 | EPUB via a project XHTML adapter (container validation before parsing, defusedxml for package XML, network-free lxml HTML for spine documents) rather than Docling's EPUB backend; spine order with document/fragment anchors | T15; [ingestion](../ingestion/ingestion-contract.md#epub-parser-revision--t15) |
+| DEC-30 | Provider envelope: frozen tool-free requests, sources only as a quoted JSON data block, strict schema-versioned outputs, seven distinct outcomes, side-effect-free execution persisted with canon; default 60 s / 48,000 chars / 2,048 output / 16,000 total tokens | T17 engineering bounds under OPEN-05; [architecture](../architecture/system-architecture.md#provider-envelope--t17) |
+| DEC-31 | Entity derivation: versioned per-generation derivations, chapter-aligned batches, verbatim quote grounding with counted rejections, kind+label unification only, explicit candidates and `same_as` links, attempt-guarded atomic publication | T18; [narrative contract](../narrative/narrative-contract.md#entity-derivation--t18) |
+| DEC-32 | Events depend on an explicit entity derivation; modality kept per event; stated relations only; partial order over fact/memory events with cycle and overlap conflicts reported as inconsistent; earlier events passed as non-citable `k:n` data | T19; [narrative contract](../narrative/narrative-contract.md#event-derivation-and-partial-chronology--t19) |
+| DEC-33 | Visual facts: explicit/inferred support only, polarity and modality kept, lexical attribution/owner/negation/question gates before storage, canonical = explicit+affirmed+fact/memory, conflicts recorded unresolved at shared events | T20; [narrative contract](../narrative/narrative-contract.md#visual-fact-derivation--t20) |
+| DEC-34 | Narrative browse reads the latest succeeded derivation chain of the current generation and filters every derived record by dependency closure at the chapter cutoff; labels must come from visible mentions; `409 NARRATIVE_NOT_READY` before extraction | T21; [API](../api/api-contract.md#narrative-browse--t21) |
+| DEC-35 | Narrative completion: per-generation job queued with parse publication, entity→event→fact stages through the worker, readiness only on full success, live provider opt-in via `VISION_NARRATIVE_PROVIDER=live` | T22; [ingestion](../ingestion/ingestion-contract.md#narrative-completion--t22) |
+| DEC-36 | Query-time fallback provider for minimal-disclosure consolidation: Groq (`gpt-oss-120b`) with Zero Data Retention, over cutoff-filtered excerpts only | Maintainer decision, 2026-10-20; [research](../research/local-first-processing.md#10-spike-results-2026-10-20) |
+| DEC-37 | Accept ADR-0003: ingestion is local (GLiNER2 entities with deterministic identity rules, fastcoref per chapter, appearance patterns, PostgreSQL FTS plus EmbeddingGemma-300M with measured fusion weights); facts are consolidated at query time from cutoff-filtered excerpts through Groq with ZDR; local models pinned, no unmeasured quantization; the FreeLLM gateway (DEC-24) may process synthetic fixtures only | Maintainer decision, 2026-10-21; [ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md) |
+| DEC-38 | DEC-37 contract: local `entities` and `appearance` ingestion stages with versioned identity rules; identity links need a supporting passage and apply from it onward (local coreference or explicit reveal patterns; consolidation may propose scoped, quoted links); events and visual facts as query-scoped `consolidation` derivations over cutoff-filtered passages in one combined-schema call, reused by scope and passage digest | Maintainer decision, 2026-10-21; [narrative contract](../narrative/narrative-contract.md#local-ingestion-and-query-time-consolidation--dec-38) |
 
 ## Proposed elaborations
 
@@ -45,13 +54,14 @@ documents fixed all details.
 |---|---|---|
 | PROP-04 | First vertical slice uses a small synthetic TXT/Markdown narrative before format expansion | First implementation increment; [roadmap](implementation-roadmap.md) |
 | PROP-05 | Cache identity includes creative mode and locked-fact revision in addition to source/retrieval scope | Reconstruction implementation |
+| PROP-06 | Owner-facing narrative retry route with `If-Match` and `Idempotency-Key`, mirroring ingestion retry | Before real-book narrative use |
 
 ## Open decisions
 
 | ID | Question | Needed before |
 |---|---|---|
 | OPEN-01 | Resolved by DEC-26; later work consumes the validated ActorScope | Any network-accessible real upload flow |
-| OPEN-02 | Gateway selected by DEC-24; role/model capabilities, credentials, budgets and source handling remain to verify | Live model integration |
+| OPEN-02 | Private-book source handling resolved by DEC-37 (no book text leaves the machine at ingestion; query-time excerpts to Groq with ZDR). Groq rate-limit handling, per-question token ceilings and the daily question budget remain open | Query-time consolidation |
 | OPEN-03 | First language resolved by DEC-22 (English); broader languages/configurations remain open | Lexical indexing and multilingual claims |
 | OPEN-04 | Resolved for the first slice by DEC-22; revisit only with an explicit changed decision | Temporal reconstruction implementation |
 | OPEN-05 | Concrete upload/expansion/time/token/cost/candidate limits and performance targets | Accepting untrusted workloads; then calibrate with measurements |
