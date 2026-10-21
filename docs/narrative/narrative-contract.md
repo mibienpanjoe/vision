@@ -336,6 +336,33 @@ not tied to the war event, and carried an untimed hair colour as an inference.
 Back-to-back questions exceed the free tier's 8,000 tokens per minute and fail
 as `rate_limited` (OPEN-02).
 
+### Scene and world — T29
+
+`services/reconstruction/scene.py` composes one event. Each member is
+reconstructed separately at that event, so a prop or injury stays with the
+entity the text gives it to:
+
+- **People and places** are present when the consolidated event names them as
+  participants or a claim ties them to the event, and never when a sentence of
+  the selected text says they were absent ("Brann and his sword were absent").
+  A requested participant without such evidence is listed as "not established
+  at this moment", not added.
+- **Objects** are present when a claim at the event describes them or a present
+  member's canonical held-object trait names them; an object whose carrier
+  (a visible `carries` relation) is absent is excluded with that reason.
+- **World context** is the states of the places present, with the same
+  explicit/inferred split as characters; with no place evidence at the event
+  the setting is `unknown`, never a default.
+
+`context.scene` builds this from a stored consolidation, using the cutoff's
+visible identities and relations and the consolidation's selected passages. On
+the synthetic dinner it keeps Arthur, Élodie, Mira and her compass, excludes
+Brann and the sword as absent, and reports the setting unknown because
+"Warm candlelight lit the room" never names the house, so the attribution gate
+refused the lighting claim. An object's material stated only at another event
+stays unknown at this one. The response schema for scenes is defined with the
+visual specification in T31.
+
 ## Discriminated outcomes
 
 Conceptual outcomes are `resolved`, `needs_context`, `insufficient_evidence`, and

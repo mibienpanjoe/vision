@@ -10,11 +10,16 @@ links do not.
 import uuid
 
 from app.models.entities import EntityRelation
-from app.models.events import Event, EventRelation
+from app.models.events import Event, EventParticipant, EventRelation
+from app.models.generations import SourceGeneration
 from app.models.model_runs import Derivation
+from app.models.passages import Passage
 from app.models.visual_facts import FactEvent, VisualFact
 from app.services.narrative.chronology import Chronology, Statement
+from app.services.narrative.eligibility import visible_narrative
+from app.services.reconstruction.scene import Entity, Scene, absentees, compose_scene
 from app.services.reconstruction.state import Fact, State, reconstruct
+from app.services.retrieval.entity_lookup import SubjectLookup
 from sqlalchemy import select
 
 
@@ -56,3 +61,26 @@ def appearance(db, plan, derivation_id: uuid.UUID, subject=None) -> tuple[State,
     event = uuid.UUID(anchored) if anchored else None
     return reconstruct(facts, subject_group(db, derivation_id, subject.entity_ids), subject.kind, event,
                        chronology), labels
+
+
+def scene(db, plan, derivation_id: uuid.UUID) -> tuple[Scene | State, dict]:
+    """The scene at the anchored event, or the subject's non-resolved state when no single event applies."""
+    state, labels = appearance(db, plan, derivation_id)
+    if state.outcome == "needs_context" or state.event is None:
+        return state, labels
+    derivation = db.get(Derivation, derivation_id)
+    facts, chronology, _ = claims(db, derivation_id)
+    view = visible_narrative(db, db.get(SourceGeneration, plan.generation_id), plan.cutoff)
+    lookup = SubjectLookup(view)
+    subjects = {lookup.subject(e) for e in view.entities}
+    entities = {s: Entity(frozenset(s.entity_ids), s.kind, s.label) for s in subjects if s is not None}
+    subject = entities[lookup.subject(plan.subject.entity_ids[0])]
+    participants = set(db.scalars(select(EventParticipant.entity_id).where(EventParticipant.event_id == state.event)))
+    carriers = {entities[lookup.subject(r.object_id)].label: entities[lookup.subject(r.subject_id)].label
+                for r in view.relations if r.relation == "carries"}
+    spans = (derivation.scope or {}).get("spans", [])
+    texts = [p.text for p in db.scalars(select(Passage).where(Passage.id.in_({uuid.UUID(s[0]) for s in spans})))]
+    present = [e for e in entities.values() if e is not subject]
+    requested = [entities[lookup.subject(p.entity_ids[0])] for p in plan.participants]
+    return compose_scene(facts, chronology, state.event, subject, present, participants, requested,
+                         absentees(texts, list(entities.values())), carriers), labels
