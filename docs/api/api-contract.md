@@ -340,3 +340,107 @@ route under the same boundary. Entity detail returns at most 200 mentions with
 `mentions_truncated`. Generated types: `EntityPage`, `EntityDetail`.
 `GenerationView` adds `narrative_status` (`not_started`, `queued`, `running`,
 `succeeded`, `failed`) and the safe `narrative_error` code (T22).
+
+## Visualization request resolution — T23
+
+`VisualizationRequest` (`app/schemas/retrieval.py`) carries an optional
+natural-language `query`, an optional `entity_id`, a story `moment` (`age` with
+`years`, or a `phrase` such as "after the war"), a scene `context`, the
+`through_chapter_id` reading boundary, `creative_mode` (`canon_first` default,
+or `interpretation`) and an optional `style`. A query or an entity is required;
+unknown fields are rejected. T31 exposes it on a route and generates its types.
+
+`services/retrieval/query_plan.py` normalizes a request into a query plan with
+deterministic English rules (`query-plan-v1`); the plan is internal and is not
+a response body:
+
+- **Source and story time stay separate.** "Chapter N" in the query is matched
+  against the chapter's own heading number, never the parser ordinal. "Through",
+  "up to", "until" and "by" narrow the reading boundary, "before chapter N" ends
+  it at the preceding chapter, and "in chapter N" only focuses the source. A
+  reference can narrow the boundary but never widen it: a chapter beyond the
+  boundary, or one the work lacks, is `insufficient_evidence`. Ages ("at ten",
+  "when he was ten", "ten years old") and before/after/during phrases become the
+  story moment; at/in/on phrases become the scene context.
+- **Subjects come from the cutoff-eligible narrative only.** Names are matched
+  against visible mention text, display labels and aliases, with Unicode NFC
+  case folding and pronouns ignored. Visible `same_as` links join identities, so
+  "Wren" names Arthur only once the reveal is within the boundary. When no full
+  name matches, a capitalised title word ("captain" of "Captain Mira") offers
+  the identities that use it. A surface whose visible mentions point at more
+  than one identity offers each one as a choice instead of picking one. Further
+  named subjects are kept as scene participants.
+- **Structured fields and the query text never override each other.** A
+  structured entity, moment or context that disagrees with the query returns
+  `needs_context` with both sides as choices (`subject` choices carry the entity
+  id, `moment` and `context` choices name `request` or the query position); a
+  structured entity among the query's candidates resolves the ambiguity. An
+  unknown or hidden `entity_id` and another owner's work return the common
+  `404`; no eligible subject is `insufficient_evidence`.
+- **An unspecified moment stays unspecified.** The plan does not choose a story
+  time; reconstruction (T28) must offer context choices rather than blend
+  materially different states.
+
+## Visualization compose — T31
+
+`POST /v1/works/{work_id}/visualizations/compose` takes a `VisualizationRequest`
+and returns a `VisualizationResult` with status 200 for every domain outcome:
+
+- `resolved` with a `VisualSpecification` (`spec_version` `vision-spec-1.0`);
+- `needs_context` with `choices`, each with `field` `subject` (the id is the
+  entity), `moment` (resubmit the label as a `phrase` moment) or `context`;
+- `insufficient_evidence` with `missing` reasons (no eligible subject, a chapter
+  beyond the boundary, a moment the eligible text does not establish, no
+  verified trait);
+- `failed` with a safe error: `PROVIDER_NOT_ENABLED` (no `GROQ_API_KEY`),
+  `PROVIDER_RATE_LIMITED`, `PROVIDER_TIMEOUT`, `PROVIDER_UNAVAILABLE` or
+  `PROVIDER_INVALID_OUTPUT` (retryable: the failed consolidation is reclaimed
+  on the next request), or `PROMPT_GATE_FAILED`. Consolidation itself makes one
+  more call after a malformed answer, never more. There is no fallback to
+  unverified output.
+
+Another owner's work or an unknown entity or chapter returns the common `404`,
+an unauthenticated call `401`, an invalid body `422`, and a work without a
+succeeded entity derivation `409 NARRATIVE_NOT_READY`. The call runs the whole
+path synchronously (plan, local retrieval, Groq consolidation reused by scope,
+reconstruction, verification with optional adjudication, prompt gate). It stores
+only the consolidation and run records; stored results are created through
+the route in the next section.
+`VISION_ADJUDICATE=0` turns adjudication off.
+
+The specification carries `lineage` (consolidation id; query-plan, consolidation,
+index and parser versions), `scope` (generation, parser revision, cutoff,
+requested and resolved moment, context, creative mode), the `subject`,
+`participants` and `world` members (each with traits and unknown core traits),
+`excluded` entities with reasons, scene `unknown`s, `creative` additions,
+`generation` (style, prompt, negative prompt) and `verification` (adjudication
+state, facts removed, selection outcome). Canonical and disputed traits always
+carry `SourceSpan` evidence, which resolves through the evidence route under the
+same boundary; inferred traits carry their reason. The negative prompt lists
+only values the text rules out at this moment (removed, negated or superseded),
+never a value that is merely unknown here, such as childhood hair for an adult
+portrait. In `interpretation` mode,
+unknown core traits of the subject become creative additions ("artist's
+choice") and inferred traits enter the prompt as "possibly"; canonical traits
+are identical in both modes. Generated types: `VisualizationRequest`,
+`VisualizationResult` and their members. `ContextChoice` gains the optional
+`field`.
+
+## Stored visualizations — T32a
+
+| Route | Behavior |
+|---|---|
+| `POST /v1/works/{work_id}/visualizations` | Requires `Idempotency-Key`. Runs compose; a `resolved` result is stored as revision 1 and returned `201` with `ETag: "1"` as `VisualizationCreated` (`visualization` and `result`). Any other outcome returns `200` with `visualization: null` and reserves nothing. The same key and request replay the stored result; the same key with a different request is `409 IDEMPOTENCY_CONFLICT`. |
+| `GET /v1/works/{work_id}/visualizations` | The owner's stored visualizations of the work, newest first (at most 100), with subject label and current revision. |
+| `GET /v1/works/{work_id}/visualizations/{id}` | The current revision as `VisualizationView`, with the revision as strong `ETag`. |
+| `GET .../{id}/revisions` and `.../{id}/revisions/{number}` | Revision summaries (generation, parser revision, consolidation), and any stored revision. |
+
+Keys are scoped to the owner and work and fingerprint the validated request.
+Concurrent inserts under one key collapse to one stored row by a unique
+constraint, and the loser replays it. Another owner's work or visualization,
+or a missing revision, is the common `404`. A revision stores the full
+validated result with its generation, parser revision and consolidation
+(migration 0018), so its cited spans still resolve through the evidence route
+after later consolidations. New revisions (refinement) arrive with T38.
+Generated types: `VisualizationCreated`, `VisualizationView`,
+`VisualizationPage`, `RevisionPage`.

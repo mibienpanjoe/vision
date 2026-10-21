@@ -2,6 +2,29 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:vision:contracts:1.0",
   "$defs": {
+    "AgeMoment": {
+      "additionalProperties": false,
+      "description": "A story-time age of the subject; never a source position.",
+      "properties": {
+        "kind": {
+          "const": "age",
+          "title": "Kind",
+          "type": "string"
+        },
+        "years": {
+          "maximum": 200,
+          "minimum": 0,
+          "title": "Years",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "years"
+      ],
+      "title": "AgeMoment",
+      "type": "object"
+    },
     "AliasView": {
       "additionalProperties": false,
       "properties": {
@@ -86,6 +109,24 @@
     "ContextChoice": {
       "additionalProperties": false,
       "properties": {
+        "field": {
+          "anyOf": [
+            {
+              "enum": [
+                "subject",
+                "moment",
+                "context"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Which request field the choice fills; a moment choice is resubmitted as its label",
+          "title": "Field"
+        },
         "id": {
           "maxLength": 128,
           "minLength": 1,
@@ -105,6 +146,42 @@
         "label"
       ],
       "title": "ContextChoice",
+      "type": "object"
+    },
+    "CreativeAddition": {
+      "additionalProperties": false,
+      "properties": {
+        "attribute": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Attribute",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "support": {
+          "const": "creative",
+          "default": "creative",
+          "title": "Support",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "attribute",
+        "value",
+        "reason"
+      ],
+      "title": "CreativeAddition",
       "type": "object"
     },
     "EntityDetail": {
@@ -197,6 +274,43 @@
         "items"
       ],
       "title": "EntityPage",
+      "type": "object"
+    },
+    "EntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Entity Ids",
+          "type": "array"
+        },
+        "kind": {
+          "enum": [
+            "character",
+            "place",
+            "object",
+            "organization"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_ids",
+        "kind",
+        "label"
+      ],
+      "title": "EntityRef",
       "type": "object"
     },
     "EntitySummary": {
@@ -547,6 +661,29 @@
       "title": "EvidenceView",
       "type": "object"
     },
+    "ExclusionView": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "reason"
+      ],
+      "title": "ExclusionView",
+      "type": "object"
+    },
     "FactView": {
       "additionalProperties": false,
       "properties": {
@@ -675,6 +812,42 @@
         "error"
       ],
       "title": "Failed",
+      "type": "object"
+    },
+    "GenerationIntent": {
+      "additionalProperties": false,
+      "properties": {
+        "negative_prompt": {
+          "maxLength": 2000,
+          "title": "Negative Prompt",
+          "type": "string"
+        },
+        "prompt": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "style": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Style"
+        }
+      },
+      "required": [
+        "style",
+        "prompt",
+        "negative_prompt"
+      ],
+      "title": "GenerationIntent",
       "type": "object"
     },
     "IngestionView": {
@@ -895,6 +1068,29 @@
       "title": "LibraryPage",
       "type": "object"
     },
+    "Lineage": {
+      "additionalProperties": false,
+      "properties": {
+        "consolidation_id": {
+          "format": "uuid",
+          "title": "Consolidation Id",
+          "type": "string"
+        },
+        "processing": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Processing",
+          "type": "object"
+        }
+      },
+      "required": [
+        "consolidation_id",
+        "processing"
+      ],
+      "title": "Lineage",
+      "type": "object"
+    },
     "LoginRequest": {
       "additionalProperties": false,
       "properties": {
@@ -915,6 +1111,49 @@
         "password"
       ],
       "title": "LoginRequest",
+      "type": "object"
+    },
+    "MemberView": {
+      "additionalProperties": false,
+      "properties": {
+        "entity": {
+          "$ref": "#/$defs/EntityRef"
+        },
+        "role": {
+          "enum": [
+            "subject",
+            "participant",
+            "place",
+            "object"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "traits": {
+          "items": {
+            "$ref": "#/$defs/TraitView"
+          },
+          "title": "Traits",
+          "type": "array"
+        },
+        "unknown": {
+          "description": "Core traits the eligible text does not establish here",
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Unknown",
+          "type": "array"
+        }
+      },
+      "required": [
+        "entity",
+        "role",
+        "traits",
+        "unknown"
+      ],
+      "title": "MemberView",
       "type": "object"
     },
     "MentionView": {
@@ -1015,6 +1254,29 @@
         "choices"
       ],
       "title": "NeedsContext",
+      "type": "object"
+    },
+    "PhraseMoment": {
+      "additionalProperties": false,
+      "description": "A story-time phrase such as \"after the war\", anchored by consolidation against cited text.",
+      "properties": {
+        "kind": {
+          "const": "phrase",
+          "title": "Kind",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "text"
+      ],
+      "title": "PhraseMoment",
       "type": "object"
     },
     "PrincipalView": {
@@ -1163,6 +1425,31 @@
       "title": "RequestScope",
       "type": "object"
     },
+    "ResolvedSpecification": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "$ref": "#/$defs/VisualSpecification"
+        },
+        "outcome": {
+          "const": "resolved",
+          "title": "Outcome",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "outcome",
+        "schema_version",
+        "data"
+      ],
+      "title": "ResolvedSpecification",
+      "type": "object"
+    },
     "Resolved_SourceSpan_": {
       "additionalProperties": false,
       "properties": {
@@ -1186,6 +1473,61 @@
         "data"
       ],
       "title": "Resolved[SourceSpan]",
+      "type": "object"
+    },
+    "RevisionPage": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/RevisionSummary"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "RevisionPage",
+      "type": "object"
+    },
+    "RevisionSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "consolidation_id": {
+          "format": "uuid",
+          "title": "Consolidation Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "generation_id": {
+          "format": "uuid",
+          "title": "Generation Id",
+          "type": "string"
+        },
+        "number": {
+          "minimum": 1,
+          "title": "Number",
+          "type": "integer"
+        },
+        "parser_revision": {
+          "title": "Parser Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "number",
+        "created_at",
+        "generation_id",
+        "parser_revision",
+        "consolidation_id"
+      ],
+      "title": "RevisionSummary",
       "type": "object"
     },
     "SafeError": {
@@ -1223,6 +1565,104 @@
         "correlation_id"
       ],
       "title": "SafeError",
+      "type": "object"
+    },
+    "ScopeView": {
+      "additionalProperties": false,
+      "properties": {
+        "context": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Context"
+        },
+        "creative_mode": {
+          "enum": [
+            "canon_first",
+            "interpretation"
+          ],
+          "title": "Creative Mode",
+          "type": "string"
+        },
+        "generation_id": {
+          "format": "uuid",
+          "title": "Generation Id",
+          "type": "string"
+        },
+        "moment": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "age": "#/$defs/AgeMoment",
+                  "phrase": "#/$defs/PhraseMoment"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/AgeMoment"
+                },
+                {
+                  "$ref": "#/$defs/PhraseMoment"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Moment"
+        },
+        "parser_revision": {
+          "title": "Parser Revision",
+          "type": "string"
+        },
+        "resolved_moment": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The event the text anchors the moment to",
+          "title": "Resolved Moment"
+        },
+        "through_chapter_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Reading cutoff; null means the whole book",
+          "title": "Through Chapter Id"
+        }
+      },
+      "required": [
+        "generation_id",
+        "parser_revision",
+        "through_chapter_id",
+        "moment",
+        "resolved_moment",
+        "context",
+        "creative_mode"
+      ],
+      "title": "ScopeView",
       "type": "object"
     },
     "SourceSpan": {
@@ -1323,6 +1763,75 @@
       "title": "ThroughChapter",
       "type": "object"
     },
+    "TraitView": {
+      "additionalProperties": false,
+      "properties": {
+        "adjudication": {
+          "default": "unchecked",
+          "enum": [
+            "unchecked",
+            "entailed"
+          ],
+          "title": "Adjudication",
+          "type": "string"
+        },
+        "attribute": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Attribute",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/SourceSpan"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Why an inferred trait is not canonical",
+          "title": "Reason"
+        },
+        "status": {
+          "enum": [
+            "canonical",
+            "disputed",
+            "inferred"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "attribute",
+        "status",
+        "values",
+        "evidence"
+      ],
+      "title": "TraitView",
+      "type": "object"
+    },
     "UploadAccepted": {
       "additionalProperties": false,
       "properties": {
@@ -1365,6 +1874,376 @@
         "format"
       ],
       "title": "UploadMetadata",
+      "type": "object"
+    },
+    "VerificationView": {
+      "additionalProperties": false,
+      "properties": {
+        "adjudication": {
+          "enum": [
+            "not_requested",
+            "applied",
+            "unavailable"
+          ],
+          "title": "Adjudication",
+          "type": "string"
+        },
+        "removed": {
+          "description": "Facts removed by verification",
+          "minimum": 0,
+          "title": "Removed",
+          "type": "integer"
+        },
+        "selection": {
+          "enum": [
+            "complete",
+            "compressed",
+            "truncated",
+            "protected_overflow"
+          ],
+          "title": "Selection",
+          "type": "string"
+        }
+      },
+      "required": [
+        "adjudication",
+        "removed",
+        "selection"
+      ],
+      "title": "VerificationView",
+      "type": "object"
+    },
+    "VisualSpecification": {
+      "additionalProperties": false,
+      "properties": {
+        "creative": {
+          "items": {
+            "$ref": "#/$defs/CreativeAddition"
+          },
+          "title": "Creative",
+          "type": "array"
+        },
+        "excluded": {
+          "items": {
+            "$ref": "#/$defs/ExclusionView"
+          },
+          "title": "Excluded",
+          "type": "array"
+        },
+        "generation": {
+          "$ref": "#/$defs/GenerationIntent"
+        },
+        "lineage": {
+          "$ref": "#/$defs/Lineage"
+        },
+        "participants": {
+          "items": {
+            "$ref": "#/$defs/MemberView"
+          },
+          "title": "Participants",
+          "type": "array"
+        },
+        "scope": {
+          "$ref": "#/$defs/ScopeView"
+        },
+        "spec_version": {
+          "const": "vision-spec-1.0",
+          "title": "Spec Version",
+          "type": "string"
+        },
+        "subject": {
+          "$ref": "#/$defs/MemberView"
+        },
+        "unknown": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Unknown",
+          "type": "array"
+        },
+        "verification": {
+          "$ref": "#/$defs/VerificationView"
+        },
+        "world": {
+          "items": {
+            "$ref": "#/$defs/MemberView"
+          },
+          "title": "World",
+          "type": "array"
+        }
+      },
+      "required": [
+        "spec_version",
+        "lineage",
+        "scope",
+        "subject",
+        "participants",
+        "world",
+        "excluded",
+        "unknown",
+        "creative",
+        "generation",
+        "verification"
+      ],
+      "title": "VisualSpecification",
+      "type": "object"
+    },
+    "VisualizationCreated": {
+      "additionalProperties": false,
+      "description": "201 with `visualization` when a resolved result was stored; 200 with it null for any other outcome.",
+      "properties": {
+        "result": {
+          "$ref": "#/$defs/VisualizationResult"
+        },
+        "visualization": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VisualizationView"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "visualization",
+        "result"
+      ],
+      "title": "VisualizationCreated",
+      "type": "object"
+    },
+    "VisualizationPage": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/VisualizationSummary"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "VisualizationPage",
+      "type": "object"
+    },
+    "VisualizationRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "context": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Scene context such as \"at home\"",
+          "title": "Context"
+        },
+        "creative_mode": {
+          "default": "canon_first",
+          "enum": [
+            "canon_first",
+            "interpretation"
+          ],
+          "title": "Creative Mode",
+          "type": "string"
+        },
+        "entity_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Entity Id"
+        },
+        "moment": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "age": "#/$defs/AgeMoment",
+                  "phrase": "#/$defs/PhraseMoment"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/AgeMoment"
+                },
+                {
+                  "$ref": "#/$defs/PhraseMoment"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Moment"
+        },
+        "query": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Query"
+        },
+        "style": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Style"
+        },
+        "through_chapter_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reading cutoff; null means the whole book",
+          "title": "Through Chapter Id"
+        }
+      },
+      "title": "VisualizationRequest",
+      "type": "object"
+    },
+    "VisualizationResult": {
+      "discriminator": {
+        "mapping": {
+          "failed": "#/$defs/Failed",
+          "insufficient_evidence": "#/$defs/InsufficientEvidence",
+          "needs_context": "#/$defs/NeedsContext",
+          "resolved": "#/$defs/ResolvedSpecification"
+        },
+        "propertyName": "outcome"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ResolvedSpecification"
+        },
+        {
+          "$ref": "#/$defs/NeedsContext"
+        },
+        {
+          "$ref": "#/$defs/InsufficientEvidence"
+        },
+        {
+          "$ref": "#/$defs/Failed"
+        }
+      ],
+      "title": "VisualizationResult"
+    },
+    "VisualizationSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "subject": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "subject",
+        "created_at"
+      ],
+      "title": "VisualizationSummary",
+      "type": "object"
+    },
+    "VisualizationView": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/$defs/VisualizationRequest"
+        },
+        "result": {
+          "$ref": "#/$defs/ResolvedSpecification"
+        },
+        "revision": {
+          "description": "Current revision; also the strong ETag",
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "work_id": {
+          "format": "uuid",
+          "title": "Work Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "work_id",
+        "revision",
+        "created_at",
+        "request",
+        "result"
+      ],
+      "title": "VisualizationView",
       "type": "object"
     },
     "WholeBook": {
@@ -1486,6 +2365,9 @@
     "probe_request": {
       "$ref": "#/$defs/ProbeRequest"
     },
+    "revision_page": {
+      "$ref": "#/$defs/RevisionPage"
+    },
     "scope": {
       "$ref": "#/$defs/RequestScope"
     },
@@ -1500,6 +2382,21 @@
     },
     "upload_metadata": {
       "$ref": "#/$defs/UploadMetadata"
+    },
+    "visualization": {
+      "$ref": "#/$defs/VisualizationView"
+    },
+    "visualization_created": {
+      "$ref": "#/$defs/VisualizationCreated"
+    },
+    "visualization_page": {
+      "$ref": "#/$defs/VisualizationPage"
+    },
+    "visualization_request": {
+      "$ref": "#/$defs/VisualizationRequest"
+    },
+    "visualization_result": {
+      "$ref": "#/$defs/VisualizationResult"
     },
     "work": {
       "$ref": "#/$defs/WorkView"
@@ -1522,7 +2419,13 @@
     "error",
     "span_outcome",
     "entity_page",
-    "entity_detail"
+    "entity_detail",
+    "visualization_request",
+    "visualization_result",
+    "visualization_created",
+    "visualization",
+    "visualization_page",
+    "revision_page"
   ],
   "title": "SchemaCatalog",
   "type": "object"

@@ -137,9 +137,15 @@ export type Id6 = string;
 export type Username1 = string;
 export type Kind3 = "probe";
 export type Value2 = number;
+export type ConsolidationId = string;
+export type CreatedAt = string;
+export type GenerationId1 = string;
+export type Number = number;
+export type ParserRevision3 = string;
+export type Items2 = RevisionSummary[];
 export type CreativeMode = "canon_first" | "interpretation";
 export type DocumentRevisionId2 = string;
-export type GenerationId1 = string;
+export type GenerationId2 = string;
 export type ReadingBoundary1 = WholeBook | ThroughChapter;
 export type StoryEventId = string | null;
 export type WorkId = string;
@@ -150,6 +156,10 @@ export type SchemaVersion = "1.0";
  * @minItems 1
  */
 export type Choices = [ContextChoice, ...ContextChoice[]];
+/**
+ * Which request field the choice fills; a moment choice is resubmitted as its label
+ */
+export type Field = ("subject" | "moment" | "context") | null;
 export type Id7 = string;
 export type Label3 = string;
 export type Outcome1 = "needs_context";
@@ -164,6 +174,97 @@ export type Outcome3 = "failed";
 export type SchemaVersion3 = "1.0";
 export type Format1 = "txt" | "md" | "pdf" | "epub";
 export type Title1 = string;
+export type CreatedAt1 = string;
+export type Id8 = string;
+/**
+ * Scene context such as "at home"
+ */
+export type Context = string | null;
+export type CreativeMode1 = "canon_first" | "interpretation";
+export type EntityId1 = string | null;
+export type Moment = (AgeMoment | PhraseMoment) | null;
+export type Kind4 = "age";
+export type Years = number;
+export type Kind5 = "phrase";
+export type Text = string;
+export type Query = string | null;
+export type Style = string | null;
+/**
+ * Reading cutoff; null means the whole book
+ */
+export type ThroughChapterId1 = string | null;
+export type Attribute1 = string;
+export type Reason = string;
+export type Support1 = "creative";
+export type Value3 = string;
+export type Creative = CreativeAddition[];
+export type Label4 = string;
+export type Reason1 = string;
+export type Excluded = ExclusionView[];
+export type NegativePrompt = string;
+export type Prompt = string;
+export type Style1 = string | null;
+export type ConsolidationId1 = string;
+/**
+ * @minItems 1
+ */
+export type EntityIds = [string, ...string[]];
+export type Kind6 = "character" | "place" | "object" | "organization";
+export type Label5 = string;
+export type Role = "subject" | "participant" | "place" | "object";
+export type Adjudication = "unchecked" | "entailed";
+export type Attribute2 = string;
+export type Evidence2 = SourceSpan[];
+/**
+ * Why an inferred trait is not canonical
+ */
+export type Reason2 = string | null;
+export type Status4 = "canonical" | "disputed" | "inferred";
+/**
+ * @minItems 1
+ */
+export type Values = [string, ...string[]];
+export type Traits = TraitView[];
+/**
+ * Core traits the eligible text does not establish here
+ */
+export type Unknown = string[];
+export type Participants = MemberView[];
+export type Context1 = string | null;
+export type CreativeMode2 = "canon_first" | "interpretation";
+export type GenerationId3 = string;
+export type Moment1 = (AgeMoment | PhraseMoment) | null;
+export type ParserRevision4 = string;
+/**
+ * The event the text anchors the moment to
+ */
+export type ResolvedMoment = string | null;
+/**
+ * Reading cutoff; null means the whole book
+ */
+export type ThroughChapterId2 = string | null;
+export type SpecVersion = "vision-spec-1.0";
+export type Unknown1 = string[];
+export type Adjudication1 = "not_requested" | "applied" | "unavailable";
+/**
+ * Facts removed by verification
+ */
+export type Removed = number;
+export type Selection = "complete" | "compressed" | "truncated" | "protected_overflow";
+export type World = MemberView[];
+export type Outcome4 = "resolved";
+export type SchemaVersion4 = "1.0";
+/**
+ * Current revision; also the strong ETag
+ */
+export type Revision2 = number;
+export type WorkId1 = string;
+export type VisualizationResult = ResolvedSpecification | NeedsContext | InsufficientEvidence | Failed;
+export type CreatedAt2 = string;
+export type Id9 = string;
+export type Revision3 = number;
+export type Subject = string;
+export type Items3 = VisualizationSummary[];
 
 /**
  * Build-time export root only; this is not an HTTP request/response.
@@ -180,11 +281,17 @@ export interface SchemaCatalog {
   login_request: LoginRequest;
   principal: PrincipalView;
   probe_request: ProbeRequest;
+  revision_page: RevisionPage;
   scope: RequestScope;
   source_span: SourceSpan;
   span_outcome: SpanResolution;
   upload_accepted: UploadAccepted;
   upload_metadata: UploadMetadata;
+  visualization: VisualizationView;
+  visualization_created: VisualizationCreated;
+  visualization_page: VisualizationPage;
+  visualization_request: VisualizationRequest;
+  visualization_result: VisualizationResult;
   work: WorkView;
 }
 export interface EntityDetail {
@@ -367,10 +474,20 @@ export interface ProbeRequest {
   kind?: Kind3;
   value?: Value2;
 }
+export interface RevisionPage {
+  items: Items2;
+}
+export interface RevisionSummary {
+  consolidation_id: ConsolidationId;
+  created_at: CreatedAt;
+  generation_id: GenerationId1;
+  number: Number;
+  parser_revision: ParserRevision3;
+}
 export interface RequestScope {
   creative_mode: CreativeMode;
   document_revision_id: DocumentRevisionId2;
-  generation_id: GenerationId1;
+  generation_id: GenerationId2;
   reading_boundary: ReadingBoundary1;
   story_event_id?: StoryEventId;
   work_id: WorkId;
@@ -386,6 +503,7 @@ export interface NeedsContext {
   schema_version: SchemaVersion1;
 }
 export interface ContextChoice {
+  field?: Field;
   id: Id7;
   label: Label3;
 }
@@ -406,4 +524,124 @@ export interface UploadAccepted {
 export interface UploadMetadata {
   format: Format1;
   title: Title1;
+}
+export interface VisualizationView {
+  created_at: CreatedAt1;
+  id: Id8;
+  request: VisualizationRequest;
+  result: ResolvedSpecification;
+  revision: Revision2;
+  work_id: WorkId1;
+}
+export interface VisualizationRequest {
+  context?: Context;
+  creative_mode?: CreativeMode1;
+  entity_id?: EntityId1;
+  moment?: Moment;
+  query?: Query;
+  style?: Style;
+  through_chapter_id?: ThroughChapterId1;
+}
+/**
+ * A story-time age of the subject; never a source position.
+ */
+export interface AgeMoment {
+  kind: Kind4;
+  years: Years;
+}
+/**
+ * A story-time phrase such as "after the war", anchored by consolidation against cited text.
+ */
+export interface PhraseMoment {
+  kind: Kind5;
+  text: Text;
+}
+export interface ResolvedSpecification {
+  data: VisualSpecification;
+  outcome: Outcome4;
+  schema_version: SchemaVersion4;
+}
+export interface VisualSpecification {
+  creative: Creative;
+  excluded: Excluded;
+  generation: GenerationIntent;
+  lineage: Lineage;
+  participants: Participants;
+  scope: ScopeView;
+  spec_version: SpecVersion;
+  subject: MemberView;
+  unknown: Unknown1;
+  verification: VerificationView;
+  world: World;
+}
+export interface CreativeAddition {
+  attribute: Attribute1;
+  reason: Reason;
+  support?: Support1;
+  value: Value3;
+}
+export interface ExclusionView {
+  label: Label4;
+  reason: Reason1;
+}
+export interface GenerationIntent {
+  negative_prompt: NegativePrompt;
+  prompt: Prompt;
+  style: Style1;
+}
+export interface Lineage {
+  consolidation_id: ConsolidationId1;
+  processing: Processing;
+}
+export interface Processing {
+  [k: string]: string;
+}
+export interface MemberView {
+  entity: EntityRef;
+  role: Role;
+  traits: Traits;
+  unknown: Unknown;
+}
+export interface EntityRef {
+  entity_ids: EntityIds;
+  kind: Kind6;
+  label: Label5;
+}
+export interface TraitView {
+  adjudication?: Adjudication;
+  attribute: Attribute2;
+  evidence: Evidence2;
+  reason?: Reason2;
+  status: Status4;
+  values: Values;
+}
+export interface ScopeView {
+  context: Context1;
+  creative_mode: CreativeMode2;
+  generation_id: GenerationId3;
+  moment: Moment1;
+  parser_revision: ParserRevision4;
+  resolved_moment: ResolvedMoment;
+  through_chapter_id: ThroughChapterId2;
+}
+export interface VerificationView {
+  adjudication: Adjudication1;
+  removed: Removed;
+  selection: Selection;
+}
+/**
+ * 201 with `visualization` when a resolved result was stored; 200 with it null for any other outcome.
+ */
+export interface VisualizationCreated {
+  result: VisualizationResult;
+  visualization: VisualizationView | null;
+}
+export interface VisualizationPage {
+  items: Items3;
+}
+export interface VisualizationSummary {
+  created_at: CreatedAt2;
+  id: Id9;
+  revision: Revision3;
+  subject: Subject;
 }

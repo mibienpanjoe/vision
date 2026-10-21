@@ -32,12 +32,16 @@ def processing_version(prompt_version: str, output: type[StructuredOutput], adap
     return f"{prompt_version}/{output.schema_version}/{adapter.provider}/{adapter.model}"[:160]
 
 
+# A request holds at most 64 sources; one slot stays free for the earlier-chapter listing.
+MAX_GROUP = 63
+
+
 def batches(passages, budget: int):
     """Chapter-aligned groups within a character budget; an oversized passage fails as input_too_large."""
     groups, current, size = [], [], 0
     for passage in passages:
         if current and (passage.chapter_ordinal != current[-1].chapter_ordinal
-                        or size + len(passage.text) > budget or len(current) == 64):
+                        or size + len(passage.text) > budget or len(current) == MAX_GROUP):
             groups.append(current)
             current, size = [], 0
         current.append(passage)
@@ -51,7 +55,7 @@ def ground(passage, quote, start=None):
     return None if start < 0 else (start, start + len(quote))
 
 
-def claim(engine, generation_id, stage, version, input_id):
+def claim(engine, generation_id, stage, version, input_id, scope: dict | None = None):
     with Session(engine) as db, db.begin():
         generation = db.get(SourceGeneration, generation_id)
         document = db.get(Document, generation.document_id)
@@ -65,7 +69,8 @@ def claim(engine, generation_id, stage, version, input_id):
             return derivation.id, None, owner_id, []
         if derivation is None:
             derivation = Derivation(generation_id=generation_id, stage=stage, processing_version=version,
-                                    input_derivation_id=input_id, status="running", attempt=1, rejections={})
+                                    input_derivation_id=input_id, status="running", attempt=1, rejections={},
+                                    scope=scope)
             db.add(derivation)
         else:
             derivation.status, derivation.error_code, derivation.completed_at = "running", None, None

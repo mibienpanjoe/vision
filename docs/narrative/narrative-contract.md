@@ -253,6 +253,124 @@ whole-book or unverified output.
 Browse shows local entities, mentions and aliases at any cutoff, and events and
 facts only from consolidations visible at that cutoff.
 
+**Implementation — T27.** `services/retrieval/consolidation.py` sends the
+budgeted selection (protected passages as their sentences, others whole, plus
+attribution context) in ordinal order with a derived `request` item naming the
+subject's visible label, participants, moment and scene; it refuses any
+passage outside the plan's document or cutoff. The derivation (stage
+`consolidation`, input = the entity derivation) stores its scope in
+`derivations.scope` (migration 0017): cutoff, subject and participant ids,
+moment, context, creative mode, exact spans and their SHA-256 digest, whose
+prefix ends the processing version, so the same scope and spans reuse a
+succeeded consolidation and a failed one is reclaimed on the next request.
+`Consolidation` (`consolidation-schema-v1`) carries events, anchors, temporal
+relations, facts keyed to those events and identity links; events and facts
+go through `publish_events` and `publish_facts` unchanged. Identity links are
+stored under the consolidation derivation as `same_as` only when the quote
+names both identities and the model marks it explicit, otherwise
+`same_as_inferred`.
+
+T27 strengthens the fact gates for every derivation: removal words ("removed",
+"took off") count as negation before a value, and a claim presented as fact or
+memory is refused as `speculative` when a hedge ("people claim", "perhaps")
+precedes its value; rumors and hypotheses keep their modality and stay
+non-canonical. Browse does not yet read consolidations; T28 composes states
+from them by derivation.
+
+A live Groq run on the synthetic fixture (2026-10-21) succeeded for "Arthur at
+home after the war" (chapter 3; 3,779 input and 2,386 output tokens, 5.5 s) and
+"Arthur during the war" (chapter 2; 17 s including a rate-limit wait): rumor
+and metaphor stayed non-canonical and the war scar was attributed to Arthur.
+Gaps for T28: childhood traits (hair, unmarked cheek, blue coat) were labelled
+`identity` rather than scoped to childhood, so temporal reconstruction must not
+trust the kind label alone.
+
+### Appearance state — T28
+
+`services/reconstruction/state.py` computes one subject's state at one event
+from the gated claims and partial chronology of a consolidation, applying the
+carry-forward rule above:
+
+| Claim relative to the requested event | Result |
+|---|---|
+| Tied to it, or to an event that overlaps it | Applies; canonical when explicit, affirmed and fact or memory |
+| Two canonical values for one trait there | `disputed`, both values kept |
+| Earlier acquired change, no direct claim for the trait | Latest one only, as `inferred` ("no persistence established") |
+| Earlier identity trait or interval | Excluded: tied to another moment (kind labels never widen scope) |
+| No event at all (identity, change or interval) | `inferred` ("stated without a story moment") |
+| Scene clothing, props or lighting from another event | Excluded: scene-specific |
+| Same value removed or negated by then | Excluded: removed |
+| Later, or order unknown or inconsistent | Excluded with that reason |
+| Rumor, dream, metaphor, hypothesis; negated claims | Excluded with the modality or `negated` |
+
+Disputes compare one exact attribute, so `coat_color` and `coat_material` are
+two traits, not a conflict. Supersession compares the part a trait describes
+(`left_cheek_scar` and `left_cheek_marked` both describe `left_cheek`), so an
+earlier change never stands beside direct evidence on the same part. For
+unknowns, model attribute names are grouped under core traits (`hair_color` →
+hair, `eye_color` → eyes, clothing words → attire). A character reports hair, eyes
+and attire as unknown unless a canonical or disputed value exists; an object
+reports material. A state with no canonical, disputed or inferred trait is
+`insufficient_evidence`. With no moment or scene requested and canonical
+claims at more than one event, the state is `needs_context` with those events
+in chronological order instead of a blend.
+
+The consolidation names the event matching the requested moment
+(`requested_event`, `consolidation-schema-v2`); `services/reconstruction/context.py`
+reads the stored event id from the derivation scope and never guesses one from
+labels, so a moment the selected passages do not establish is
+`insufficient_evidence` with `moment` unknown. Identity links stated explicitly
+inside the consolidation extend the subject; inferred ones do not. Every
+annotated reconstruction case of the synthetic corpus passes as an inclusion,
+exclusion, dispute and unknown matrix; creative mode does not enter this
+computation.
+
+Live check (Groq, synthetic fixture, 2026-10-21, one question a minute): with
+`reasoning_effort: low` each consolidation used about 3,600–3,900 input and
+800–1,700 output tokens in 2–4 s (at default effort the 4,096-token output cap
+was reached and no moment was anchored). "Arthur at ten" resolved hair,
+unmarked cheek and coat at the anchored childhood event; "Arthur at home after
+the war" resolved the linen shirt with hair and eyes unknown; "Arthur during
+the war" resolved the scar but left attire unknown because the armor claim was
+not tied to the war event, and carried an untimed hair colour as an inference.
+Back-to-back questions exceed the free tier's 8,000 tokens per minute and fail
+as `rate_limited` (OPEN-02).
+
+### Scene and world — T29
+
+`services/reconstruction/scene.py` composes one event. Each member is
+reconstructed separately at that event, so a prop or injury stays with the
+entity the text gives it to:
+
+- **People and places** are present when the consolidated event names them as
+  participants or a claim ties them to the event, and never when a sentence of
+  the selected text says they were absent ("Brann and his sword were absent").
+  A requested participant without such evidence is listed as "not established
+  at this moment", not added.
+- **Objects** are present when a claim at the event describes them or a present
+  member's canonical held-object trait names them; an object whose carrier
+  (a visible `carries` relation) is absent is excluded with that reason.
+- **World context** is the states of the places present, with the same
+  explicit/inferred split as characters; with no place evidence at the event
+  the setting is `unknown`, never a default.
+
+`context.scene` builds this from a stored consolidation, using the cutoff's
+visible identities and relations and the consolidation's selected passages. On
+the synthetic dinner it keeps Arthur, Élodie, Mira and her compass, excludes
+Brann and the sword as absent, and reports the setting unknown because
+"Warm candlelight lit the room" never names the house, so the attribution gate
+refused the lighting claim. An object's material stated only at another event
+stays unknown at this one. The response schema for scenes is defined with the
+visual specification in T31.
+
+**Live end to end (T31, 2026-10-21).** Through the real compose endpoint with
+Groq consolidation and adjudication on the synthetic fixture, "Arthur at home
+after the war" (chapter 3) resolved after the prompt asked for event keys on
+every fact (`consolidate-v4`). One run kept the linen shirt and the visible scar
+canonical with Mira holding her compass. A second run kept only the shirt, and
+a third failed strict validation once, which led to the single retry. The
+results vary from run to run; T33 measures them over repeats.
+
 ## Discriminated outcomes
 
 Conceptual outcomes are `resolved`, `needs_context`, `insufficient_evidence`, and

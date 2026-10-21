@@ -80,7 +80,8 @@ def derive_events(engine, generation_id: uuid.UUID, entity_derivation_id: uuid.U
                           input_id=entity_derivation_id, cancelled=cancelled)
 
 
-def publish_events(db, derivation_id, entity_derivation_id, outputs) -> dict:
+def publish_events(db, derivation_id, entity_derivation_id, outputs, keys: dict | None = None) -> dict:
+    """Rejection counts; `keys`, when given, receives each response key's stored event (or None)."""
     rejected: Counter[str] = Counter()
     names = {e.label.casefold(): e.id for e in db.scalars(select(Entity).where(Entity.derivation_id == entity_derivation_id))}
     global_events: list[Event | None] = []
@@ -109,6 +110,8 @@ def publish_events(db, derivation_id, entity_derivation_id, outputs) -> dict:
                 rejected["unmentioned_event"] += 1
             local.setdefault(item.key, event)
             global_events.append(event)
+        if keys is not None:
+            keys.update(local)
         earlier = len(global_events) - len(output.events)
 
         def resolve(key):

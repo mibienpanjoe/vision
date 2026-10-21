@@ -331,5 +331,67 @@
       "pages": null,
       "section": "OEBPS/text/chapter5.xhtml#ch5-p2"
     }
+  },
+  {
+    "model": "VisualizationResult",
+    "valid": true,
+    "value": {
+      "outcome": "needs_context",
+      "schema_version": "1.0",
+      "choices": [
+        {
+          "id": "evt-1",
+          "label": "dinner",
+          "field": "moment"
+        }
+      ]
+    }
+  },
+  {
+    "model": "VisualizationResult",
+    "valid": false,
+    "value": {
+      "outcome": "needs_context",
+      "schema_version": "1.0",
+      "choices": [
+        {
+          "id": "evt-1",
+          "label": "dinner",
+          "field": "time"
+        }
+      ]
+    }
+  },
+  {
+    "model": "TraitView",
+    "valid": false,
+    "value": {
+      "attribute": "eyes",
+      "status": "guessed",
+      "values": [
+        "blue"
+      ],
+      "evidence": []
+    }
+  },
+  {
+    "model": "VisualizationRequest",
+    "valid": false,
+    "value": {
+      "query": "Arthur",
+      "story_event_id": "later"
+    }
+  },
+  {
+    "model": "VisualizationRequest",
+    "valid": true,
+    "value": {
+      "query": "Arthur at ten",
+      "moment": {
+        "kind": "age",
+        "years": 10
+      },
+      "creative_mode": "interpretation"
+    }
   }
 ]

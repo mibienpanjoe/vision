@@ -33,21 +33,33 @@ def not_found():
     return PublicError(404, "RESOURCE_NOT_FOUND", "Resource not found.")
 
 
-def scoped(db, actor, work_id, chapter_id):
+def not_ready():
+    return PublicError(409, "NARRATIVE_NOT_READY", "Narrative extraction is not complete.")
+
+
+def current_generation(db, actor, work_id):
     document = document_for(db, owned_object(db, Work, work_id, actor))
     generation = db.get(SourceGeneration, document.current_generation_id) if document.current_generation_id else None
     if generation is None:
-        raise PublicError(409, "NARRATIVE_NOT_READY", "Narrative extraction is not complete.")
-    cutoff = None
-    if chapter_id is not None:
-        chapter = db.scalar(select(Chapter).where(Chapter.id == chapter_id, Chapter.document_id == document.id,
-                                                 Chapter.parser_revision == generation.parser_revision))
-        if chapter is None:
-            raise not_found()
-        cutoff = chapter.ordinal
-    view = visible_narrative(db, generation, cutoff)
+        raise not_ready()
+    return document, generation
+
+
+def chapter_ordinal(db, document, generation, chapter_id) -> int | None:
+    if chapter_id is None:
+        return None
+    chapter = db.scalar(select(Chapter).where(Chapter.id == chapter_id, Chapter.document_id == document.id,
+                                             Chapter.parser_revision == generation.parser_revision))
+    if chapter is None:
+        raise not_found()
+    return chapter.ordinal
+
+
+def scoped(db, actor, work_id, chapter_id):
+    document, generation = current_generation(db, actor, work_id)
+    view = visible_narrative(db, generation, chapter_ordinal(db, document, generation, chapter_id))
     if view is None:
-        raise PublicError(409, "NARRATIVE_NOT_READY", "Narrative extraction is not complete.")
+        raise not_ready()
     scope = NarrativeScope(generation_id=generation.id, parser_revision=generation.parser_revision,
                            through_chapter_id=chapter_id)
     return document, view, scope

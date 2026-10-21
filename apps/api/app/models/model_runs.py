@@ -26,6 +26,8 @@ class Derivation(Base):
     error_code: Mapped[str | None] = mapped_column(String(64))
     # Counts of rejected model items by reason; never their text.
     rejections: Mapped[dict] = mapped_column(JSONB, default=dict)
+    # Query-time stages only: the reading cutoff, subject and moment, and the selected passage spans.
+    scope: Mapped[dict | None] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

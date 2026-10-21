@@ -61,6 +61,128 @@ Redis transports background work; durable job status belongs in PostgreSQL.
 Do not assume broker delivery is exactly once. Cross-system storage/job/index
 effects need idempotence and recovery, detailed when executable contracts land.
 
+### Lexical and entity-linked retrieval — T24
+
+`passages.search` is a stored `to_tsvector('english', text)` column with a GIN
+index (migration 0015); English is the only configured language (DEC-22).
+`services/retrieval/lexical.py` produces three candidate paths for one query
+plan, each restricted in SQL to the plan's document, parser revision and reading
+boundary before rows are returned:
+
+- `entity`: whole passages with a mention resolved to the subject's visible
+  identity group, most mentions first, carrying the exact mention spans.
+  Mentions that only list the subject as a candidate are not linked.
+- `appearance`: description sentences from the appearance derivation whose
+  resolved mentions include the subject. These are **protected**: later ranking
+  may reorder them but may not drop them for a low similarity score.
+- `lexical`: passages matching any name phrase (`phraseto_tsquery`, so word
+  order counts) or request term (`plainto_tsquery` of the moment and context),
+  ordered by how many distinct names and terms match, then cover density.
+  Names are the visible surfaces that identify only this subject at the cutoff,
+  so a shared title such as "captain" never widens the search.
+
+`services/retrieval/evidence.py` merges candidates by exact passage span, keeps
+each path's rank, protection and anchors, and renders `SourceSpan` quotes from
+the immutable passage text.
+
+### Semantic indexing and retrieval — T25
+
+The local `index` stage (`services/retrieval/semantic.py`) embeds every passage
+of a generation with EmbeddingGemma-300M at the pinned revision `57c266a7`,
+fp32 on CPU, with the model's `document` prompt and a 512-token window, and
+stores 768-dimension vectors in `passage_embeddings` (migration 0016, pgvector)
+under one derivation. Its processing version names the weights, revision,
+precision, window, sentence-transformers and torch versions and the dimension,
+so a model change adds a new derivation, and a query is answered only from the
+derivation built by the same embedder version; vectors never mix. A different
+dimension is refused. Local narrative jobs run `entities → appearance → index`;
+the index success sets `search_ready_at`.
+
+Queries embed appearance-oriented expansions of the subject's visible label (per
+entity kind) plus the requested moment and context with the `query` prompt, and
+order passages by their smallest cosine distance to any expansion. Passages are
+restricted to the plan's document, parser revision and boundary in SQL, and are
+not filtered by entity, so descriptions that never name the subject remain
+reachable. Scans are exact; an ANN index waits for measurements (OPEN-06).
+`HashedEmbeddings` is a deterministic stand-in for tests of scope and versioning.
+The reader's own query text is the first expansion.
+
+### Fusion and protected selection — T26
+
+`services/retrieval/fusion.py` merges candidates per passage, keeping each
+path's best rank, the protected sentence spans and the subject anchors, and
+orders passages by weighted reciprocal rank (k = 60): semantic 1.0, lexical
+0.5, entity and appearance 0. The entity and appearance paths still supply
+anchors and protection; giving them rank weight lowered recall@5 without
+raising selection recall.
+
+Selection fills a budget of 20 whole passages and 20,000 characters (about
+5,000 tokens, ADR-0003). Protected sentences are reserved first, as sentences,
+so a low similarity score never drops them; a protected passage is sent whole
+only when its rank earns a slot. Whole passages are then taken first for any
+visual category (body, attire, colour and material, structure, light) not yet
+covered within the top 40, then by rank. Near-duplicate passages (same words)
+are sent once. The selection reports `complete`, `compressed` (protected
+passages sent as sentences only), `truncated` (lower-ranked unprotected
+passages left out, with the count) or `protected_overflow` (protected sentences
+alone exceed the budget, with the count); it never drops protected evidence
+silently.
+
+Measured on *Jekyll and Hyde* through the real local pipeline (334 passages,
+21 of the 25 research queries resolved to a subject; the other four asked for
+context), recall of the gold passages:
+
+| Ordering | @5 | @10 | @20 | Budgeted selection |
+|---|---|---|---|---|
+| Semantic only | 0.70 | 0.84 | 0.92 | 0.79 (old rule) |
+| Lexical only | 0.49 | 0.59 | 0.71 | 0.62 (old rule) |
+| Equal-weight RRF | 0.49 | 0.63 | 0.88 | 0.74 (old rule) |
+| **Semantic 1.0 + lexical 0.5** | **0.74** | 0.82 | **0.93** | **0.93** |
+
+The old rule took whole protected passages first and capped selection recall
+at 0.79 whatever the weights. One novel and 21 queries cannot fix a target
+(OPEN-05); the opt-in harness is `tests/test_retrieval_measurement.py`.
+
+### Scoped result cache — T32b
+
+`services/reconstruction/cache.py` stores each resolved specification in
+`cached_results` (migration 0019) under the SHA-256 of its full scope:
+
+- owner, work, generation and reading cutoff;
+- subject and participant ids, moment, context, creative mode, style and
+  locked facts;
+- every processing version: the entity, appearance and index derivations in
+  use, the query-plan rules, the consolidation prompt, schema, provider and
+  model, the adjudication prompt and model, the gates, specification version
+  and fusion weights.
+
+Any change is a different key, so the result is recomputed: a new generation,
+re-extraction, model change, cutoff, mode or style never reuses an older entry,
+and a whole-book result never answers a chapter-limited reader. The lookup runs
+after the plan has re-checked ownership and the current generation, and only
+for the same owner. Concurrent identical requests write one row (first writer
+wins). Only resolved results are cached; old entries are left for retention
+(T46). This adopts PROP-05.
+
+### Context expansion and the Groq adapter — T27
+
+`services/retrieval/rerank.py` adds, for a selected passage that never names
+the subject or whose protected sentence opens with a pronoun, the passage just
+before it as attribution context, inside the same budget. Only earlier
+passages of the visible narrative are added, so expansion cannot cross the
+reading boundary; a refusal for budget is counted (`unexpanded`). No reranking
+model is used: weighted fusion already reaches 0.93 selection recall on Jekyll
+(DEC-42), and a MiniLM reranker remains an unmeasured option.
+
+`GroqGateway` (`app/providers/openai_compatible.py`, DEC-36) sends
+`openai/gpt-oss-120b` requests with `json_schema` guidance (`strict: false`;
+the envelope still validates strictly) and `reasoning_effort: low`, because
+gpt-oss reasoning counts against the output budget. It reads `GROQ_API_KEY` and is disabled
+without it. Both chat adapters honour a 429 `retry-after` once when the wait is
+at most 20 seconds and fits the call's time bound; otherwise the call ends as
+`rate_limited` instead of retrying immediately. Consolidation uses bounds of
+90 s, 24,000 input characters, 4,096 output and 12,000 total tokens.
+
 ## Provider seams
 
 Define narrow operations for extraction, reasoning/consolidation, embeddings,
@@ -86,7 +208,8 @@ output-token and time bounds) and nothing else. Outputs subclass
 
 `app/providers/execution.py` returns either the validated output with outcome
 `succeeded` or no value with one of `invalid_output`, `timeout`,
-`budget_exhausted`, `cancelled`, `provider_unavailable` or `input_too_large`.
+`budget_exhausted`, `cancelled`, `provider_unavailable`, `input_too_large` or
+(T27) `rate_limited` (`PROVIDER_RATE_LIMITED`).
 Oversized input and cancellation before the call skip the adapter; cancellation,
 elapsed time or token budget exceeded after the call discard the response.
 Execution has no side effects: the caller persists the safe `RunRecord` with
