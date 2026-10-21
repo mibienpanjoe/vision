@@ -44,6 +44,14 @@ SURFACES = {"arthur": {"arthur"}, "elodie": {"élodie"}, "mira": {"mira", "capta
             "brann": {"brann", "captain brann"}, "wren": {"wren", "masked visitor", "visitor"},
             "house": {"house", "house by the ash tree"}, "compass": {"compass", "brass compass"},
             "sword": {"sword", "silver sword"}}
+# Main Jekyll characters and the surface forms the text uses for each (public-domain annotation).
+JEKYLL_SURFACES = {"utterson": {"utterson", "mr. utterson", "gabriel john utterson", "lawyer"},
+                   "jekyll": {"jekyll", "dr. jekyll", "henry jekyll", "harry jekyll", "dr. henry jekyll"},
+                   "hyde": {"hyde", "mr. hyde", "edward hyde", "mr. edward hyde"},
+                   "lanyon": {"lanyon", "dr. lanyon", "hastie lanyon", "dr. hastie lanyon"},
+                   "enfield": {"enfield", "mr. enfield", "richard enfield", "mr. richard enfield"},
+                   "poole": {"poole"}, "carew": {"carew", "sir danvers carew", "danvers carew", "sir danvers"},
+                   "guest": {"guest", "mr. guest"}, "newcomen": {"newcomen", "inspector newcomen"}}
 APPEARANCE_WORDS = re.compile(
     r"\b(hair|eyes?|cheek|face|scar|skin|wore|wearing|dressed|coat|armou?r|shirt|cloak|mask|roof|slate|"
     r"sword|compass|brass|silver|candlelight|light|tall|short|pale|dark|stooped|dwarfish|deformed|"
@@ -158,6 +166,8 @@ def entities(args):
             head = next((words[i - 1] for i, w in enumerate(words) if i and w in PREPOSITIONS), words[-1])
             entity_of[m] = ("common", head)  # head noun ("house" in "house by the ash tree"), whatever the label
     coref_seconds, coref_links = 0.0, 0
+    ner_peak = peak_mb()
+    windows = []
     if args.coref:
         from fastcoref import FCoref
         coref = FCoref(device="cpu")
@@ -167,7 +177,15 @@ def entities(args):
         for index, (_, chapter, text) in enumerate(passages):
             chapters[chapter].append(index)
         coref_started = time.monotonic()
-        for chapter, indexes in chapters.items():
+        for indexes in chapters.values():  # optionally cut long chapters into windows of whole passages
+            window = []
+            for index in indexes:
+                if window and args.window and sum(len(passages[i][2]) for i in window + [index]) > args.window:
+                    windows.append(window)
+                    window = []
+                window.append(index)
+            windows.append(window)
+        for indexes in windows:
             offsets, parts, cursor = {}, [], 0
             for index in indexes:
                 offsets[index] = cursor
@@ -181,20 +199,37 @@ def entities(args):
                 if len(linked) == 1:
                     coref_links += sum(1 for span in cluster if tuple(span) not in located)
         coref_seconds = time.monotonic() - coref_started
+    # A proper name is one identity whatever label it got; full names fold into their surname, and a lone
+    # first name into the single full name it starts ("Danvers" -> "Danvers Carew" -> "Carew").
+    proper = {k[1] for k in entity_of.values() if k[0] != "common"}
+    surname = {n: n.split()[-1] for n in proper if len(n.split()) > 1 and n.split()[-1] in proper}
+    firsts = defaultdict(set)
+    for n in surname:
+        firsts[n.split()[0]].add(surname[n])
+    def fold(key):
+        if key[0] == "common":
+            return key
+        name = surname.get(key[1], key[1])
+        name = next(iter(firsts[name])) if len(firsts.get(name, ())) == 1 else name
+        return ("name", name)
+    entity_of = {m: fold(k) for m, k in entity_of.items()}
     clusters = defaultdict(set)
     for m, identity in entity_of.items():
         clusters[identity].add(normalize(m[4]))
     result = {"component": "entities", "corpus": args.corpus, "int8": args.int8, "coref": args.coref,
+              "window_chars": args.window, "coref_units": len(windows), "ner_peak_mb": ner_peak,
+              "largest_coref_unit_chars": max((sum(len(passages[i][2]) for i in w) for w in windows), default=0),
               "passages": len(passages), "characters": sum(len(t) for _, _, t in passages),
               "load_s": round(loaded - started, 1), "ner_s": round(ner_seconds, 1), "coref_s": round(coref_seconds, 1),
               "mentions": len(mentions), "entities": len(clusters), "ambiguous_titles": len(ambiguous),
               "pronoun_links_from_coref": coref_links,
               "top_entities": sorted(((f"{k[0]}:{k[1]}", len([m for m in entity_of if entity_of[m] == k]))
                                       for k in clusters), key=lambda x: -x[1])[:25]}
-    if data is not None:
+    gold = SURFACES if data is not None else JEKYLL_SURFACES
+    if gold:
         matched = defaultdict(set)
         for m, identity in entity_of.items():
-            for expected, forms in SURFACES.items():
+            for expected, forms in gold.items():
                 if normalize(m[4]) in forms:
                     matched[identity].add(expected)
         by_expected = defaultdict(set)
@@ -202,13 +237,15 @@ def entities(args):
             for name in names_:
                 by_expected[name].add(identity)
         result["evaluation"] = {
-            "misses": sorted(set(SURFACES) - set(by_expected)),
+            "misses": sorted(set(gold) - set(by_expected)),
             "false_merges": sorted(sorted(v) for v in matched.values() if len(v) > 1),
             "splits": sorted(n for n, ids in by_expected.items() if len(ids) > 1),
+            "split_detail": {n: sorted(f"{i[0]}:{i[1]}" for i in ids) for n, ids in by_expected.items() if len(ids) > 1},
             "captain_resolved_to_one": [m[4] for m in entity_of if normalize(m[4]) == "captain"],
             "ambiguous_titles": [m[4] for m in ambiguous],
         }
-    save(f"entities-{args.corpus}-{'int8' if args.int8 else 'fp32'}{'-coref' if args.coref else ''}", result)
+    save(f"entities-{args.corpus}-{'int8' if args.int8 else 'fp32'}{'-coref' if args.coref else ''}"
+         f"{f'-w{args.window}' if args.window else ''}", result)
 
 
 # ----------------------------------------------------------------- appearance passages
@@ -340,6 +377,28 @@ NOVEL_QUERIES = {  # query -> distinctive phrases that identify the gold passage
     "Utterson the lawyer's face and appearance": ["rugged countenance"],
     "Dr Jekyll's hand compared with Hyde's hand": ["corded, knuckly", "comely"],
     "the door and the building in the by-street": ["blistered and distained", "sinister block of building"],
+    # Expanded set (2026-10-21): visual questions worded away from the gold text where possible.
+    "Dr Jekyll's age, build and face": ["smooth-faced man of fifty"],
+    "What did Dr Lanyon look like before his shock?": ["dapper, red-faced", "shock of hair prematurely white"],
+    "How had Lanyon's looks changed when he was dying?": ["death-warrant written legibly", "rosy man had grown pale"],
+    "the elderly victim walking in the moonlit lane": ["beautiful gentleman with white hair", "brilliantly lit by the full moon"],
+    "the weapon used to kill Sir Danvers Carew": ["very tough and heavy wood"],
+    "colour of the fog over London that morning": ["chocolate-coloured pall"],
+    "the Soho street where Hyde lived": ["dismal quarter of Soho", "gin palace"],
+    "how Hyde's rooms were decorated inside": ["furnished with luxury"],
+    "the old woman who opened Hyde's door": ["ivory-faced and silvery-haired"],
+    "furniture in Dr Jekyll's private cabinet": ["glass presses", "cheval-glass"],
+    "the old laboratory building behind the doctor's house": ["dissecting rooms", "dingy, windowless structure"],
+    "the entrance hall of Jekyll's house": ["costly cabinets of oak", "bright, open fire"],
+    "the square where Jekyll's house stands": ["square of ancient, handsome houses"],
+    "how Hyde's borrowed clothes fitted him at Lanyon's": ["enormously too large", "waist of the coat below his haunches"],
+    "colour changes of the potion while mixing": ["reddish hue"],
+    "the powder kept in the drawer": ["crystalline salt"],
+    "the dead man found on the cabinet floor": ["sorely contorted", "clothes far too large"],
+    "the sky and weather on the last night": ["pale moon"],
+    "Dr Jekyll sitting at the window looking sad": ["disconsolate prisoner"],
+    "the covered door at the top of the stairs": ["red baize"],
+    "the face covering Poole saw on his master": ["mask upon his face", "that thing in the mask"],
 }
 
 
@@ -369,7 +428,7 @@ def novel_retrieval(args):
         encoders["embeddinggemma"] = lambda q: (lambda v: v / np.linalg.norm(v))(
             np.array(ollama_embed("embeddinggemma", [f"task: search result | query: {q}"])[0]))
     timings["embeddinggemma_index_s"] = round(time.monotonic() - started, 1)
-    rows = defaultdict(list)
+    rows, rows10 = defaultdict(list), defaultdict(list)
     for query, phrases in NOVEL_QUERIES.items():
         gold = {i for i, t in enumerate(texts) if any(p in t for p in phrases)}
         rankings = {"bm25": list(np.argsort(bm25(texts, query))[::-1])}
@@ -382,10 +441,12 @@ def novel_retrieval(args):
         rankings["rrf"] = [i for i, _ in fused.most_common()]
         for name, ranked in rankings.items():
             rows[name].append(len(set(ranked[:5]) & gold) / len(gold))
+            rows10[name].append(len(set(ranked[:10]) & gold) / len(gold))
     save(f"retrieval-jekyll-{'int8' if args.int8 else 'fp32'}{'-gemma-direct' if args.gemma_direct else ''}",
          {"component": "novel_retrieval", "int8": args.int8, "gemma_direct": args.gemma_direct,
           "passages": len(texts), **timings,
-          "recall@5": {name: round(sum(v) / len(v), 2) for name, v in rows.items()},
+          "queries": len(NOVEL_QUERIES), "recall@5": {name: round(sum(v) / len(v), 2) for name, v in rows.items()},
+          "recall@10": {name: round(sum(v) / len(v), 2) for name, v in rows10.items()},
           "per_query": {name: [round(x, 2) for x in v] for name, v in rows.items()}})
 
 
@@ -478,6 +539,7 @@ def main():
     parser.add_argument("--int8", action="store_true")
     parser.add_argument("--coref", action="store_true")
     parser.add_argument("--gemma-direct", action="store_true")
+    parser.add_argument("--window", type=int, default=0, help="max characters per coreference unit; 0 = whole chapter")
     parser.add_argument("--model", default="qwen3:4b")
     args = parser.parse_args()
     globals()[args.component](args)

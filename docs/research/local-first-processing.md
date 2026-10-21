@@ -267,8 +267,51 @@ cannot confirm it). Only the synthetic fixture was sent. Findings:
   serve whole-book extraction on the free tier; query-time calls must stay small
   and honour the `retry-after` delay.
 
-Remaining before an ADR: windowed coreference memory check and a larger
-annotated sample from a real novel.
+### Larger Jekyll sample and windowed coreference (2026-10-21)
+
+**Retrieval, 25 visual queries** (characters, places, objects, weather), worded
+away from the gold text where possible; gold passages identified by distinctive
+phrases:
+
+| Method | recall@5 | recall@10 |
+|---|---|---|
+| BM25 | 0.55 | 0.55 |
+| bge-small fp32 | 0.63 | 0.71 |
+| **EmbeddingGemma (direct)** | **0.71** | **0.84** |
+| RRF fusion of all three | 0.64 | 0.72 |
+
+EmbeddingGemma stays best; the 4-query figure (0.85) was optimistic. Equal-weight
+fusion *lowers* quality on the novel because weaker rankers dilute EmbeddingGemma.
+Its misses (entrance hall, square, borrowed clothes, powder, body on the floor)
+were partly found by BM25 or bge-small, so a weighted fusion or a reranker over
+the top 20 is the next thing to measure; equal-weight RRF should not be the
+default.
+
+**Entities on Jekyll, 9 annotated main characters:** 0 misses, 0 false merges.
+Two identity rules removed every name split: one identity per proper name
+whatever label GLiNER2 assigned ("Hyde" was also tagged as organization and
+place), and full names fold into their surname, with a lone first name folding
+into the single full name it starts ("Danvers" → "Danvers Carew" → "Carew").
+The only remaining split is the role noun "the lawyer" for Utterson, which by
+design is not merged on its own (role nouns stay ambiguous unless coreference
+links them). Remaining noise: "you", "will" and sentence-initial "Street" tagged
+as names, which a stop-list removes.
+
+**Coreference memory:** peak memory is set by GLiNER2 (4.3–4.5 GB), not by
+fastcoref. Whole chapters (largest 37,622 characters) added no memory over the
+GLiNER2 peak and took 21 s for the book:
+
+| Coreference unit | Units | Largest | Coref time | Pronoun links | Peak |
+|---|---|---|---|---|---|
+| Whole chapter | 10 | 37,622 chars | 21 s | 771 | 4.3 GB |
+| 8,000-char windows | 25 | 7,980 chars | 33 s | 617 | 4.4 GB |
+| 4,000-char windows | 44 | 4,306 chars | 21 s | 776 | 4.5 GB |
+
+Windowing is not needed for memory at this chapter size; it stays as a guard for
+very long chapters (proposed cap: 40,000 characters). Lowering GLiNER2's batch
+size is the lever if memory must drop.
+
+All checks needed before an ADR are complete.
 
 ## Sources
 
