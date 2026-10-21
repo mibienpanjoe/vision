@@ -49,6 +49,42 @@ is tied to admissible source spans; an unqualified confidence statement is not
 a passed gate. Failed canonical claims are removed or reclassified explicitly,
 and relevant uncertainty remains visible.
 
+### Attribute and prompt gates — T30
+
+`services/verification/claims.py` re-checks every fact behind a reconstructed
+trait against storage before composition. Each check removes the fact with a
+stable reason; a trait with no surviving fact is removed:
+
+| Check | Reason |
+|---|---|
+| Fact belongs to the requested subject (or its explicitly linked identity) | `wrong_owner` |
+| Has evidence | `no_evidence` |
+| Spans lie in the plan's document and parser revision and inside the passage | `span_mismatch` |
+| Every span and every linked event's evidence is inside the reading boundary | `beyond_boundary` |
+| An evidence passage names the subject or holds a mention resolved to it | `unattributed` |
+| Canonical: explicit, affirmed, fact or memory | `not_canonical` |
+| Canonical: value asserted in its quotes, outside negation, removal, question or hedge | `unsupported_value` |
+| Canonical: tied to the requested event; inference: at least before it | `not_at_this_moment` |
+
+Kept traits carry their `SourceSpan` evidence per fact. Optional adjudication
+(`adjudicate-v2`, role `reasoning`) sends each surviving canonical claim with its
+quotes and their passages as context. A verdict counts only when its quote is
+copied from that claim's own evidence. `entailed` marks the trait and nothing
+more; `not_entailed` or `contradicted` removes the fact. An unquoted verdict
+counts for nothing, and a provider failure leaves the deterministic result
+with adjudication `unavailable`. Adjudication runs on survivors only, so it can
+never approve or promote a claim. A live Groq sample on the synthetic dinner
+(985 input and 211 output tokens, 0.9 s) entailed both the linen shirt and the
+visible scar. Without passage context it had rejected the scar because the
+quote says "his", which led to the context field.
+
+`prompt_problems` checks a final prompt. It fails when an excluded or removed
+value appears and no kept value contains it, when a disputed trait's value
+appears as settled, when a lock is not a kept canonical value or is missing
+from the prompt, when a creative addition is quoted, or when the text reads as
+an instruction ("ignore", "reveal", "system prompt" and similar). An empty
+list passes.
+
 ## Refinement and history
 
 Changing style does not change canon. Changing the subject, moment, reading
