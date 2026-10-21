@@ -106,8 +106,13 @@ def test_assertion_gate_rejects_questions_and_negations_but_not_negated_names():
     assert assertion_problem("steel armor", [NEGATION]) == "negated_or_question"
     assert assertion_problem("steel armor", ["Arthur never wore steel armor."]) == "negated_or_question"
     assert assertion_problem("silver sword", [OWNER]) is None
-    assert assertion_problem("golden", ["People claim Arthur has golden eyes, but I have never seen them."]) is None
+    rumor = "People claim Arthur has golden eyes, but I have never seen them."
+    assert assertion_problem("golden", [rumor]) is None  # a rumor may say it; canon may not
+    assert assertion_problem("golden", [rumor], canonical_modality=True) == "speculative"
     assert assertion_problem("purple", ["Arthur wore steel armor."]) == "value_ungrounded"
+    removed = "Before dinner, Arthur removed his steel armor and put on a plain linen shirt."
+    assert assertion_problem("steel armor", [removed]) == "negated_or_question"
+    assert assertion_problem("plain linen shirt", [removed], canonical_modality=True) is None
 
 
 def test_conflicts_and_summary_keep_disputes_and_unknowns_visible():

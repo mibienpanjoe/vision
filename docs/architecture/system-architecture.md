@@ -143,6 +143,24 @@ The old rule took whole protected passages first and capped selection recall
 at 0.79 whatever the weights. One novel and 21 queries cannot fix a target
 (OPEN-05); the opt-in harness is `tests/test_retrieval_measurement.py`.
 
+### Context expansion and the Groq adapter — T27
+
+`services/retrieval/rerank.py` adds, for a selected passage that never names
+the subject or whose protected sentence opens with a pronoun, the passage just
+before it as attribution context, inside the same budget. Only earlier
+passages of the visible narrative are added, so expansion cannot cross the
+reading boundary; a refusal for budget is counted (`unexpanded`). No reranking
+model is used: weighted fusion already reaches 0.93 selection recall on Jekyll
+(DEC-42), and a MiniLM reranker remains an unmeasured option.
+
+`GroqGateway` (`app/providers/openai_compatible.py`, DEC-36) sends
+`openai/gpt-oss-120b` requests with `json_schema` guidance (`strict: false`;
+the envelope still validates strictly). It reads `GROQ_API_KEY` and is disabled
+without it. Both chat adapters honour a 429 `retry-after` once when the wait is
+at most 20 seconds and fits the call's time bound; otherwise the call ends as
+`rate_limited` instead of retrying immediately. Consolidation uses bounds of
+90 s, 24,000 input characters, 4,096 output and 12,000 total tokens.
+
 ## Provider seams
 
 Define narrow operations for extraction, reasoning/consolidation, embeddings,
@@ -168,7 +186,8 @@ output-token and time bounds) and nothing else. Outputs subclass
 
 `app/providers/execution.py` returns either the validated output with outcome
 `succeeded` or no value with one of `invalid_output`, `timeout`,
-`budget_exhausted`, `cancelled`, `provider_unavailable` or `input_too_large`.
+`budget_exhausted`, `cancelled`, `provider_unavailable`, `input_too_large` or
+(T27) `rate_limited` (`PROVIDER_RATE_LIMITED`).
 Oversized input and cancellation before the call skip the adapter; cancellation,
 elapsed time or token budget exceeded after the call discard the response.
 Execution has no side effects: the caller persists the safe `RunRecord` with

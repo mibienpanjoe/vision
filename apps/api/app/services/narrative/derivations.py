@@ -55,7 +55,7 @@ def ground(passage, quote, start=None):
     return None if start < 0 else (start, start + len(quote))
 
 
-def claim(engine, generation_id, stage, version, input_id):
+def claim(engine, generation_id, stage, version, input_id, scope: dict | None = None):
     with Session(engine) as db, db.begin():
         generation = db.get(SourceGeneration, generation_id)
         document = db.get(Document, generation.document_id)
@@ -69,7 +69,8 @@ def claim(engine, generation_id, stage, version, input_id):
             return derivation.id, None, owner_id, []
         if derivation is None:
             derivation = Derivation(generation_id=generation_id, stage=stage, processing_version=version,
-                                    input_derivation_id=input_id, status="running", attempt=1, rejections={})
+                                    input_derivation_id=input_id, status="running", attempt=1, rejections={},
+                                    scope=scope)
             db.add(derivation)
         else:
             derivation.status, derivation.error_code, derivation.completed_at = "running", None, None

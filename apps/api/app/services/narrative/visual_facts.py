@@ -3,7 +3,10 @@
 Before a fact is stored it must pass deterministic gates: a known subject named
 or resolved as a mention in an evidence passage, grounded quotes, no explicit owner negation ("not
 Arthur"), and for affirmed explicit claims a value word asserted outside a
-question or a preceding negation. These are lexical guards, not entailment.
+question or a preceding negation or removal ("removed his armor"). A claim
+presented as fact or memory is also refused when a hedge ("people claim",
+"perhaps") precedes its value, since only a rumor or hypothesis may carry that.
+These are lexical guards, not entailment.
 """
 
 import json
@@ -31,14 +34,16 @@ from sqlalchemy.orm import Session
 
 STAGE = "facts"
 KNOWN_BUDGET = 8_000
-NEGATION = re.compile(r"\b(not|no|never|without|nor)\b|n't\b")
+NEGATION = re.compile(r"\b(not|no|never|without|nor|nobody|neither|removed|removes|removing|off|shed|doffed)\b|n't\b")
+HEDGE = re.compile(r"\b(claim|claims|claimed|rumou?r|rumou?red|supposedly|reportedly|perhaps|maybe|might|seemed|seems|"
+                   r"apparently|allegedly)\b", re.I)
 WORD = re.compile(r"[^\W\d_]{3,}")
 STOP = {"the", "and", "with", "his", "her", "its", "their", "still", "possibly"}
 
 
-def assertion_problem(value: str, quotes: list[str]) -> str | None:
+def assertion_problem(value: str, quotes: list[str], canonical_modality: bool = False) -> str | None:
     words = [w.casefold() for w in WORD.findall(value) if w.casefold() not in STOP]
-    asserted = False
+    asserted = hedged = False
     for quote in quotes:
         for sentence in re.findall(r"[^.?!;]+[.?!;]?", quote):
             tokens = [t.casefold() for t in re.findall(r"[\w']+", sentence)]
@@ -48,11 +53,13 @@ def assertion_problem(value: str, quotes: list[str]) -> str | None:
                     continue
                 window = [(tokens[j], raw[j + 1] if j + 1 < len(raw) else "") for j in range(max(0, i - 3), i)]
                 negated = any(NEGATION.fullmatch(t) and not nxt[:1].isupper() for t, nxt in window)
-                if not sentence.strip().endswith("?") and not negated:
+                if canonical_modality and any(HEDGE.fullmatch(t) for t in tokens[:i]):
+                    hedged = True
+                elif not sentence.strip().endswith("?") and not negated:
                     asserted = True
     if not any(w in q.casefold() for q in quotes for w in words):
         return "value_ungrounded"
-    return None if asserted else "negated_or_question"
+    return None if asserted else "speculative" if hedged else "negated_or_question"
 
 
 def visible_events(db, event_derivation_id):
@@ -127,7 +134,7 @@ def publish_facts(db, derivation_id, entity_derivation_id, keyed, outputs) -> di
             elif item.kind == "scene" and not linked:
                 problem = "unscoped_scene"
             elif item.support == "explicit" and item.polarity == "affirmed":
-                problem = assertion_problem(item.value, quotes)
+                problem = assertion_problem(item.value, quotes, item.modality in {"fact", "memory"})
             else:
                 problem = None
             if problem:

@@ -13,6 +13,7 @@ from app.models.model_runs import ModelRun
 from app.providers.contracts import (
     Outcome,
     ProviderAdapter,
+    ProviderRateLimited,
     ProviderRequest,
     ProviderTimeout,
     ProviderUnavailable,
@@ -27,6 +28,7 @@ ERROR_CODES: dict[Outcome, str | None] = {
     "succeeded": None, "invalid_output": "PROVIDER_INVALID_OUTPUT", "timeout": "PROVIDER_TIMEOUT",
     "budget_exhausted": "PROVIDER_BUDGET_EXHAUSTED", "cancelled": None,
     "provider_unavailable": "PROVIDER_UNAVAILABLE", "input_too_large": "PROVIDER_INPUT_TOO_LARGE",
+    "rate_limited": "PROVIDER_RATE_LIMITED",
 }
 
 
@@ -81,6 +83,8 @@ def execute(adapter: ProviderAdapter, request: ProviderRequest, output: type[Str
         return finish("timeout")
     except ProviderUnavailable:
         return finish("provider_unavailable")
+    except ProviderRateLimited:
+        return finish("rate_limited")
     usage, version = result.usage, result.model_version
     if cancelled():
         return finish("cancelled")

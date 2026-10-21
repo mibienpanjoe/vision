@@ -253,6 +253,38 @@ whole-book or unverified output.
 Browse shows local entities, mentions and aliases at any cutoff, and events and
 facts only from consolidations visible at that cutoff.
 
+**Implementation — T27.** `services/retrieval/consolidation.py` sends the
+budgeted selection (protected passages as their sentences, others whole, plus
+attribution context) in ordinal order with a derived `request` item naming the
+subject's visible label, participants, moment and scene; it refuses any
+passage outside the plan's document or cutoff. The derivation (stage
+`consolidation`, input = the entity derivation) stores its scope in
+`derivations.scope` (migration 0017): cutoff, subject and participant ids,
+moment, context, creative mode, exact spans and their SHA-256 digest, whose
+prefix ends the processing version, so the same scope and spans reuse a
+succeeded consolidation and a failed one is reclaimed on the next request.
+`Consolidation` (`consolidation-schema-v1`) carries events, anchors, temporal
+relations, facts keyed to those events and identity links; events and facts
+go through `publish_events` and `publish_facts` unchanged. Identity links are
+stored under the consolidation derivation as `same_as` only when the quote
+names both identities and the model marks it explicit, otherwise
+`same_as_inferred`.
+
+T27 strengthens the fact gates for every derivation: removal words ("removed",
+"took off") count as negation before a value, and a claim presented as fact or
+memory is refused as `speculative` when a hedge ("people claim", "perhaps")
+precedes its value; rumors and hypotheses keep their modality and stay
+non-canonical. Browse does not yet read consolidations; T28 composes states
+from them by derivation.
+
+A live Groq run on the synthetic fixture (2026-10-21) succeeded for "Arthur at
+home after the war" (chapter 3; 3,779 input and 2,386 output tokens, 5.5 s) and
+"Arthur during the war" (chapter 2; 17 s including a rate-limit wait): rumor
+and metaphor stayed non-canonical and the war scar was attributed to Arthur.
+Gaps for T28: childhood traits (hair, unmarked cheek, blue coat) were labelled
+`identity` rather than scoped to childhood, so temporal reconstruction must not
+trust the kind label alone.
+
 ## Discriminated outcomes
 
 Conceptual outcomes are `resolved`, `needs_context`, `insufficient_evidence`, and
