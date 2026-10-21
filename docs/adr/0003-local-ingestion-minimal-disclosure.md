@@ -95,5 +95,5 @@ corpora.
 - Each question costs a few thousand Groq tokens; on the free plan this means
   a small number of questions per minute and a daily cap. OPEN-05 limits must
   account for this.
-- Remaining measurements: weighted fusion or a MiniLM reranker over the top 20,
-  and a second annotated novel.
+- Remaining measurements: a MiniLM reranker over the top 20 and a second
+  annotated novel. Weighted fusion was measured in T26 (DEC-42).

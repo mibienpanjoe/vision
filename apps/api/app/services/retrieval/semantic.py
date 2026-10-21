@@ -61,9 +61,10 @@ def index_passages(engine, generation_id: uuid.UUID, embedder: Embedder,
 
 
 def expansions(plan) -> list[str]:
-    """Appearance-oriented queries for the subject's visible label, plus the requested moment and context."""
+    """The reader's own words, then appearance-oriented queries for the subject's visible label and moment."""
     label = plan.subject.label
-    found = [a.format(label=label) for a in ASPECTS.get(plan.subject.kind, ASPECTS["object"])]
+    found = [plan.query] if plan.query else []
+    found += [a.format(label=label) for a in ASPECTS.get(plan.subject.kind, ASPECTS["object"])]
     if terms(plan):
         found.append(" ".join([label, *terms(plan)]))
     return found

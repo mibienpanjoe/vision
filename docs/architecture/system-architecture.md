@@ -105,6 +105,43 @@ restricted to the plan's document, parser revision and boundary in SQL, and are
 not filtered by entity, so descriptions that never name the subject remain
 reachable. Scans are exact; an ANN index waits for measurements (OPEN-06).
 `HashedEmbeddings` is a deterministic stand-in for tests of scope and versioning.
+The reader's own query text is the first expansion.
+
+### Fusion and protected selection — T26
+
+`services/retrieval/fusion.py` merges candidates per passage, keeping each
+path's best rank, the protected sentence spans and the subject anchors, and
+orders passages by weighted reciprocal rank (k = 60): semantic 1.0, lexical
+0.5, entity and appearance 0. The entity and appearance paths still supply
+anchors and protection; giving them rank weight lowered recall@5 without
+raising selection recall.
+
+Selection fills a budget of 20 whole passages and 20,000 characters (about
+5,000 tokens, ADR-0003). Protected sentences are reserved first, as sentences,
+so a low similarity score never drops them; a protected passage is sent whole
+only when its rank earns a slot. Whole passages are then taken first for any
+visual category (body, attire, colour and material, structure, light) not yet
+covered within the top 40, then by rank. Near-duplicate passages (same words)
+are sent once. The selection reports `complete`, `compressed` (protected
+passages sent as sentences only), `truncated` (lower-ranked unprotected
+passages left out, with the count) or `protected_overflow` (protected sentences
+alone exceed the budget, with the count); it never drops protected evidence
+silently.
+
+Measured on *Jekyll and Hyde* through the real local pipeline (334 passages,
+21 of the 25 research queries resolved to a subject; the other four asked for
+context), recall of the gold passages:
+
+| Ordering | @5 | @10 | @20 | Budgeted selection |
+|---|---|---|---|---|
+| Semantic only | 0.70 | 0.84 | 0.92 | 0.79 (old rule) |
+| Lexical only | 0.49 | 0.59 | 0.71 | 0.62 (old rule) |
+| Equal-weight RRF | 0.49 | 0.63 | 0.88 | 0.74 (old rule) |
+| **Semantic 1.0 + lexical 0.5** | **0.74** | 0.82 | **0.93** | **0.93** |
+
+The old rule took whole protected passages first and capped selection recall
+at 0.79 whatever the weights. One novel and 21 queries cannot fix a target
+(OPEN-05); the opt-in harness is `tests/test_retrieval_measurement.py`.
 
 ## Provider seams
 

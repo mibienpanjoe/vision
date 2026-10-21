@@ -37,7 +37,7 @@ def test_similarity_candidates_stay_inside_the_work_and_reading_boundary(story):
     assert story.db.get(SourceGeneration, story.generation).search_ready_at is not None
 
     plan = story.plan(2, query="Arthur in battle")
-    assert expansions(plan) == ["the appearance of Arthur: face, hair, eyes, skin and build",
+    assert expansions(plan) == ["Arthur in battle", "the appearance of Arthur: face, hair, eyes, skin and build",
                                 "what Arthur wore: clothes, armour, accessories and things carried",
                                 "Arthur in battle"]
     found = semantic(story.db, plan, embedder)

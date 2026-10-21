@@ -11,6 +11,7 @@ from app.models.appearance import AppearanceCandidate, AppearanceSubject
 from app.models.passages import Passage
 from app.services.narrative.eligibility import latest
 from app.services.retrieval.evidence import Candidate
+from app.services.retrieval.fusion import PassageInfo
 from app.services.retrieval.query_plan import WORDS
 from sqlalchemy import case, func, or_, select
 
@@ -23,6 +24,12 @@ def in_scope(query, plan):
     if plan.cutoff is not None:
         query = query.where(or_(Passage.chapter_ordinal.is_(None), Passage.chapter_ordinal <= plan.cutoff))
     return query
+
+
+def passage_infos(db, plan) -> dict:
+    """Ordinal and text of every passage inside the plan's scope, for selection and expansion."""
+    rows = db.execute(in_scope(select(Passage.id, Passage.ordinal, Passage.text), plan)).all()
+    return {pid: PassageInfo(ordinal, text) for pid, ordinal, text in rows}
 
 
 def ordinals(db, plan, passage_ids) -> dict:
