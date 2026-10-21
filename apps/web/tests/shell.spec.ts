@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
 test("library shell has no invented books and persists an explicit theme", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Your library" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your library", exact: true })).toBeVisible();
   await expect(page.locator("html")).toHaveClass("dark");
   const theme = page.getByRole("combobox", { name: "Color theme" });
   await expect(theme).toBeEnabled();
