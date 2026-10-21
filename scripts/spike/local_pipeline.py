@@ -5,7 +5,7 @@ Runs one component per invocation so wall time and peak memory are attributable:
     python local_pipeline.py entities  --corpus synthetic|jekyll [--int8]
     python local_pipeline.py appearance --corpus synthetic|jekyll [--int8]
     python local_pipeline.py retrieval --corpus synthetic [--int8]
-    python local_pipeline.py novel_retrieval [--int8]
+    python local_pipeline.py novel_retrieval [--int8] [--gemma-direct]
     python local_pipeline.py grounding [--int8]
     python local_pipeline.py generator --model qwen3:4b
 
@@ -358,12 +358,17 @@ def novel_retrieval(args):
     encoders["bge-small"] = lambda q: bge.encode(["Represent this sentence for searching relevant passages: " + q],
                                                  normalize_embeddings=True)[0]
     started = time.monotonic()
-    gemma = np.array([v for i in range(0, len(texts), 32)
-                      for v in ollama_embed("embeddinggemma", [f"title: none | text: {t}" for t in texts[i:i + 32]])])
-    vectors["embeddinggemma"] = gemma / np.linalg.norm(gemma, axis=1, keepdims=True)
+    if args.gemma_direct:  # official Hugging Face weights; needs the licence and HF_TOKEN
+        model = SentenceTransformer("google/embeddinggemma-300m", device="cpu")
+        vectors["embeddinggemma"] = model.encode_document(texts, normalize_embeddings=True, batch_size=16)
+        encoders["embeddinggemma"] = lambda q: model.encode_query([q], normalize_embeddings=True)[0]
+    else:
+        gemma = np.array([v for i in range(0, len(texts), 32)
+                          for v in ollama_embed("embeddinggemma", [f"title: none | text: {t}" for t in texts[i:i + 32]])])
+        vectors["embeddinggemma"] = gemma / np.linalg.norm(gemma, axis=1, keepdims=True)
+        encoders["embeddinggemma"] = lambda q: (lambda v: v / np.linalg.norm(v))(
+            np.array(ollama_embed("embeddinggemma", [f"task: search result | query: {q}"])[0]))
     timings["embeddinggemma_index_s"] = round(time.monotonic() - started, 1)
-    encoders["embeddinggemma"] = lambda q: (lambda v: v / np.linalg.norm(v))(
-        np.array(ollama_embed("embeddinggemma", [f"task: search result | query: {q}"])[0]))
     rows = defaultdict(list)
     for query, phrases in NOVEL_QUERIES.items():
         gold = {i for i, t in enumerate(texts) if any(p in t for p in phrases)}
@@ -377,8 +382,9 @@ def novel_retrieval(args):
         rankings["rrf"] = [i for i, _ in fused.most_common()]
         for name, ranked in rankings.items():
             rows[name].append(len(set(ranked[:5]) & gold) / len(gold))
-    save(f"retrieval-jekyll-{'int8' if args.int8 else 'fp32'}",
-         {"component": "novel_retrieval", "int8": args.int8, "passages": len(texts), **timings,
+    save(f"retrieval-jekyll-{'int8' if args.int8 else 'fp32'}{'-gemma-direct' if args.gemma_direct else ''}",
+         {"component": "novel_retrieval", "int8": args.int8, "gemma_direct": args.gemma_direct,
+          "passages": len(texts), **timings,
           "recall@5": {name: round(sum(v) / len(v), 2) for name, v in rows.items()},
           "per_query": {name: [round(x, 2) for x in v] for name, v in rows.items()}})
 
@@ -471,6 +477,7 @@ def main():
     parser.add_argument("--corpus", choices=["synthetic", "jekyll"], default="synthetic")
     parser.add_argument("--int8", action="store_true")
     parser.add_argument("--coref", action="store_true")
+    parser.add_argument("--gemma-direct", action="store_true")
     parser.add_argument("--model", default="qwen3:4b")
     args = parser.parse_args()
     globals()[args.component](args)

@@ -204,12 +204,15 @@ matches the cited research on fiction.
 | bge-small fp32 | 1.00 | 0.55 | 9 s |
 | bge-small int8 | 1.00 | 0.30 | 7 s |
 | EmbeddingGemma (Ollama) | 1.00 | **0.85** | **1,518 s** |
+| EmbeddingGemma (sentence-transformers, fp32) | — | **0.85** | **107 s** |
 | RRF fusion | 1.00 | 0.80 | — |
 | RRF + MiniLM rerank | 0.96 | — | — |
 
 The synthetic story is too small to separate methods. On the novel,
-EmbeddingGemma is clearly best, but indexing through Ollama took about 4.5 s
-per passage. Jekyll gold passages were identified by distinctive phrases, so the
+EmbeddingGemma is clearly best. Through Ollama, indexing took about 4.5 s per
+passage; loading the official `google/embeddinggemma-300m` weights directly in
+sentence-transformers (2026-10-21) gave the same recall in 107 s (about 0.3 s
+per passage, 14x faster) with 2.4 GB peak memory. Jekyll gold passages were identified by distinctive phrases, so the
 sample is small (4 queries).
 
 ### Grounding check (HHEM-2.1-open, 18 claims)
@@ -242,19 +245,30 @@ this machine.
 1. **Ingestion, local:** GLiNER2 base fp32 for entities, fastcoref with windowed
    chapters for pronouns, hand-written patterns for appearance passages, rule
    fixes for surname unification and pronoun filtering.
-2. **Embeddings:** EmbeddingGemma for quality; before adoption, measure it
-   through sentence-transformers (requires accepting the Gemma licence on
-   Hugging Face) to see whether indexing gets fast enough. bge-small is the
-   fast fallback.
+2. **Embeddings:** EmbeddingGemma loaded directly through sentence-transformers
+   (Gemma licence accepted on Hugging Face). A typical novel indexes in an
+   estimated 8–10 minutes on this laptop. bge-small is the fast fallback.
 3. **Query-time consolidation:** Groq `gpt-oss-120b` with Zero Data Retention
    and strict JSON schema (DEC-36), over cutoff-filtered excerpts only. A local
    generator is not viable on this hardware.
 4. **Verification:** existing deterministic gates first; HHEM as an additional
    signal, never the only check.
 
-Remaining before an ADR: faster EmbeddingGemma path, windowed coreference memory
-check, a larger annotated sample from a real novel, and a Groq account with ZDR
-enabled.
+### Groq check (2026-10-21)
+
+The Groq account has Zero Data Retention enabled by the maintainer (the API
+cannot confirm it). Only the synthetic fixture was sent. Findings:
+
+- Groq sits behind Cloudflare, which rejects urllib's default User-Agent
+  (HTTP 403, error 1010); the gateway adapter now sends its own.
+- The free tier caps `gpt-oss-120b` at **8,000 tokens per minute**. One
+  entity-extraction batch alone requests about 4,000, so the adapter's three
+  back-to-back retries exhaust the budget (HTTP 429). This confirms Groq cannot
+  serve whole-book extraction on the free tier; query-time calls must stay small
+  and honour the `retry-after` delay.
+
+Remaining before an ADR: windowed coreference memory check and a larger
+annotated sample from a real novel.
 
 ## Sources
 
