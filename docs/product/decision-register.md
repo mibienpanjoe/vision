@@ -42,6 +42,7 @@
 | DEC-34 | Narrative browse reads the latest succeeded derivation chain of the current generation and filters every derived record by dependency closure at the chapter cutoff; labels must come from visible mentions; `409 NARRATIVE_NOT_READY` before extraction | T21; [API](../api/api-contract.md#narrative-browse--t21) |
 | DEC-35 | Narrative completion: per-generation job queued with parse publication, entity→event→fact stages through the worker, readiness only on full success, live provider opt-in via `VISION_NARRATIVE_PROVIDER=live` | T22; [ingestion](../ingestion/ingestion-contract.md#narrative-completion--t22) |
 | DEC-36 | Query-time fallback provider for minimal-disclosure consolidation: Groq (`gpt-oss-120b`) with Zero Data Retention, over cutoff-filtered excerpts only | Maintainer decision, 2026-10-20; [research](../research/local-first-processing.md#10-spike-results-2026-10-20) |
+| DEC-37 | Accept ADR-0003: ingestion is local (GLiNER2 entities with deterministic identity rules, fastcoref per chapter, appearance patterns, PostgreSQL FTS plus EmbeddingGemma-300M with measured fusion weights); facts are consolidated at query time from cutoff-filtered excerpts through Groq with ZDR; local models pinned, no unmeasured quantization; the FreeLLM gateway (DEC-24) may process synthetic fixtures only | Maintainer decision, 2026-10-21; [ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md) |
 
 ## Proposed elaborations
 
@@ -53,14 +54,13 @@ documents fixed all details.
 | PROP-04 | First vertical slice uses a small synthetic TXT/Markdown narrative before format expansion | First implementation increment; [roadmap](implementation-roadmap.md) |
 | PROP-05 | Cache identity includes creative mode and locked-fact revision in addition to source/retrieval scope | Reconstruction implementation |
 | PROP-06 | Owner-facing narrative retry route with `If-Match` and `Idempotency-Key`, mirroring ingestion retry | Before real-book narrative use |
-| PROP-07 | Local ingestion (GLiNER2, fastcoref, patterns, EmbeddingGemma) and query-time consolidation of cutoff-filtered excerpts through Groq with ZDR; FreeLLM gateway limited to synthetic fixtures | Maintainer acceptance of [ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md) |
 
 ## Open decisions
 
 | ID | Question | Needed before |
 |---|---|---|
 | OPEN-01 | Resolved by DEC-26; later work consumes the validated ActorScope | Any network-accessible real upload flow |
-| OPEN-02 | Gateway selected by DEC-24; T18 adapter reads `VISION_LLM_*` (default model `auto`, proposed) with three calls per batch on retryable outcomes; live entity extraction verified on the synthetic corpus only. Model pinning, upstream source-text handling for private books and cost ceilings remain open | Any real-book extraction |
+| OPEN-02 | Private-book source handling resolved by DEC-37 (no book text leaves the machine at ingestion; query-time excerpts to Groq with ZDR). Groq rate-limit handling, per-question token ceilings and the daily question budget remain open | Query-time consolidation |
 | OPEN-03 | First language resolved by DEC-22 (English); broader languages/configurations remain open | Lexical indexing and multilingual claims |
 | OPEN-04 | Resolved for the first slice by DEC-22; revisit only with an explicit changed decision | Temporal reconstruction implementation |
 | OPEN-05 | Concrete upload/expansion/time/token/cost/candidate limits and performance targets | Accepting untrusted workloads; then calibrate with measurements |

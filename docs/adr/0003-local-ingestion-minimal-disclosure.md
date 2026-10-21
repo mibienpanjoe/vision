@@ -1,7 +1,7 @@
 # ADR-0003 — Local ingestion and minimal-disclosure query-time consolidation
 
-**Status:** proposed, awaiting maintainer acceptance.
-**Recorded:** 2026-10-21.
+**Status:** accepted (DEC-37), implementation pending.
+**Recorded:** 2026-10-21; accepted by the maintainer 2026-10-21.
 **Source:** [local-first processing research](../research/local-first-processing.md)
 and its evaluation spike (section 10); DEC-36.
 
@@ -85,8 +85,8 @@ corpora.
   and canonical model must be revised before this is implemented.
 - ADR-0002 still holds for entity-aware hybrid retrieval and temporal
   grounding; this ADR changes where extraction runs and replaces equal-weight
-  fusion with measured weighting. The retrieval strategy is updated only after
-  acceptance.
+  fusion with measured weighting. The retrieval strategy is a fixed source
+  document; where it differs, this ADR and DEC-37 take precedence.
 - DEC-24 (FreeLLM gateway) becomes development-only: synthetic fixtures may use
   it; private books may not.
 - Requirements on the machine: about 2.5 GB of model files and about 4.5 GB of

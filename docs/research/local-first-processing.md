@@ -1,10 +1,10 @@
 # Research: local-first processing and minimal-disclosure retrieval
 
-**Status:** Proposed — research for maintainer review, 2026-10-20, with
-evaluation spike results in section 10. Only the query-time fallback (Groq with
-Zero Data Retention, DEC-36) is decided; nothing else here is adopted; the [retrieval strategy](../architecture/retrieval-strategy.md) and
-the [decision register](../product/decision-register.md) remain authoritative
-until a maintainer accepts an ADR. Figures marked *estimate* are unmeasured.
+**Status:** Research record, 2026-10-20, with evaluation spike results in
+section 10. Its recommendation was accepted as
+[ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md) (DEC-37) on
+2026-10-21; the ADR and the [decision register](../product/decision-register.md)
+are authoritative, and this page is supporting evidence. Figures marked *estimate* are unmeasured.
 
 ## 1. Why this review
 
@@ -312,7 +312,7 @@ very long chapters (proposed cap: 40,000 characters). Lowering GLiNER2's batch
 size is the lever if memory must drop.
 
 All checks needed before an ADR are complete; the proposal is recorded as
-[ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md).
+[ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md) and accepted (DEC-37).
 
 ## Sources
 

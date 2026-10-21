@@ -106,6 +106,9 @@ with 0 misses, 0 false merges, 0 splits and 0 ambiguity violations against the
 annotations, plus unannotated object entities. Routed models varied per call
 (e.g. qwen3.8-27b, gpt-oss-120b, Gemini variants), so results are not
 reproducible by model name; a pinned model was unavailable upstream at the time.
+Under DEC-37 this ingestion-time LLM path is limited to synthetic fixtures;
+[ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md) moves private-book
+extraction to local models and consolidation to query time.
 A second live run of the full entity → event → fact chain succeeded on the
 synthetic corpus (bounded retries absorbed three unavailable routes and two
 invalid outputs). Review: rumor, metaphor and dream claims stayed

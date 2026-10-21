@@ -128,6 +128,9 @@ and fixture tests are not evidence of deployment readiness.
 ## Local model gateway
 
 The maintainer selected the installed **FreeLLM API** for LLM calls (DEC-24).
+Since DEC-37 it may process synthetic fixtures only, never a private book;
+private-book processing is local, and query-time excerpts go to Groq with Zero
+Data Retention ([ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md)).
 The existing gateway was observed healthy on loopback port 3001 during Phase 1
 prerequisite inspection. Its role/model capabilities, structured outputs,
 embeddings, authentication, upstream source-text handling and limits still need
