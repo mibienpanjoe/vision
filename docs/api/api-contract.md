@@ -340,3 +340,43 @@ route under the same boundary. Entity detail returns at most 200 mentions with
 `mentions_truncated`. Generated types: `EntityPage`, `EntityDetail`.
 `GenerationView` adds `narrative_status` (`not_started`, `queued`, `running`,
 `succeeded`, `failed`) and the safe `narrative_error` code (T22).
+
+## Visualization request resolution — T23
+
+`VisualizationRequest` (`app/schemas/retrieval.py`) carries an optional
+natural-language `query`, an optional `entity_id`, a story `moment` (`age` with
+`years`, or a `phrase` such as "after the war"), a scene `context`, the
+`through_chapter_id` reading boundary, `creative_mode` (`canon_first` default,
+or `interpretation`) and an optional `style`. A query or an entity is required;
+unknown fields are rejected. T31 exposes it on a route and generates its types.
+
+`services/retrieval/query_plan.py` normalizes a request into a query plan with
+deterministic English rules (`query-plan-v1`); the plan is internal and is not
+a response body:
+
+- **Source and story time stay separate.** "Chapter N" in the query is matched
+  against the chapter's own heading number, never the parser ordinal. "Through",
+  "up to", "until" and "by" narrow the reading boundary, "before chapter N" ends
+  it at the preceding chapter, and "in chapter N" only focuses the source. A
+  reference can narrow the boundary but never widen it: a chapter beyond the
+  boundary, or one the work lacks, is `insufficient_evidence`. Ages ("at ten",
+  "when he was ten", "ten years old") and before/after/during phrases become the
+  story moment; at/in/on phrases become the scene context.
+- **Subjects come from the cutoff-eligible narrative only.** Names are matched
+  against visible mention text, display labels and aliases, with Unicode NFC
+  case folding and pronouns ignored. Visible `same_as` links join identities, so
+  "Wren" names Arthur only once the reveal is within the boundary. When no full
+  name matches, a capitalised title word ("captain" of "Captain Mira") offers
+  the identities that use it. A surface whose visible mentions point at more
+  than one identity offers each one as a choice instead of picking one. Further
+  named subjects are kept as scene participants.
+- **Structured fields and the query text never override each other.** A
+  structured entity, moment or context that disagrees with the query returns
+  `needs_context` with both sides as choices (`subject` choices carry the entity
+  id, `moment` and `context` choices name `request` or the query position); a
+  structured entity among the query's candidates resolves the ambiguity. An
+  unknown or hidden `entity_id` and another owner's work return the common
+  `404`; no eligible subject is `insufficient_evidence`.
+- **An unspecified moment stays unspecified.** The plan does not choose a story
+  time; reconstruction (T28) must offer context choices rather than blend
+  materially different states.
