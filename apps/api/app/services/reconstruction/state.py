@@ -27,6 +27,18 @@ SYNONYMS = [(re.compile(r"^(hair|hair_.*|.*_hair)$"), "hair"), (re.compile(r"^(e
             (re.compile(r"^(material|.*_material)$"), "material")]
 
 
+QUALIFIERS = frozenset("color colour material scar scars mark marked marking decoration style length shape type state "
+                       "condition exclusion pattern".split())
+
+
+def part(attribute: str) -> str:
+    """The body part or item a trait describes ("left_cheek_scar" -> "left_cheek"), for supersession."""
+    tokens = attribute.casefold().split("_")
+    while len(tokens) > 1 and tokens[-1] in QUALIFIERS:
+        tokens.pop()
+    return "eyes" if tokens == ["eye"] else "_".join(tokens)
+
+
 def attribute_key(attribute: str) -> str:
     """Group a model's attribute names ("hair_color", "eye_color") under the core trait they describe."""
     for pattern, key in SYNONYMS:
@@ -107,11 +119,12 @@ def reconstruct(facts: list[Fact], subject_ids, kind: str, event, chronology: Ch
         if fact.polarity == "negated":
             state.excluded[fact.id] = "negated"
             continue
-        key = attribute_key(fact.attribute)
+        key, item = fact.attribute.casefold(), part(fact.attribute)
         where = ("direct" if event is None else "untimed") if not fact.events else \
             "unordered" if event is None else position(fact, event, chronology)
-        if where != "direct" and any(same(n.value, fact.value) and attribute_key(n.attribute) == key
-                                     and n.events != fact.events for n in removed):
+        if where != "direct" and any(same(n.value, fact.value) and fact.events != n.events and (
+                part(n.attribute) == item or attribute_key(n.attribute) == attribute_key(fact.attribute))
+                for n in removed):
             state.excluded[fact.id] = "removed"
         elif where == "direct":
             direct.setdefault(key, []).append(fact)
@@ -122,10 +135,11 @@ def reconstruct(facts: list[Fact], subject_ids, kind: str, event, chronology: Ch
         elif fact.kind == "scene":
             state.excluded[fact.id] = "scene-specific"
         elif where == "untimed" and fact.kind in UNTIMED or fact.kind == "acquired":
-            carried.setdefault(key, []).append(fact)  # an inference at most
+            carried.setdefault(item, []).append(fact)  # an inference at most
         else:
             state.excluded[fact.id] = "tied to another moment"
 
+    # Disputes compare one exact attribute; "coat_color" and "coat_material" are two traits, not a conflict.
     for key, items in direct.items():
         canonical = [f for f in items if f.canonical]
         chosen = canonical or items
@@ -137,8 +151,10 @@ def reconstruct(facts: list[Fact], subject_ids, kind: str, event, chronology: Ch
         for fact in items:
             if fact not in chosen:
                 state.excluded[fact.id] = "weaker than explicit evidence here"
-    for key, items in carried.items():
-        if key in state.traits:
+    # An earlier change to a part ("left_cheek_marked") never stands beside direct evidence on it ("left_cheek_scar").
+    described = {part(key) for key in state.traits}
+    for item, items in carried.items():
+        if item in described:
             for fact in items:
                 state.excluded[fact.id] = "superseded at this moment"
             continue
@@ -147,14 +163,16 @@ def reconstruct(facts: list[Fact], subject_ids, kind: str, event, chronology: Ch
         for fact in items:
             if fact not in latest:
                 state.excluded[fact.id] = "superseded by a later change"
-        if len({f.value.casefold() for f in latest}) == 1:
+        if len({(f.attribute.casefold(), f.value.casefold()) for f in latest}) == 1:
             reason = ("stated without a story moment" if not latest[0].events
                       else "acquired earlier; no persistence to this moment is established")
+            key = latest[0].attribute.casefold()
             state.traits[key] = Trait(key, "inferred", [latest[0].value], [f.id for f in latest], reason)
         else:
             for fact in latest:
                 state.excluded[fact.id] = "order of earlier changes unknown"
-    state.unknown = [a for a in CORE.get(kind, ()) if a not in state.traits or state.traits[a].status == "inferred"]
+    known = {attribute_key(t.attribute) for t in state.traits.values() if t.status != "inferred"}
+    state.unknown = [a for a in CORE.get(kind, ()) if a not in known]
     if not any(t.status in {"canonical", "disputed", "inferred"} for t in state.traits.values()):
         state.outcome = "insufficient_evidence"
     return state

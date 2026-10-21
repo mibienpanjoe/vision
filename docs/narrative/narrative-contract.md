@@ -303,8 +303,12 @@ carry-forward rule above:
 | Later, or order unknown or inconsistent | Excluded with that reason |
 | Rumor, dream, metaphor, hypothesis; negated claims | Excluded with the modality or `negated` |
 
-Model attribute names are grouped under core traits (`hair_color` → hair,
-`eye_color` → eyes, clothing words → attire). A character reports hair, eyes
+Disputes compare one exact attribute, so `coat_color` and `coat_material` are
+two traits, not a conflict. Supersession compares the part a trait describes
+(`left_cheek_scar` and `left_cheek_marked` both describe `left_cheek`), so an
+earlier change never stands beside direct evidence on the same part. For
+unknowns, model attribute names are grouped under core traits (`hair_color` →
+hair, `eye_color` → eyes, clothing words → attire). A character reports hair, eyes
 and attire as unknown unless a canonical or disputed value exists; an object
 reports material. A state with no canonical, disputed or inferred trait is
 `insufficient_evidence`. With no moment or scene requested and canonical
@@ -320,6 +324,17 @@ inside the consolidation extend the subject; inferred ones do not. Every
 annotated reconstruction case of the synthetic corpus passes as an inclusion,
 exclusion, dispute and unknown matrix; creative mode does not enter this
 computation.
+
+Live check (Groq, synthetic fixture, 2026-10-21, one question a minute): with
+`reasoning_effort: low` each consolidation used about 3,600–3,900 input and
+800–1,700 output tokens in 2–4 s (at default effort the 4,096-token output cap
+was reached and no moment was anchored). "Arthur at ten" resolved hair,
+unmarked cheek and coat at the anchored childhood event; "Arthur at home after
+the war" resolved the linen shirt with hair and eyes unknown; "Arthur during
+the war" resolved the scar but left attire unknown because the armor claim was
+not tied to the war event, and carried an untimed hair colour as an inference.
+Back-to-back questions exceed the free tier's 8,000 tokens per minute and fail
+as `rate_limited` (OPEN-02).
 
 ## Discriminated outcomes
 

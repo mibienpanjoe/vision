@@ -242,14 +242,25 @@ def test_groq_is_disabled_without_its_key(monkeypatch):
 def test_live_groq_consolidation_on_the_synthetic_fixture(story):
     adapter = GroqGateway.from_environment()
     report = {}
-    for cutoff, text in [(3, "Arthur at home after the war"), (2, "Arthur during the war")]:
+    for i, (cutoff, text) in enumerate([(3, "Arthur at home after the war"), (2, "Arthur during the war"),
+                                        (1, "Arthur at ten")]):
+        if i:
+            time.sleep(61)  # the free tier allows about one consolidation per minute (8,000 tokens)
         plan, expanded, _ = gathered(story, cutoff, text)
         derivation_id = consolidate(story.engine, plan, expanded, adapter)
         story.db.expire_all()
         derivation = story.db.get(Derivation, derivation_id)
         run = story.db.scalar(query(ModelRun).where(ModelRun.derivation_id == derivation_id))
         facts = story.db.scalars(query(VisualFact).where(VisualFact.derivation_id == derivation_id)).all()
+        state = None
+        if derivation.status == "succeeded":
+            from app.services.reconstruction.context import appearance
+            found, labels = appearance(story.db, plan, derivation_id)
+            state = {"outcome": found.outcome, "event": labels.get(found.event), "unknown": found.unknown,
+                     "traits": {k: [t.status, t.values] for k, t in found.traits.items()},
+                     "choices": [labels.get(c) for c in found.choices]}
         report[text] = {"status": derivation.status, "error": derivation.error_code, "rejections": derivation.rejections,
+                        "state": state,
                         "tokens": [run.input_tokens, run.output_tokens], "ms": run.duration_ms,
                         "facts": sorted(f"{f.attribute}={f.value} ({f.kind}, {f.support}, {f.modality}, "
                                         f"{f.polarity}, canonical={f.canonical})" for f in facts)}

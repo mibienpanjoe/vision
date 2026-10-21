@@ -44,10 +44,13 @@ class ChatGateway:
     def response_format(self, call: ProviderCall) -> dict:
         return {"type": "json_object"}
 
+    def options(self) -> dict:
+        return {}
+
     def complete(self, call: ProviderCall) -> ProviderResult:
         system = f"{call.system}\n\nRespond with one JSON object matching this JSON Schema:\n{json.dumps(call.output_schema)}"
         body = json.dumps({"model": self.model, "temperature": 0, "max_tokens": call.max_output_tokens,
-                           "response_format": self.response_format(call),
+                           "response_format": self.response_format(call), **self.options(),
                            "messages": [{"role": "system", "content": system},
                                         {"role": "user", "content": call.data}]}).encode()
         deadline = time.monotonic() + call.timeout_seconds
@@ -99,6 +102,10 @@ class GroqGateway(ChatGateway):
             return None
         return cls(os.environ.get("VISION_GROQ_BASE_URL", GROQ_BASE_URL), key,
                    os.environ.get("VISION_GROQ_MODEL", GROQ_MODEL))
+
+    def options(self) -> dict:
+        # gpt-oss counts reasoning against the output budget; low effort leaves room for the answer.
+        return {"reasoning_effort": "low"} if "gpt-oss" in self.model else {}
 
     def response_format(self, call: ProviderCall) -> dict:
         # Best-effort schema guidance; the envelope still validates every response strictly.

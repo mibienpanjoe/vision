@@ -155,7 +155,8 @@ model is used: weighted fusion already reaches 0.93 selection recall on Jekyll
 
 `GroqGateway` (`app/providers/openai_compatible.py`, DEC-36) sends
 `openai/gpt-oss-120b` requests with `json_schema` guidance (`strict: false`;
-the envelope still validates strictly). It reads `GROQ_API_KEY` and is disabled
+the envelope still validates strictly) and `reasoning_effort: low`, because
+gpt-oss reasoning counts against the output budget. It reads `GROQ_API_KEY` and is disabled
 without it. Both chat adapters honour a 429 `retry-after` once when the wait is
 at most 20 seconds and fits the call's time bound; otherwise the call ends as
 `rate_limited` instead of retrying immediately. Consolidation uses bounds of

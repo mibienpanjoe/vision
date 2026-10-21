@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from app.services.narrative.chronology import Chronology, Statement
-from app.services.reconstruction.state import Fact, attribute_key, reconstruct
+from app.services.reconstruction.state import Fact, attribute_key, part, reconstruct
 
 DATA = json.loads((Path(__file__).parent / "fixtures/narrative/expected.json").read_text(encoding="utf-8"))
 CHAPTER = {p["id"]: p["chapter"] for p in DATA["passages"]}
@@ -96,11 +96,27 @@ def test_unordered_events_and_untimed_traits_stay_uncertain():
     assert set(state.unknown) == {"hair", "eyes", "attire"}
 
 
+def test_sub_attributes_are_separate_traits_but_share_supersession():
+    def fact(id, attribute, value, kind, events):
+        return Fact(id, "arthur", attribute, value, kind, "explicit", "fact", "affirmed", frozenset(events))
+    facts = [fact("blue", "coat_color", "blue", "scene", {"child"}), fact("wool", "coat_material", "wool", "scene", {"child"}),
+             fact("unmarked", "left_cheek_marked", "unmarked", "acquired", {"child"}),
+             fact("scar", "left_cheek_scar", "scar", "acquired", {"war"})]
+    child = reconstruct(facts, {"arthur"}, "character", "child", chronology_at(2))
+    assert {k: t.status for k, t in child.traits.items()} == {
+        "coat_color": "canonical", "coat_material": "canonical", "left_cheek_marked": "canonical"}
+    assert "attire" not in child.unknown
+    war = reconstruct(facts, {"arthur"}, "character", "war", chronology_at(2))
+    assert set(war.traits) == {"left_cheek_scar"} and war.excluded["unmarked"] == "superseded at this moment"
+
+
 def test_model_attribute_names_group_under_core_traits():
     assert [attribute_key(a) for a in ("hair_color", "eye_color", "eyes", "clothing", "armor_material",
                                        "attire_exclusion", "left_cheek")] == [
         "hair", "eyes", "eyes", "attire", "attire", "attire", "left_cheek"]
     assert attribute_key("blade_material") == "material"
+    assert [part(a) for a in ("left_cheek_scar", "left_cheek", "coat_color", "eye_color", "attire_exclusion")] == [
+        "left_cheek", "left_cheek", "coat", "eyes", "attire"]
 
 
 QUOTE = {s["id"]: s["quote"] for s in DATA["spans"]}
