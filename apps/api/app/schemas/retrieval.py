@@ -5,6 +5,8 @@ from app.schemas.base import ContractModel
 from pydantic import Field, model_validator
 
 Phrase = Annotated[str, Field(min_length=1, max_length=256)]
+# Request bodies are validated from parsed JSON, where an id arrives as a string.
+Id = Annotated[uuid.UUID, Field(strict=False)]
 
 
 class AgeMoment(ContractModel):
@@ -24,10 +26,10 @@ Moment = Annotated[AgeMoment | PhraseMoment, Field(discriminator="kind")]
 
 class VisualizationRequest(ContractModel):
     query: str | None = Field(default=None, min_length=1, max_length=1000)
-    entity_id: uuid.UUID | None = None
+    entity_id: Id | None = None
     moment: Moment | None = None
     context: Phrase | None = Field(default=None, description="Scene context such as \"at home\"")
-    through_chapter_id: uuid.UUID | None = Field(default=None, description="Reading cutoff; null means the whole book")
+    through_chapter_id: Id | None = Field(default=None, description="Reading cutoff; null means the whole book")
     creative_mode: Literal["canon_first", "interpretation"] = "canon_first"
     style: Phrase | None = None
 

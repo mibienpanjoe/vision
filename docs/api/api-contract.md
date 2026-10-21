@@ -380,3 +380,43 @@ a response body:
 - **An unspecified moment stays unspecified.** The plan does not choose a story
   time; reconstruction (T28) must offer context choices rather than blend
   materially different states.
+
+## Visualization compose — T31
+
+`POST /v1/works/{work_id}/visualizations/compose` takes a `VisualizationRequest`
+and returns a `VisualizationResult` with status 200 for every domain outcome:
+
+- `resolved` with a `VisualSpecification` (`spec_version` `vision-spec-1.0`);
+- `needs_context` with `choices`, each with `field` `subject` (the id is the
+  entity), `moment` (resubmit the label as a `phrase` moment) or `context`;
+- `insufficient_evidence` with `missing` reasons (no eligible subject, a chapter
+  beyond the boundary, a moment the eligible text does not establish, no
+  verified trait);
+- `failed` with a safe error: `PROVIDER_NOT_ENABLED` (no `GROQ_API_KEY`),
+  `PROVIDER_RATE_LIMITED`, `PROVIDER_TIMEOUT` or `PROVIDER_UNAVAILABLE`
+  (retryable), `PROVIDER_INVALID_OUTPUT`, or `PROMPT_GATE_FAILED`. There is no
+  fallback to unverified output.
+
+Another owner's work or an unknown entity or chapter returns the common `404`,
+an unauthenticated call `401`, an invalid body `422`, and a work without a
+succeeded entity derivation `409 NARRATIVE_NOT_READY`. The call runs the whole
+path synchronously (plan, local retrieval, Groq consolidation reused by scope,
+reconstruction, verification with optional adjudication, prompt gate). It stores
+only the consolidation and run records; persisted results, reads, history and
+an `Idempotency-Key` for stored creation arrive with T32.
+`VISION_ADJUDICATE=0` turns adjudication off.
+
+The specification carries `lineage` (consolidation id; query-plan, consolidation,
+index and parser versions), `scope` (generation, parser revision, cutoff,
+requested and resolved moment, context, creative mode), the `subject`,
+`participants` and `world` members (each with traits and unknown core traits),
+`excluded` entities with reasons, scene `unknown`s, `creative` additions,
+`generation` (style, prompt, negative prompt) and `verification` (adjudication
+state, facts removed, selection outcome). Canonical and disputed traits always
+carry `SourceSpan` evidence, which resolves through the evidence route under the
+same boundary; inferred traits carry their reason. In `interpretation` mode,
+unknown core traits of the subject become creative additions ("artist's
+choice") and inferred traits enter the prompt as "possibly"; canonical traits
+are identical in both modes. Generated types: `VisualizationRequest`,
+`VisualizationResult` and their members. `ContextChoice` gains the optional
+`field`.

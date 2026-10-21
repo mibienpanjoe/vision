@@ -11,6 +11,7 @@ explicit/inferred split, and with no place evidence the setting is unknown.
 """
 
 import re
+import unicodedata
 from collections.abc import Hashable
 from dataclasses import dataclass, field
 
@@ -45,6 +46,11 @@ class Scene:
     unknown: list[str] = field(default_factory=list)
 
 
+def sort_key(label: str) -> str:
+    """Accent-insensitive order, so "Élodie" sorts with E rather than after Z."""
+    return "".join(c for c in unicodedata.normalize("NFKD", label.casefold()) if not unicodedata.combining(c))
+
+
 def absentees(texts: list[str], entities: list[Entity]) -> set[str]:
     """Labels the text says were absent ("Brann and his sword were absent"), sentence by sentence."""
     found = set()
@@ -69,6 +75,7 @@ def compose_scene(facts: list[Fact], chronology: Chronology, event, subject: Ent
         return bool(entity.ids & (event_participants | tied))
 
     members: list[tuple[Entity, str]] = [(subject, "subject")]
+    entities = sorted(entities, key=lambda e: (sort_key(e.label), sorted(map(str, e.ids))))
     for entity in entities:
         if entity is subject or entity.kind == "object":
             continue

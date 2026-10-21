@@ -150,6 +150,10 @@ export type SchemaVersion = "1.0";
  * @minItems 1
  */
 export type Choices = [ContextChoice, ...ContextChoice[]];
+/**
+ * Which request field the choice fills; a moment choice is resubmitted as its label
+ */
+export type Field = ("subject" | "moment" | "context") | null;
 export type Id7 = string;
 export type Label3 = string;
 export type Outcome1 = "needs_context";
@@ -164,6 +168,85 @@ export type Outcome3 = "failed";
 export type SchemaVersion3 = "1.0";
 export type Format1 = "txt" | "md" | "pdf" | "epub";
 export type Title1 = string;
+/**
+ * Scene context such as "at home"
+ */
+export type Context = string | null;
+export type CreativeMode1 = "canon_first" | "interpretation";
+export type EntityId1 = string | null;
+export type Moment = (AgeMoment | PhraseMoment) | null;
+export type Kind4 = "age";
+export type Years = number;
+export type Kind5 = "phrase";
+export type Text = string;
+export type Query = string | null;
+export type Style = string | null;
+/**
+ * Reading cutoff; null means the whole book
+ */
+export type ThroughChapterId1 = string | null;
+export type VisualizationResult = ResolvedSpecification | NeedsContext | InsufficientEvidence | Failed;
+export type Attribute1 = string;
+export type Reason = string;
+export type Support1 = "creative";
+export type Value3 = string;
+export type Creative = CreativeAddition[];
+export type Label4 = string;
+export type Reason1 = string;
+export type Excluded = ExclusionView[];
+export type NegativePrompt = string;
+export type Prompt = string;
+export type Style1 = string | null;
+export type ConsolidationId = string;
+/**
+ * @minItems 1
+ */
+export type EntityIds = [string, ...string[]];
+export type Kind6 = "character" | "place" | "object" | "organization";
+export type Label5 = string;
+export type Role = "subject" | "participant" | "place" | "object";
+export type Adjudication = "unchecked" | "entailed";
+export type Attribute2 = string;
+export type Evidence2 = SourceSpan[];
+/**
+ * Why an inferred trait is not canonical
+ */
+export type Reason2 = string | null;
+export type Status4 = "canonical" | "disputed" | "inferred";
+/**
+ * @minItems 1
+ */
+export type Values = [string, ...string[]];
+export type Traits = TraitView[];
+/**
+ * Core traits the eligible text does not establish here
+ */
+export type Unknown = string[];
+export type Participants = MemberView[];
+export type Context1 = string | null;
+export type CreativeMode2 = "canon_first" | "interpretation";
+export type GenerationId2 = string;
+export type Moment1 = (AgeMoment | PhraseMoment) | null;
+export type ParserRevision3 = string;
+/**
+ * The event the text anchors the moment to
+ */
+export type ResolvedMoment = string | null;
+/**
+ * Reading cutoff; null means the whole book
+ */
+export type ThroughChapterId2 = string | null;
+export type SpecVersion = "vision-spec-1.0";
+export type Unknown1 = string[];
+export type Adjudication1 = "not_requested" | "applied" | "unavailable";
+/**
+ * Facts removed by verification
+ */
+export type Removed = number;
+export type Selection = "complete" | "compressed" | "truncated" | "protected_overflow";
+export type World = MemberView[];
+export type Outcome4 = "resolved";
+export type SchemaVersion4 = "1.0";
 
 /**
  * Build-time export root only; this is not an HTTP request/response.
@@ -185,6 +268,8 @@ export interface SchemaCatalog {
   span_outcome: SpanResolution;
   upload_accepted: UploadAccepted;
   upload_metadata: UploadMetadata;
+  visualization_request: VisualizationRequest;
+  visualization_result: VisualizationResult;
   work: WorkView;
 }
 export interface EntityDetail {
@@ -386,6 +471,7 @@ export interface NeedsContext {
   schema_version: SchemaVersion1;
 }
 export interface ContextChoice {
+  field?: Field;
   id: Id7;
   label: Label3;
 }
@@ -406,4 +492,100 @@ export interface UploadAccepted {
 export interface UploadMetadata {
   format: Format1;
   title: Title1;
+}
+export interface VisualizationRequest {
+  context?: Context;
+  creative_mode?: CreativeMode1;
+  entity_id?: EntityId1;
+  moment?: Moment;
+  query?: Query;
+  style?: Style;
+  through_chapter_id?: ThroughChapterId1;
+}
+/**
+ * A story-time age of the subject; never a source position.
+ */
+export interface AgeMoment {
+  kind: Kind4;
+  years: Years;
+}
+/**
+ * A story-time phrase such as "after the war", anchored by consolidation against cited text.
+ */
+export interface PhraseMoment {
+  kind: Kind5;
+  text: Text;
+}
+export interface ResolvedSpecification {
+  data: VisualSpecification;
+  outcome: Outcome4;
+  schema_version: SchemaVersion4;
+}
+export interface VisualSpecification {
+  creative: Creative;
+  excluded: Excluded;
+  generation: GenerationIntent;
+  lineage: Lineage;
+  participants: Participants;
+  scope: ScopeView;
+  spec_version: SpecVersion;
+  subject: MemberView;
+  unknown: Unknown1;
+  verification: VerificationView;
+  world: World;
+}
+export interface CreativeAddition {
+  attribute: Attribute1;
+  reason: Reason;
+  support?: Support1;
+  value: Value3;
+}
+export interface ExclusionView {
+  label: Label4;
+  reason: Reason1;
+}
+export interface GenerationIntent {
+  negative_prompt: NegativePrompt;
+  prompt: Prompt;
+  style: Style1;
+}
+export interface Lineage {
+  consolidation_id: ConsolidationId;
+  processing: Processing;
+}
+export interface Processing {
+  [k: string]: string;
+}
+export interface MemberView {
+  entity: EntityRef;
+  role: Role;
+  traits: Traits;
+  unknown: Unknown;
+}
+export interface EntityRef {
+  entity_ids: EntityIds;
+  kind: Kind6;
+  label: Label5;
+}
+export interface TraitView {
+  adjudication?: Adjudication;
+  attribute: Attribute2;
+  evidence: Evidence2;
+  reason?: Reason2;
+  status: Status4;
+  values: Values;
+}
+export interface ScopeView {
+  context: Context1;
+  creative_mode: CreativeMode2;
+  generation_id: GenerationId2;
+  moment: Moment1;
+  parser_revision: ParserRevision3;
+  resolved_moment: ResolvedMoment;
+  through_chapter_id: ThroughChapterId2;
+}
+export interface VerificationView {
+  adjudication: Adjudication1;
+  removed: Removed;
+  selection: Selection;
 }

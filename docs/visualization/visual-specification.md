@@ -1,8 +1,9 @@
 # Visual specification and grounding contract
 
-**Status:** baseline output semantics; executable JSON Schema not yet defined.
-The overview example is abbreviated. This document does not freeze version 1.0
-or claim a working image-provider integration.
+**Status:** executable schema `vision-spec-1.0` (`app/schemas/visualization.py`,
+T31) behind `POST /v1/works/{work_id}/visualizations/compose`; see the
+[API contract](../api/api-contract.md#visualization-compose--t31). Results are
+not stored yet (T32), and there is no image-provider integration.
 
 ## Inputs and outcomes
 
