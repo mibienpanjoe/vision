@@ -61,6 +61,30 @@ Redis transports background work; durable job status belongs in PostgreSQL.
 Do not assume broker delivery is exactly once. Cross-system storage/job/index
 effects need idempotence and recovery, detailed when executable contracts land.
 
+### Lexical and entity-linked retrieval — T24
+
+`passages.search` is a stored `to_tsvector('english', text)` column with a GIN
+index (migration 0015); English is the only configured language (DEC-22).
+`services/retrieval/lexical.py` produces three candidate paths for one query
+plan, each restricted in SQL to the plan's document, parser revision and reading
+boundary before rows are returned:
+
+- `entity`: whole passages with a mention resolved to the subject's visible
+  identity group, most mentions first, carrying the exact mention spans.
+  Mentions that only list the subject as a candidate are not linked.
+- `appearance`: description sentences from the appearance derivation whose
+  resolved mentions include the subject. These are **protected**: later ranking
+  may reorder them but may not drop them for a low similarity score.
+- `lexical`: passages matching any name phrase (`phraseto_tsquery`, so word
+  order counts) or request term (`plainto_tsquery` of the moment and context),
+  ordered by how many distinct names and terms match, then cover density.
+  Names are the visible surfaces that identify only this subject at the cutoff,
+  so a shared title such as "captain" never widens the search.
+
+`services/retrieval/evidence.py` merges candidates by exact passage span, keeps
+each path's rank, protection and anchors, and renders `SourceSpan` quotes from
+the immutable passage text.
+
 ## Provider seams
 
 Define narrow operations for extraction, reasoning/consolidation, embeddings,

@@ -3,9 +3,16 @@
 import uuid
 
 from app.models.access import Base
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, String, Text, UniqueConstraint
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (
+    Computed,
+    ForeignKey,
+    ForeignKeyConstraint,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
+from sqlalchemy.orm import Mapped, deferred, mapped_column
 
 
 class Chapter(Base):
@@ -40,3 +47,5 @@ class Passage(Base):
     next_ordinal: Mapped[int | None]
     # Format-specific anchors, e.g. PDF {"pages": [...], "boxes": [[page, l, t, r, b]]}.
     locator: Mapped[dict | None] = mapped_column(JSONB)
+    # English FTS (DEC-22); other languages need their own configuration before they are claimed.
+    search: Mapped[str | None] = deferred(mapped_column(TSVECTOR, Computed("to_tsvector('english', text)", persisted=True)))

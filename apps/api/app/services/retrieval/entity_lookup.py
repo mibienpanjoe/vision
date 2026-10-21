@@ -85,6 +85,10 @@ class SubjectLookup:
     def subject(self, entity_id: uuid.UUID) -> Subject | None:
         return self._subject.get(entity_id)
 
+    def names(self, subject: Subject) -> list[str]:
+        """Visible surfaces that name only this identity, so a shared title never widens a search."""
+        return sorted(surface for surface, subjects in self._surfaces.items() if subjects == {subject})
+
     def find(self, query: str) -> list[Match]:
         """Named subjects in request order; falls back to title words when no full name matches."""
         text = fold(query)

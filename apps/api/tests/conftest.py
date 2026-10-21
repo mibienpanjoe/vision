@@ -1,14 +1,29 @@
 """Explicitly opted-in PostgreSQL tests, isolated from the reader's database."""
 
+import json
 import os
 import uuid
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import create_engine, text
+from app.core.passwords import hash_password
+from app.core.security import ActorScope
+from app.main import create_app
+from app.models.access import Principal
+from app.models.entities import Entity
+from app.models.passages import Chapter
+from app.schemas.retrieval import VisualizationRequest
+from app.services.ingestion.parse import execute_ingestion
+from app.services.narrative.appearance import derive_appearance
+from app.services.narrative.entities import derive_entities
+from app.services.retrieval.query_plan import plan_query
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, select, text
 from sqlalchemy.engine import make_url
+from sqlalchemy.orm import Session
 
 
 @pytest.fixture
@@ -43,3 +58,51 @@ def database(monkeypatch):
             )
             connection.execute(text(f'DROP DATABASE "{name}"'))
         admin.dispose()
+
+
+ORIGIN = {"Origin": "http://127.0.0.1:3000"}
+STORY = Path(__file__).parent / "fixtures/narrative/story.md"
+
+
+@pytest.fixture
+def story(database, monkeypatch, tmp_path):
+    """The synthetic corpus parsed, with fixture entities and appearance cues, plus a second work."""
+    monkeypatch.delenv("REDIS_URL", raising=False)
+    monkeypatch.setenv("VISION_SOURCE_ROOT", str(tmp_path / "originals"))
+    password = "synthetic query plan passphrase"
+    with Session(database) as db:
+        db.add_all([Principal(username=n, password_hash=hash_password(password)) for n in ("reader", "stranger")])
+        db.commit()
+    with TestClient(create_app(), base_url="http://127.0.0.1") as client:
+        assert client.post("/v1/auth/login", json={"username": "reader", "password": password},
+                           headers=ORIGIN).status_code == 200
+        accepted = client.post("/v1/works", data={"title": "Plans", "format": "md"},
+                               files={"file": ("story.md", STORY.read_bytes())},
+                               headers={**ORIGIN, "Idempotency-Key": "plan-source"}).json()
+        other = client.post("/v1/works", data={"title": "Same text, other work", "format": "md"},
+                            files={"file": ("story.md", STORY.read_bytes())},
+                            headers={**ORIGIN, "Idempotency-Key": "plan-other"}).json()
+        execute_ingestion(accepted["job"]["id"])
+        execute_ingestion(other["job"]["id"])
+        work_id = uuid.UUID(accepted["work"]["id"])
+        generation = client.get(f"/v1/works/{work_id}/generations").json()["items"][0]["id"]
+    from tests.test_entity_extraction import fixture_adapter
+
+    entities = derive_entities(database, generation, fixture_adapter())
+    derive_appearance(database, uuid.UUID(generation), entities)
+    with Session(database) as db:
+        actors = {p.username: ActorScope(p.id, p.username) for p in db.scalars(select(Principal))}
+        chapters = {c.ordinal: c.id for c in db.scalars(select(Chapter).where(
+            Chapter.document_id == uuid.UUID(accepted["work"]["document_id"])))}
+        ids = {e.label: e.id for e in db.scalars(select(Entity))}
+
+        def plan(through=None, actor="reader", **fields):
+            if through is not None:
+                fields["through_chapter_id"] = str(chapters[through])
+            return plan_query(db, actors[actor], work_id, visualization_request(**fields))
+        yield SimpleNamespace(plan=plan, ids=ids, chapters=chapters, db=db,
+                              other_document=uuid.UUID(other["work"]["document_id"]))
+
+
+def visualization_request(**fields) -> VisualizationRequest:
+    return VisualizationRequest.model_validate_json(json.dumps(fields))
