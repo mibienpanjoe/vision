@@ -43,7 +43,9 @@ class ChatGateway:
                                         {"role": "user", "content": call.data}]}).encode()
         request = urllib.request.Request(f"{self.base_url}/chat/completions", data=body, method="POST",
                                          headers={"Authorization": f"Bearer {self._key}",
-                                                  "Content-Type": "application/json"})
+                                                  "Content-Type": "application/json",
+                                                  # Cloudflare-fronted gateways reject urllib's default agent (error 1010).
+                                                  "User-Agent": "vision/0.1"})
         try:
             with urllib.request.urlopen(request, timeout=call.timeout_seconds) as response:
                 payload = json.loads(response.read(4_000_000))
