@@ -54,6 +54,7 @@
 | DEC-46 | Verification: per-fact deterministic re-checks (owner, evidence, span, boundary incl. linked events, attribution, canonical modality, asserted value, moment) remove with stable reasons; optional quote-bound adjudication with passage context can only remove or mark entailed; provider failure leaves the deterministic result marked `unavailable`; prompt gate refuses excluded values, settled disputes, unsupported or missing locks, quoted creative text and instruction-like text | T30; [visual specification](../visualization/visual-specification.md#attribute-and-prompt-gates--t30) |
 | DEC-47 | Visualization compose: synchronous `POST /v1/works/{work_id}/visualizations/compose` returning 200 with `resolved`/`needs_context`/`insufficient_evidence`/`failed`; `vision-spec-1.0` with lineage, scope, subject/participants/world members, exclusions, unknowns, creative additions, prompt intent and verification summary; choices carry their request `field`; interpretation adds labelled creative choices without changing canon; no stored result until T32 | T31; [API](../api/api-contract.md#visualization-compose--t31) |
 | DEC-48 | Stored visualizations: only resolved results are stored (201 + ETag); other outcomes 200 without reservation; key scoped to owner+work with request fingerprint (replay / 409); immutable revisions keep full result, generation, parser revision and consolidation; owner-scoped list/read/history with 404 otherwise | T32a; [API](../api/api-contract.md#stored-visualizations--t32a) |
+| DEC-49 | Adopt PROP-05: resolved results cached per owner under the hash of work, generation, cutoff, subject/participants, moment, context, creative mode, style, locks and every processing version (derivations in use, prompts, models, gates, spec, fusion weights); lookup only after the plan re-checks ownership and current generation | T32b; [architecture](../architecture/system-architecture.md#scoped-result-cache--t32b) |
 
 ## Proposed elaborations
 
@@ -63,7 +64,6 @@ documents fixed all details.
 | ID | Proposal | Resolve in |
 |---|---|---|
 | PROP-04 | First vertical slice uses a small synthetic TXT/Markdown narrative before format expansion | First implementation increment; [roadmap](implementation-roadmap.md) |
-| PROP-05 | Cache identity includes creative mode and locked-fact revision in addition to source/retrieval scope | Reconstruction implementation |
 | PROP-06 | Owner-facing narrative retry route with `If-Match` and `Idempotency-Key`, mirroring ingestion retry | Before real-book narrative use |
 
 ## Open decisions

@@ -4,41 +4,14 @@ import pytest
 from app.main import create_app
 from app.providers.contracts import ProviderRateLimited
 from app.providers.deterministic import RuleAdapter
-from app.providers.embeddings import HashedEmbeddings
 from app.schemas.visualization import VisualizationResult
-from app.services.narrative import pipeline
-from app.services.retrieval.semantic import index_passages
 from app.services.visualization import specification
 from fastapi.testclient import TestClient
 from tests.conftest import ORIGIN
 from tests.test_appearance_states import annotated_consolidation
-from tests.test_grounding_verification import verdict_rule
 
 pytestmark = pytest.mark.integration
 PASSWORD = "synthetic query plan passphrase"
-
-
-@pytest.fixture
-def api(story, monkeypatch):
-    index_passages(story.engine, story.generation, HashedEmbeddings())
-    monkeypatch.setattr(pipeline, "local_embedder", HashedEmbeddings)
-    monkeypatch.setattr(specification, "consolidation_adapter", lambda: RuleAdapter(annotated_consolidation))
-    monkeypatch.setattr(specification, "adjudicator", lambda _: RuleAdapter(verdict_rule({
-        "plain linen shirt": ("entailed", None)})))
-    clients = {}
-    with TestClient(create_app(), base_url="http://127.0.0.1") as reader, \
-            TestClient(create_app(), base_url="http://127.0.0.1") as stranger:
-        for client, name in [(reader, "reader"), (stranger, "stranger")]:
-            assert client.post("/v1/auth/login", json={"username": name, "password": PASSWORD},
-                               headers=ORIGIN).status_code == 200
-            clients[name] = client
-        work_id = str(story.plan(None, query="Arthur").work_id)
-
-        def compose(client="reader", chapter=None, **body):
-            if chapter is not None:
-                body["through_chapter_id"] = str(story.chapters[chapter])
-            return clients[client].post(f"/v1/works/{work_id}/visualizations/compose", json=body, headers=ORIGIN)
-        yield compose, clients, work_id, story
 
 
 def outcome(response):

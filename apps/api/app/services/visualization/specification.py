@@ -6,12 +6,16 @@ needs-context or insufficient-evidence result is returned as such. Nothing is
 stored here except the consolidation and its run records (T32 stores results).
 """
 
+import json
 import os
 import uuid
 
 from app.models.generations import SourceGeneration
 from app.models.model_runs import Derivation
 from app.models.visual_facts import VisualFact
+from app.providers.adjudication import PROMPT_VERSION as ADJUDICATION_PROMPT
+from app.providers.consolidation import PROMPT_VERSION as CONSOLIDATION_PROMPT
+from app.providers.consolidation import Consolidation
 from app.providers.contracts import ProviderAdapter
 from app.providers.openai_compatible import GroqGateway
 from app.schemas.outcomes import (
@@ -37,14 +41,16 @@ from app.schemas.visualization import (
     VisualSpecification,
 )
 from app.services.narrative import pipeline
-from app.services.narrative.eligibility import visible_narrative
+from app.services.narrative.eligibility import latest, visible_narrative
+from app.services.reconstruction.cache import GATES_VERSION, cache_scope, remember
+from app.services.reconstruction.cache import lookup as lookup_cached
 from app.services.reconstruction.context import scene
 from app.services.reconstruction.scene import Member
 from app.services.retrieval import query_plan
 from app.services.retrieval.consolidation import consolidate
 from app.services.retrieval.entity_lookup import SubjectLookup
 from app.services.retrieval.evidence import collect
-from app.services.retrieval.fusion import fuse, select
+from app.services.retrieval.fusion import WEIGHTS, fuse, select
 from app.services.retrieval.lexical import (
     appearance_linked,
     entity_linked,
@@ -106,9 +112,14 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
     if adapter is None:
         return failed("PROVIDER_NOT_ENABLED", "Query-time consolidation is not configured.", correlation_id)
 
+    embedder = pipeline.local_embedder()
+    judge = adjudicator(adapter)
+    scope = cache_scope(actor.owner_id, plan, versions(db, plan, adapter, embedder, judge))
+    if (hit := lookup_cached(db, actor.owner_id, scope)) is not None:
+        return ResolvedSpecification.model_validate_json(json.dumps(hit))
+
     view = visible_narrative(db, db.get(SourceGeneration, plan.generation_id), plan.cutoff)
     lookup = SubjectLookup(view)
-    embedder = pipeline.local_embedder()
     similar = semantic(db, plan, embedder)
     found = collect(entity_linked(db, plan, view), appearance_linked(db, plan, view),
                     lexical(db, plan, lookup.names(plan.subject), terms(plan)), similar or [])
@@ -131,7 +142,6 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
     if composed.outcome != "resolved":
         return insufficient("The eligible text does not describe this subject at this moment.")
 
-    judge = adjudicator(adapter)
     verified, removed, adjudication = [], 0, "not_requested"
     for member in [*composed.members, *composed.world]:
         subject = lookup.subject(next(iter(member.entity.ids)))
@@ -177,4 +187,20 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
         unknown=composed.unknown, creative=creative,
         generation=GenerationIntent(style=plan.style, prompt=prompt, negative_prompt=negative),
         verification=VerificationView(adjudication=adjudication, removed=removed, selection=selection.outcome))
-    return ResolvedSpecification(outcome="resolved", schema_version="1.0", data=spec)
+    resolved = ResolvedSpecification(outcome="resolved", schema_version="1.0", data=spec)
+    remember(db, actor.owner_id, plan, scope, resolved.model_dump(mode="json"))
+    return resolved
+
+
+def versions(db, plan, adapter, embedder, judge) -> dict:
+    """Every processing version a result depends on; any change is a different cache key."""
+    entities = latest(db, plan.generation_id, "entities")
+    appearance = latest(db, plan.generation_id, "appearance", entities.id)
+    indexed = db.scalar(select_rows(Derivation.id).where(
+        Derivation.generation_id == plan.generation_id, Derivation.stage == "index",
+        Derivation.processing_version == index_version(embedder), Derivation.status == "succeeded"))
+    return {"entities": str(entities.id), "appearance": str(appearance.id) if appearance else None,
+            "index": str(indexed) if indexed else None, "query_plan": plan.rules_version,
+            "consolidation": f"{CONSOLIDATION_PROMPT}/{Consolidation.schema_version}/{adapter.provider}/{adapter.model}",
+            "adjudication": f"{ADJUDICATION_PROMPT}/{judge.provider}/{judge.model}" if judge else None,
+            "gates": GATES_VERSION, "spec": SPEC_VERSION, "fusion": json.dumps(WEIGHTS, sort_keys=True)}

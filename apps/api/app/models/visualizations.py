@@ -38,3 +38,15 @@ class VisualizationRevision(Base):
     consolidation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("derivations.id"))
     result: Mapped[dict] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
+
+class CachedResult(Base):
+    """A resolved result under its full scope key (see services/reconstruction/cache.py)."""
+    __tablename__ = "cached_results"
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("principals.id"), index=True)
+    work_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("works.id"), index=True)
+    generation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("source_generations.id"), index=True)
+    scope: Mapped[dict] = mapped_column(JSONB)
+    result: Mapped[dict] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))

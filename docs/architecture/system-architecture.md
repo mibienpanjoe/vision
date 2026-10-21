@@ -143,6 +143,27 @@ The old rule took whole protected passages first and capped selection recall
 at 0.79 whatever the weights. One novel and 21 queries cannot fix a target
 (OPEN-05); the opt-in harness is `tests/test_retrieval_measurement.py`.
 
+### Scoped result cache — T32b
+
+`services/reconstruction/cache.py` stores each resolved specification in
+`cached_results` (migration 0019) under the SHA-256 of its full scope:
+
+- owner, work, generation and reading cutoff;
+- subject and participant ids, moment, context, creative mode, style and
+  locked facts;
+- every processing version: the entity, appearance and index derivations in
+  use, the query-plan rules, the consolidation prompt, schema, provider and
+  model, the adjudication prompt and model, the gates, specification version
+  and fusion weights.
+
+Any change is a different key, so the result is recomputed: a new generation,
+re-extraction, model change, cutoff, mode or style never reuses an older entry,
+and a whole-book result never answers a chapter-limited reader. The lookup runs
+after the plan has re-checked ownership and the current generation, and only
+for the same owner. Concurrent identical requests write one row (first writer
+wins). Only resolved results are cached; old entries are left for retention
+(T46). This adopts PROP-05.
+
 ### Context expansion and the Groq adapter — T27
 
 `services/retrieval/rerank.py` adds, for a selected passage that never names
