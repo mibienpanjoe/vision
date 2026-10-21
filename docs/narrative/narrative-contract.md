@@ -285,6 +285,42 @@ Gaps for T28: childhood traits (hair, unmarked cheek, blue coat) were labelled
 `identity` rather than scoped to childhood, so temporal reconstruction must not
 trust the kind label alone.
 
+### Appearance state — T28
+
+`services/reconstruction/state.py` computes one subject's state at one event
+from the gated claims and partial chronology of a consolidation, applying the
+carry-forward rule above:
+
+| Claim relative to the requested event | Result |
+|---|---|
+| Tied to it, or to an event that overlaps it | Applies; canonical when explicit, affirmed and fact or memory |
+| Two canonical values for one trait there | `disputed`, both values kept |
+| Earlier acquired change, no direct claim for the trait | Latest one only, as `inferred` ("no persistence established") |
+| Earlier identity trait or interval | Excluded: tied to another moment (kind labels never widen scope) |
+| No event at all (identity, change or interval) | `inferred` ("stated without a story moment") |
+| Scene clothing, props or lighting from another event | Excluded: scene-specific |
+| Same value removed or negated by then | Excluded: removed |
+| Later, or order unknown or inconsistent | Excluded with that reason |
+| Rumor, dream, metaphor, hypothesis; negated claims | Excluded with the modality or `negated` |
+
+Model attribute names are grouped under core traits (`hair_color` → hair,
+`eye_color` → eyes, clothing words → attire). A character reports hair, eyes
+and attire as unknown unless a canonical or disputed value exists; an object
+reports material. A state with no canonical, disputed or inferred trait is
+`insufficient_evidence`. With no moment or scene requested and canonical
+claims at more than one event, the state is `needs_context` with those events
+in chronological order instead of a blend.
+
+The consolidation names the event matching the requested moment
+(`requested_event`, `consolidation-schema-v2`); `services/reconstruction/context.py`
+reads the stored event id from the derivation scope and never guesses one from
+labels, so a moment the selected passages do not establish is
+`insufficient_evidence` with `moment` unknown. Identity links stated explicitly
+inside the consolidation extend the subject; inferred ones do not. Every
+annotated reconstruction case of the synthetic corpus passes as an inclusion,
+exclusion, dispute and unknown matrix; creative mode does not enter this
+computation.
+
 ## Discriminated outcomes
 
 Conceptual outcomes are `resolved`, `needs_context`, `insufficient_evidence`, and

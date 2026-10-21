@@ -99,6 +99,11 @@ def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limi
             keyed = [(key, event.id, event.label, event.modality, 0, 0) for key, event in keys.items() if event]
             rejected.update(publish_facts(db, derivation_id, entities.id, keyed, outputs))
             rejected.update(publish_links(db, derivation_id, entities.id, group, result.output, run.id))
+            requested = keys.get(result.output.requested_event) if result.output.requested_event else None
+            if result.output.requested_event and requested is None:
+                rejected["unknown_event"] += 1
+            # Scope already holds the digest; the anchored moment is the stored event, never the model's key.
+            derivation.scope = {**derivation.scope, "requested_event": str(requested.id) if requested else None}
             derivation.rejections = {reason: count for reason, count in rejected.items() if count}
             derivation.status = "succeeded"
         derivation.completed_at = datetime.now(UTC)

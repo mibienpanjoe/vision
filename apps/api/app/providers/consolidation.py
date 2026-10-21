@@ -18,7 +18,7 @@ from app.providers.extraction import Key, Label, Quote, Ref
 from app.providers.visual_facts import FactKind
 from pydantic import Field
 
-PROMPT_VERSION = "consolidate-v1"
+PROMPT_VERSION = "consolidate-v2"
 REQUEST_REF = "request"
 
 INSTRUCTIONS = f"""You consolidate what numbered book passages say about how one subject looks.
@@ -36,6 +36,8 @@ it is derived data, never evidence. Return JSON that matches the schema exactly,
   modality as the text presents it; perspective when someone other than the narrator describes it.
 - identity_links: only when a quote says two names are the same person or thing; "explicit" when the quote
   states it, otherwise "inferred".
+- requested_event: the key of your event that is the moment or scene the reader asked about, or null when the
+  passages do not establish that moment. Never invent an event to fill it.
 Attribute every fact only to the entity the text gives it to, and quote text exactly as written.
 Never add details the passages do not support; leave out what they do not say."""
 
@@ -68,12 +70,13 @@ class IdentityLink(StructuredOutput):
 
 
 class Consolidation(StructuredOutput):
-    schema_version = "consolidation-schema-v1"
+    schema_version = "consolidation-schema-v2"
     events: list[ExtractedEvent] = Field(default=[], max_length=60)
     anchors: list[ExtractedAnchor] = Field(default=[], max_length=60)
     relations: list[ExtractedTemporal] = Field(default=[], max_length=120)
     facts: list[ConsolidatedFact] = Field(default=[], max_length=120)
     identity_links: list[IdentityLink] = Field(default=[], max_length=16)
+    requested_event: Key | None = None
 
 
 def consolidation_request(sources: list[SourceItem], request: str, limits: Limits) -> ProviderRequest:
