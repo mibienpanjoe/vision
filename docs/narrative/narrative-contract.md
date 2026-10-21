@@ -1,6 +1,11 @@
 # Narrative identity, chronology, and appearance contract
 
 **Status:** first-slice temporal and cutoff rules selected by T02 (DEC-22).
+DEC-37 ([ADR-0003](../adr/0003-local-ingestion-minimal-disclosure.md)) moves
+private-book extraction to local models and consolidation to query time; the
+proposed contract for that change is
+[PROP-08](#local-ingestion-and-query-time-consolidation--prop-08). The T18–T20
+LLM derivations below remain the synthetic-fixture path and evaluation baseline.
 **Data owner:** [canonical model](../data/canonical-model.md).
 
 ## Identity and attribution
@@ -159,6 +164,63 @@ identities remain separate. Events need all evidence visible; participants,
 anchors and relations are filtered the same way. Facts need all evidence, the
 subject and every linked event visible; conflicts need both facts. Rows without
 provenance do not exist by construction, so nothing is shown on trust.
+
+## Local ingestion and query-time consolidation — PROP-08
+
+Proposed contract for DEC-37. Identity, time, appearance and eligibility rules
+above are unchanged; what changes is which component produces each record and
+when.
+
+**Ingestion stages (local, no network).** Each is a versioned derivation of the
+source generation whose processing version names the model repository
+revisions, precision, runtime versions and rule version.
+
+| Stage | Input | Output |
+|---|---|---|
+| `entities` (local) | Passages | Entities, mentions, candidates, aliases, `same_as` relations |
+| `appearance` | Passages, entity derivation | Appearance-candidate spans with their pattern and in-sentence mentions |
+| `index` | Passages | Full-text and EmbeddingGemma vectors per passage (owned by the retrieval stage) |
+
+Local entities follow the T18 storage contract with these rules:
+
+- Mentions come from model offsets, and each is checked against the passage text
+  before storage; a mismatch is a counted rejection.
+- Identity rules are deterministic and versioned: one identity per proper name
+  whatever its label; a full name folds into a surname that occurs alone; a lone
+  first name folds into the single full name it starts; a title or role noun
+  alone ("the captain", "the lawyer") stays a mention with candidates; a stop-list
+  drops pronouns and function words tagged as names.
+- Coreference runs per chapter (windows of whole passages above 40,000
+  characters). A pronoun or descriptive mention resolves only when its cluster
+  links exactly one identity; otherwise it keeps candidates.
+- A `same_as` relation is created only when one chapter's coreference cluster
+  links two proper-name identities, and it carries the span of the linking
+  mention, so a reveal in chapter five stays invisible at a chapter-two cutoff.
+
+Appearance candidates are pointers, not facts: a sentence span, the matched
+pattern and the mentions it contains. They rank evidence for retrieval and
+never become visual facts without consolidation. A generation is narrative-ready
+when `entities` and `appearance` succeed.
+
+**Consolidation (query time).** Events and visual facts are derived per
+question as a `consolidation` derivation. Its input is the entity derivation
+plus a scope: cutoff chapter, subject entity, requested time or context, and
+the digest of the selected passage set. Only eligible passages selected by
+local retrieval (target about 20 passages, about 5,000 tokens) are sent through
+the provider envelope, in one call returning events and facts under a combined
+strict schema to fit the provider's per-minute token budget.
+
+The response goes through the existing pipeline unchanged: verbatim quote
+grounding, event modality, partial chronology, the visual-fact gates,
+canonical rules and conflict recording. Because every input is within the
+cutoff, the dependency closure holds by construction; T21 eligibility is still
+applied on read. The same scope and passage digest reuse a succeeded
+consolidation instead of calling the provider again. A provider failure records
+the run and returns a failed outcome with its code; it never falls back to
+whole-book or unverified output.
+
+Browse shows local entities, mentions and aliases at any cutoff, and events and
+facts only from consolidations visible at that cutoff.
 
 ## Discriminated outcomes
 

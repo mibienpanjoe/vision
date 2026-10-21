@@ -31,7 +31,7 @@ Physical IDs are opaque; their final storage type is an implementation choice.
 | `chapters` | Source-order section; document, ordinal, title, anchors, structure quality |
 | `scenes` | Optional scene grouping; source range, participants/context, boundary uncertainty |
 | `passages` | Immutable parsed text; document/parser revision, chapter/scene where known, source anchors, neighboring passages |
-| `derivations` | T18: one versioned derivation stage of a source generation; processing version, status, attempt, rejection counts |
+| `derivations` | T18: one versioned derivation stage of a source generation; processing version, status, attempt, rejection counts. PROP-08 adds local `appearance` and query-scoped `consolidation` stages, the latter keyed also by cutoff, subject, requested scope and selected-passage digest |
 | `entities` | Identity within a work; kind, preferred label, resolution status; T18 scopes each row to a derivation |
 | `entity_aliases` | Candidate or supported names/titles; entity, scope, provenance, ambiguity |
 | `entity_mentions` | Exact source occurrence; span, candidate entities (`mention_candidates`), resolved identity if justified, model run |
@@ -39,6 +39,7 @@ Physical IDs are opaque; their final storage type is an implementation choice.
 | `events` | Narrative event; label, participants, place, source evidence, temporal status; T19 stores modality, `event_evidence` spans and `event_participants` per derivation |
 | `event_relations` | Before/after/during/overlap/unknown/inconsistent relation; linked events and support |
 | `temporal_anchors` | Date, age, relative event, or uncertain interval; preserve granularity and evidence |
+| `appearance_candidates` | PROP-08: local pointer to a likely description span; passage, span, pattern, mentions contained; ranks evidence, never a fact |
 | `visual_facts` | Atomic claim about an entity; value, scope, temporal/context conditions, support/modality/status; T20 adds kind, polarity, perspective, assumption and `fact_events` |
 | `fact_evidence` | Fact-to-source-span support with explicit or inferential role |
 | `fact_conflicts` | Conflicting claims, compatible context distinctions, and unresolved resolution evidence |

@@ -54,6 +54,7 @@ documents fixed all details.
 | PROP-04 | First vertical slice uses a small synthetic TXT/Markdown narrative before format expansion | First implementation increment; [roadmap](implementation-roadmap.md) |
 | PROP-05 | Cache identity includes creative mode and locked-fact revision in addition to source/retrieval scope | Reconstruction implementation |
 | PROP-06 | Owner-facing narrative retry route with `If-Match` and `Idempotency-Key`, mirroring ingestion retry | Before real-book narrative use |
+| PROP-08 | DEC-37 contract: local `entities` and `appearance` ingestion stages with versioned identity rules; events and visual facts as query-scoped `consolidation` derivations over cutoff-filtered passages in one combined-schema call, reused by scope and passage digest | Before local adapters are implemented; [narrative contract](../narrative/narrative-contract.md#local-ingestion-and-query-time-consolidation--prop-08) |
 
 ## Open decisions
 
