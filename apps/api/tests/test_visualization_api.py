@@ -156,3 +156,67 @@ def test_live_compose_through_groq(api, monkeypatch):
         "prompt": body["data"]["generation"]["prompt"], "negative": body["data"]["generation"]["negative_prompt"]}
     print(json.dumps(summary, indent=1, ensure_ascii=False))
     assert body["outcome"] in {"resolved", "needs_context", "insufficient_evidence", "failed"}
+
+
+def store(api, key, client="reader", chapter=3, **body):
+    compose, clients, work_id, story = api
+    if chapter is not None:
+        body["through_chapter_id"] = str(story.chapters[chapter])
+    return clients[client].post(f"/v1/works/{work_id}/visualizations", json=body,
+                                headers={**ORIGIN, "Idempotency-Key": key})
+
+
+def test_resolved_results_are_stored_once_and_read_back_with_history(api):
+    compose, clients, work_id, story = api
+    reader = clients["reader"]
+    created = store(api, "home-1", query="Arthur at home after the war")
+    assert created.status_code == 201 and created.headers["ETag"] == '"1"'
+    stored = created.json()["visualization"]
+    assert created.json()["result"] == stored["result"] and stored["revision"] == 1
+    assert stored["request"]["query"] == "Arthur at home after the war"
+    replay = store(api, "home-1", query="Arthur at home after the war")
+    assert (replay.status_code, replay.json()["visualization"]["id"]) == (201, stored["id"])
+    conflict = store(api, "home-1", query="Arthur during the war", chapter=2)
+    assert (conflict.status_code, conflict.json()["error"]["code"]) == (409, "IDEMPOTENCY_CONFLICT")
+    assert store(api, "home-1", client="stranger", query="Arthur").status_code == 404
+
+    read = reader.get(f"/v1/works/{work_id}/visualizations/{stored['id']}")
+    assert (read.status_code, read.headers["ETag"], read.json()) == (200, '"1"', stored)
+    page = reader.get(f"/v1/works/{work_id}/visualizations").json()["items"]
+    assert [(i["id"], i["subject"], i["revision"]) for i in page] == [(stored["id"], "Arthur", 1)]
+    history = reader.get(f"/v1/works/{work_id}/visualizations/{stored['id']}/revisions").json()["items"]
+    assert [(r["number"], r["parser_revision"], r["consolidation_id"]) for r in history] == [
+        (1, stored["result"]["data"]["scope"]["parser_revision"], stored["result"]["data"]["lineage"]["consolidation_id"])]
+    assert reader.get(f"/v1/works/{work_id}/visualizations/{stored['id']}/revisions/1").json() == stored
+    assert reader.get(f"/v1/works/{work_id}/visualizations/{stored['id']}/revisions/2").status_code == 404
+    for path in ("", "/revisions", "/revisions/1"):
+        assert clients["stranger"].get(f"/v1/works/{work_id}/visualizations/{stored['id']}{path}").status_code == 404
+    assert clients["stranger"].get(f"/v1/works/{work_id}/visualizations").status_code == 404
+
+
+def test_other_outcomes_are_returned_but_not_stored(api):
+    compose, clients, work_id, _ = api
+    choices = store(api, "captain-1", chapter=2, query="the captain during the war")
+    assert choices.status_code == 200 and choices.json()["visualization"] is None
+    assert choices.json()["result"]["outcome"] == "needs_context"
+    assert clients["reader"].get(f"/v1/works/{work_id}/visualizations").json()["items"] == []
+    missing = clients["reader"].post(f"/v1/works/{work_id}/visualizations", json={"query": "Arthur"}, headers=ORIGIN)
+    assert missing.status_code == 422
+
+
+def test_stored_citations_stay_resolvable_after_new_consolidations(api, monkeypatch):
+    compose, clients, work_id, story = api
+    stored = store(api, "home-2", query="Arthur at home after the war").json()["visualization"]
+    other = RuleAdapter(annotated_consolidation)
+    other.model = "rule-v2"  # a changed model writes a new consolidation, never over the old one
+    monkeypatch.setattr(specification, "consolidation_adapter", lambda: other)
+    fresh = outcome(compose(chapter=3, query="Arthur at home after the war"))["data"]
+    assert fresh["lineage"]["consolidation_id"] != stored["result"]["data"]["lineage"]["consolidation_id"]
+    again = clients["reader"].get(f"/v1/works/{work_id}/visualizations/{stored['id']}").json()
+    assert again == stored
+    boundary = {"mode": "through_chapter", "chapter_id": str(story.chapters[3])}
+    for trait in again["result"]["data"]["subject"]["traits"]:
+        for span in trait["evidence"]:
+            assert clients["reader"].post(f"/v1/works/{work_id}/evidence", headers=ORIGIN, json={
+                "span": span, "parser_revision": again["result"]["data"]["scope"]["parser_revision"],
+                "reading_boundary": boundary}).status_code == 200

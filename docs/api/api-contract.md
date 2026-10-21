@@ -404,8 +404,8 @@ an unauthenticated call `401`, an invalid body `422`, and a work without a
 succeeded entity derivation `409 NARRATIVE_NOT_READY`. The call runs the whole
 path synchronously (plan, local retrieval, Groq consolidation reused by scope,
 reconstruction, verification with optional adjudication, prompt gate). It stores
-only the consolidation and run records; persisted results, reads, history and
-an `Idempotency-Key` for stored creation arrive with T32.
+only the consolidation and run records; stored results are created through
+the route in the next section.
 `VISION_ADJUDICATE=0` turns adjudication off.
 
 The specification carries `lineage` (consolidation id; query-plan, consolidation,
@@ -425,3 +425,22 @@ choice") and inferred traits enter the prompt as "possibly"; canonical traits
 are identical in both modes. Generated types: `VisualizationRequest`,
 `VisualizationResult` and their members. `ContextChoice` gains the optional
 `field`.
+
+## Stored visualizations — T32a
+
+| Route | Behavior |
+|---|---|
+| `POST /v1/works/{work_id}/visualizations` | Requires `Idempotency-Key`. Runs compose; a `resolved` result is stored as revision 1 and returned `201` with `ETag: "1"` as `VisualizationCreated` (`visualization` and `result`). Any other outcome returns `200` with `visualization: null` and reserves nothing. The same key and request replay the stored result; the same key with a different request is `409 IDEMPOTENCY_CONFLICT`. |
+| `GET /v1/works/{work_id}/visualizations` | The owner's stored visualizations of the work, newest first (at most 100), with subject label and current revision. |
+| `GET /v1/works/{work_id}/visualizations/{id}` | The current revision as `VisualizationView`, with the revision as strong `ETag`. |
+| `GET .../{id}/revisions` and `.../{id}/revisions/{number}` | Revision summaries (generation, parser revision, consolidation), and any stored revision. |
+
+Keys are scoped to the owner and work and fingerprint the validated request.
+Concurrent inserts under one key collapse to one stored row by a unique
+constraint, and the loser replays it. Another owner's work or visualization,
+or a missing revision, is the common `404`. A revision stores the full
+validated result with its generation, parser revision and consolidation
+(migration 0018), so its cited spans still resolve through the evidence route
+after later consolidations. New revisions (refinement) arrive with T38.
+Generated types: `VisualizationCreated`, `VisualizationView`,
+`VisualizationPage`, `RevisionPage`.

@@ -16,7 +16,13 @@ from app.schemas.outcomes import (  # noqa: F401  (re-exported: the shared envel
 )
 from app.schemas.retrieval import VisualizationRequest
 from app.schemas.scope import RequestScope, SourceSpan
-from app.schemas.visualization import VisualizationResult
+from app.schemas.visualization import (
+    RevisionPage,
+    VisualizationCreated,
+    VisualizationPage,
+    VisualizationResult,
+    VisualizationView,
+)
 from app.schemas.works import (
     IngestionView,
     LibraryPage,
@@ -58,3 +64,7 @@ class SchemaCatalog(ContractModel):
     entity_detail: EntityDetail
     visualization_request: VisualizationRequest
     visualization_result: VisualizationResult
+    visualization_created: VisualizationCreated
+    visualization: VisualizationView
+    visualization_page: VisualizationPage
+    revision_page: RevisionPage

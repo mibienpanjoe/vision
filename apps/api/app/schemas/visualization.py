@@ -6,11 +6,12 @@ quotations. Unknowns and exclusions stay visible.
 """
 
 import uuid
+from datetime import datetime
 from typing import Annotated, Literal
 
 from app.schemas.base import ContractModel
 from app.schemas.outcomes import Failed, InsufficientEvidence, NeedsContext
-from app.schemas.retrieval import Moment
+from app.schemas.retrieval import Moment, VisualizationRequest
 from app.schemas.scope import SourceSpan
 from pydantic import Field, RootModel, model_validator
 
@@ -113,3 +114,41 @@ VisualizationOutcome = Annotated[ResolvedSpecification | NeedsContext | Insuffic
 
 class VisualizationResult(RootModel[VisualizationOutcome]):
     pass
+
+
+class VisualizationView(ContractModel):
+    id: uuid.UUID
+    work_id: uuid.UUID
+    revision: int = Field(ge=1, description="Current revision; also the strong ETag")
+    created_at: datetime
+    request: VisualizationRequest
+    result: ResolvedSpecification
+
+
+class VisualizationCreated(ContractModel):
+    """201 with `visualization` when a resolved result was stored; 200 with it null for any other outcome."""
+    visualization: VisualizationView | None
+    result: VisualizationResult
+
+
+class VisualizationSummary(ContractModel):
+    id: uuid.UUID
+    revision: int = Field(ge=1)
+    subject: Text
+    created_at: datetime
+
+
+class VisualizationPage(ContractModel):
+    items: list[VisualizationSummary]
+
+
+class RevisionSummary(ContractModel):
+    number: int = Field(ge=1)
+    created_at: datetime
+    generation_id: uuid.UUID
+    parser_revision: str
+    consolidation_id: uuid.UUID
+
+
+class RevisionPage(ContractModel):
+    items: list[RevisionSummary]

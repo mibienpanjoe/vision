@@ -1475,6 +1475,61 @@
       "title": "Resolved[SourceSpan]",
       "type": "object"
     },
+    "RevisionPage": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/RevisionSummary"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "RevisionPage",
+      "type": "object"
+    },
+    "RevisionSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "consolidation_id": {
+          "format": "uuid",
+          "title": "Consolidation Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "generation_id": {
+          "format": "uuid",
+          "title": "Generation Id",
+          "type": "string"
+        },
+        "number": {
+          "minimum": 1,
+          "title": "Number",
+          "type": "integer"
+        },
+        "parser_revision": {
+          "title": "Parser Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "number",
+        "created_at",
+        "generation_id",
+        "parser_revision",
+        "consolidation_id"
+      ],
+      "title": "RevisionSummary",
+      "type": "object"
+    },
     "SafeError": {
       "additionalProperties": false,
       "properties": {
@@ -1935,6 +1990,48 @@
       "title": "VisualSpecification",
       "type": "object"
     },
+    "VisualizationCreated": {
+      "additionalProperties": false,
+      "description": "201 with `visualization` when a resolved result was stored; 200 with it null for any other outcome.",
+      "properties": {
+        "result": {
+          "$ref": "#/$defs/VisualizationResult"
+        },
+        "visualization": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VisualizationView"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "visualization",
+        "result"
+      ],
+      "title": "VisualizationCreated",
+      "type": "object"
+    },
+    "VisualizationPage": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/VisualizationSummary"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "VisualizationPage",
+      "type": "object"
+    },
     "VisualizationRequest": {
       "additionalProperties": false,
       "properties": {
@@ -2073,6 +2170,82 @@
       ],
       "title": "VisualizationResult"
     },
+    "VisualizationSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "subject": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "subject",
+        "created_at"
+      ],
+      "title": "VisualizationSummary",
+      "type": "object"
+    },
+    "VisualizationView": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/$defs/VisualizationRequest"
+        },
+        "result": {
+          "$ref": "#/$defs/ResolvedSpecification"
+        },
+        "revision": {
+          "description": "Current revision; also the strong ETag",
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "work_id": {
+          "format": "uuid",
+          "title": "Work Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "work_id",
+        "revision",
+        "created_at",
+        "request",
+        "result"
+      ],
+      "title": "VisualizationView",
+      "type": "object"
+    },
     "WholeBook": {
       "additionalProperties": false,
       "properties": {
@@ -2192,6 +2365,9 @@
     "probe_request": {
       "$ref": "#/$defs/ProbeRequest"
     },
+    "revision_page": {
+      "$ref": "#/$defs/RevisionPage"
+    },
     "scope": {
       "$ref": "#/$defs/RequestScope"
     },
@@ -2206,6 +2382,15 @@
     },
     "upload_metadata": {
       "$ref": "#/$defs/UploadMetadata"
+    },
+    "visualization": {
+      "$ref": "#/$defs/VisualizationView"
+    },
+    "visualization_created": {
+      "$ref": "#/$defs/VisualizationCreated"
+    },
+    "visualization_page": {
+      "$ref": "#/$defs/VisualizationPage"
     },
     "visualization_request": {
       "$ref": "#/$defs/VisualizationRequest"
@@ -2236,7 +2421,11 @@
     "entity_page",
     "entity_detail",
     "visualization_request",
-    "visualization_result"
+    "visualization_result",
+    "visualization_created",
+    "visualization",
+    "visualization_page",
+    "revision_page"
   ],
   "title": "SchemaCatalog",
   "type": "object"
