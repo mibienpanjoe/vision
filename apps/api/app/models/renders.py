@@ -39,4 +39,17 @@ class RenderJob(Base):
     cancel_expected: Mapped[int | None]
     cancel_result: Mapped[dict | None] = mapped_column(JSONB)
     dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Set when a worker claims the job; afterwards the provider may have been called.
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_code: Mapped[str | None] = mapped_column(String(64))
+    # Provider route and size plus the sent prompt's digest; never the token.
+    settings: Mapped[dict | None] = mapped_column(JSONB)
+    duration_ms: Mapped[int | None]
+    # Provider-reported token counts, when the provider returns them.
+    usage: Mapped[dict | None] = mapped_column(JSONB)
+    output_reference: Mapped[str | None] = mapped_column(String(32))
+    output_sha256: Mapped[str | None] = mapped_column(String(64))
+    output_media_type: Mapped[str | None] = mapped_column(String(32))
+    output_bytes: Mapped[int | None]
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))

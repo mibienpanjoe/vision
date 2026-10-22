@@ -1,11 +1,19 @@
-"""Real render reservations in PostgreSQL; no external image provider is selected here."""
+"""Real render reservations and execution in PostgreSQL with synthetic image adapters; no live provider."""
 
+import hashlib
+import os
+import subprocess
+import time
 import uuid
+from pathlib import Path
 
 import pytest
+from app.core.storage import SourceLease
 from app.models.renders import RenderJob
-from app.providers.images import RenderPolicy
+from app.providers.images import AcceptanceUnknown, Image, RenderPolicy, RenderRejected
+from app.services.ingestion.jobs import job_lock
 from app.services.visualization import render
+from tests.image_fixtures import PNG, SyntheticImages
 from tests.test_refinement import ORIGIN, refine, stored
 
 pytestmark = pytest.mark.integration
@@ -146,3 +154,167 @@ def test_render_migration_round_trip_preserves_parent_specifications(api):
     command.downgrade(config, "0021")
     command.upgrade(config, "head")
     assert clients["reader"].get(f"/v1/works/{work_id}/visualizations/{original['id']}").json() == original
+
+
+class Recording(SyntheticImages):
+    def __init__(self, outcome=None):
+        self.prompts, self.outcome = [], outcome
+
+    def generate(self, prompt):
+        self.prompts.append(prompt)
+        if isinstance(self.outcome, Exception):
+            raise self.outcome
+        return self.outcome() if self.outcome else Image(PNG, "image/png", {"total_tokens": 3})
+
+
+def execute(monkeypatch, adapter, job, times=1):
+    monkeypatch.setattr(render, "image_adapter", lambda: adapter)
+    for _ in range(times):
+        render.execute_render(job["id"])
+
+
+def current(api, job):
+    _, clients, work_id, _ = api
+    return clients["reader"].get(f"/v1/works/{work_id}/renders/{job['id']}").json()
+
+
+@pytest.fixture
+def renders(monkeypatch, tmp_path):
+    monkeypatch.setenv("VISION_RENDER_ROOT", str(tmp_path / "renders"))
+    return tmp_path / "renders"
+
+
+def test_worker_sends_only_the_specification_prompt_once_and_keeps_private_output(api, monkeypatch, renders):
+    original = stored(api)
+    enable(monkeypatch)
+    job = submit(api, original).json()
+    adapter = Recording()
+    execute(monkeypatch, adapter, job, times=2)
+    generation = original["result"]["data"]["generation"]
+    assert adapter.prompts == [generation["prompt"]]
+    assert generation["negative_prompt"] and generation["negative_prompt"] not in adapter.prompts[0]
+    view = current(api, job)
+    assert (view["status"], view["revision"], view["error_code"]) == ("succeeded", 3, None)
+    assert (view["output_sha256"], view["output_media_type"]) == (hashlib.sha256(PNG).hexdigest(), "image/png")
+    assert view["completed_at"] and submit(api, original).json() == view
+    *_, story = api
+    row = story.db.get(RenderJob, uuid.UUID(job["id"]))
+    story.db.refresh(row)
+    output = renders / row.output_reference
+    assert output.read_bytes() == PNG and output.stat().st_mode & 0o077 == 0
+    assert row.settings == {**SyntheticImages.settings,
+                            "prompt_sha256": hashlib.sha256(generation["prompt"].encode()).hexdigest()}
+    assert row.usage == {"total_tokens": 3} and row.output_reference not in str(view)
+
+
+def failing_write(lease, data):
+    lease.stream.write(data[:4])
+    lease.stream.flush()
+    raise OSError("disk full")
+
+
+@pytest.mark.parametrize(("outcome", "status", "code"), [
+    (AcceptanceUnknown(), "acceptance_unknown", "PROVIDER_ACCEPTANCE_UNKNOWN"),
+    (RenderRejected("PROVIDER_REJECTED"), "failed", "PROVIDER_REJECTED"),
+    (None, "failed", "RENDER_STORAGE_FAILED"),
+])
+def test_uncertain_rejected_and_unstored_calls_are_honest_and_never_repeated(api, monkeypatch, renders,
+                                                                             outcome, status, code):
+    original = stored(api)
+    enable(monkeypatch)
+    job = submit(api, original).json()
+    if outcome is None:
+        monkeypatch.setattr(SourceLease, "write", failing_write)
+    adapter = Recording(outcome)
+    execute(monkeypatch, adapter, job, times=2)
+    view = current(api, job)
+    assert (view["status"], view["error_code"], view["output_sha256"]) == (status, code, None)
+    assert len(adapter.prompts) == 1 and not list(renders.glob("*"))
+    # The used reservation still counts: a retry is a new, explicit, capped request.
+    assert submit(api, original, key="retry").status_code == 429
+
+
+def test_cancelled_or_unconfigured_jobs_never_call_the_provider(api, monkeypatch, renders):
+    original = stored(api)
+    enable(monkeypatch, 3)
+    _, clients, work_id, _ = api
+    cancelled = submit(api, original).json()
+    clients["reader"].post(f"/v1/works/{work_id}/renders/{cancelled['id']}/cancel", json={},
+                           headers={**ORIGIN, "Idempotency-Key": "cancel", "If-Match": '"1"'})
+    adapter = Recording()
+    execute(monkeypatch, adapter, cancelled)
+    assert current(api, cancelled)["status"] == "cancelled"
+    unconfigured = submit(api, original, key="second").json()
+    execute(monkeypatch, None, unconfigured)
+    # A reservation made for one model is never executed by another.
+    changed = submit(api, original, key="third").json()
+    adapter.model = "another-model"
+    execute(monkeypatch, adapter, changed)
+    assert adapter.prompts == []
+    for job in (unconfigured, changed):
+        assert (current(api, job)["status"], current(api, job)["error_code"]) == ("failed", "RENDER_NOT_CONFIGURED")
+
+
+def test_cancel_during_a_running_call_keeps_its_outcome(api, monkeypatch, renders):
+    original = stored(api)
+    enable(monkeypatch)
+    _, clients, work_id, _ = api
+    job = submit(api, original).json()
+    path = f"/v1/works/{work_id}/renders/{job['id']}/cancel"
+
+    def late_cancel():
+        response = clients["reader"].post(path, json={}, headers={**ORIGIN, "Idempotency-Key": "late", "If-Match": '"2"'})
+        assert response.json()["status"] == "running" and response.json()["cancel_requested"] is True
+        return Image(PNG, "image/png")
+    execute(monkeypatch, Recording(late_cancel), job)
+    view = current(api, job)
+    assert (view["status"], view["cancel_requested"], view["revision"]) == ("succeeded", True, 4)
+    assert view["output_sha256"] == hashlib.sha256(PNG).hexdigest()
+
+
+def test_interrupted_claims_settle_as_acceptance_unknown_without_another_call(api, monkeypatch, renders):
+    original = stored(api)
+    enable(monkeypatch, 3)
+    *_, story = api
+    jobs = [submit(api, original, key=f"claim-{n}").json() for n in range(3)]
+    for job in jobs:
+        story.db.get(RenderJob, uuid.UUID(job["id"])).status = "running"
+    story.db.commit()
+    adapter = Recording()
+    execute(monkeypatch, adapter, jobs[0])
+    with job_lock(story.engine, uuid.UUID(jobs[2]["id"])) as held:
+        assert held and render.recover_renders(story.engine) == 1
+    assert adapter.prompts == []
+    assert [current(api, job)["status"] for job in jobs] == ["acceptance_unknown", "acceptance_unknown", "running"]
+    assert current(api, jobs[0])["error_code"] == "RENDER_INTERRUPTED"
+
+
+def test_real_worker_renders_after_a_failed_enqueue_is_dispatched(api, monkeypatch, renders):
+    redis_url = os.environ.get("VISION_TEST_REDIS_URL")
+    if not redis_url:
+        pytest.skip("Set VISION_TEST_REDIS_URL to opt into a real Redis worker test")
+    original = stored(api)
+    enable(monkeypatch)
+    *_, story = api
+    monkeypatch.setenv("VISION_QUEUE_NAMESPACE", "vision_test_" + uuid.uuid4().hex)
+    monkeypatch.setenv("REDIS_URL", "redis://127.0.0.1:1/0")
+    job = submit(api, original).json()
+    assert job["dispatched"] is False and job["status"] == "queued"
+    monkeypatch.setenv("REDIS_URL", redis_url)
+    api_root = Path(__file__).parents[1]
+    worker = subprocess.Popen([str(api_root / ".venv/bin/dramatiq"), "tests.render_worker", "--processes", "1",
+                               "--threads", "1", "--queues", "render"], cwd=api_root, env=os.environ.copy(),
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        from app.services.dispatch import dispatch_renders
+        assert dispatch_renders(story.engine) == 1
+        for _ in range(300):
+            view = current(api, job)
+            if view["status"] != "queued" and view["status"] != "running":
+                break
+            time.sleep(0.1)
+        assert (view["status"], view["dispatched"], view["output_media_type"]) == ("succeeded", True, "image/png")
+        assert dispatch_renders(story.engine) == 0
+    finally:
+        worker.terminate()
+        worker.wait(timeout=15)

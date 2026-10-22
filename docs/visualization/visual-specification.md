@@ -102,6 +102,10 @@ from the prompt gate.
 An optional rendered image references its specification revision, provider/model,
 settings, and outcome. The image can be aesthetically plausible and still fail
 the textual contract; generated pixels never become evidence for new facts.
+[Image rendering](../api/api-contract.md#image-rendering--t40) sends only the
+gated `generation.prompt`; the selected model takes no negative prompt, so
+excluded values are not enforced by the provider and must be checked in the
+pixels.
 
 ## Synthetic example policy
 

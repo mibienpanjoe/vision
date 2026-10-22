@@ -172,11 +172,21 @@ export type Value3 = string;
  */
 export type Locks = CanonicalLock[];
 export type Style = string | null;
+/**
+ * A running call is never interrupted; its outcome is still kept
+ */
 export type CancelRequested1 = boolean;
+export type CompletedAt = string | null;
 export type CreatedAt = string;
 export type Dispatched = boolean;
+export type ErrorCode1 = string | null;
 export type Id9 = string;
 export type Model = string;
+export type OutputMediaType = string | null;
+/**
+ * Digest of the privately stored image, when one was kept
+ */
+export type OutputSha256 = string | null;
 export type Provider = string;
 export type Revision2 = number;
 export type SpecificationRevision = number;
@@ -573,10 +583,14 @@ export interface CanonicalLock {
 }
 export interface RenderView {
   cancel_requested: CancelRequested1;
+  completed_at: CompletedAt;
   created_at: CreatedAt;
   dispatched: Dispatched;
+  error_code: ErrorCode1;
   id: Id9;
   model: Model;
+  output_media_type: OutputMediaType;
+  output_sha256: OutputSha256;
   provider: Provider;
   revision: Revision2;
   specification_revision: SpecificationRevision;

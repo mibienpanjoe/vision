@@ -88,3 +88,27 @@ def dispatch_ingestions(engine, job_id: uuid.UUID | None = None) -> int:
         return 0
     finally:
         broker.close()
+
+
+def dispatch_renders(engine, job_id: uuid.UUID | None = None) -> int:
+    from app.models.renders import RenderJob
+
+    broker = configured_broker()
+    if broker is None:
+        return 0
+    try:
+        with Session(engine) as db, db.begin():
+            query = select(RenderJob).where(RenderJob.status == "queued", RenderJob.dispatched_at.is_(None))
+            if job_id is not None:
+                query = query.where(RenderJob.id == job_id)
+            sent = 0
+            for job in db.scalars(query.limit(50).with_for_update(skip_locked=True)):
+                broker.enqueue(Message(queue_name="render", actor_name="render", args=(str(job.id),), kwargs={}, options={}))
+                job.dispatched_at = datetime.now(UTC)
+                sent += 1
+        return sent
+    except RedisError:
+        # A duplicate publish is harmless: the worker claims each job once.
+        return 0
+    finally:
+        broker.close()

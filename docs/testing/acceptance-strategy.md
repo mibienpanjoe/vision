@@ -290,14 +290,27 @@ outcome or the previously measured recall limits.
 | REQ-22 | Provider instruction/data separation, hostile-upload limits, wrong-owner grounding rejection and literal source-markup browser rendering. These checks do not prove universal prompt-injection resistance. |
 | REQ-20 | Optional image rendering remains Phase 6 and is excluded from G5. |
 
-## Render reservation checks — T40a
+## Render checks — T40
 
-`test_render_contract.py` exercises real HTTP/PostgreSQL reservations with an
-injected synthetic provider policy, not an image provider. It checks disabled
-production configuration, raw-prompt rejection, retained specification/hash,
-owner isolation, request/cancellation replay, strong preconditions, concurrent
-owner-limit enforcement, stale source/specification/dependencies and a guarded
-disposable-database 0022 downgrade/upgrade that preserves parent specifications.
-Running cancellation is a seeded-state test; no render worker, uncertain-provider
-acceptance, asset storage, visible image or charging behavior has been verified.
-T40 remains incomplete until its selected adapter and real bounded request pass.
+`test_image_provider.py` drives both DEC-51 adapters (OpenAI and Hugging Face)
+against a real local HTTP server: exact route, bearer header and body (prompt
+only, no negative prompt); provider-reported token usage; image-type
+verification; HTTP refusals, rate limits and OpenAI quota/moderation codes as
+definite failures without echoing provider text; 200 responses without a
+verifiable image as `PROVIDER_INVALID_OUTPUT`; a sent request without a response
+as acceptance unknown; a refused connection as `PROVIDER_UNAVAILABLE`; explicit
+opt-in requiring the selected provider's own key.
+
+`test_render_contract.py` exercises real HTTP/PostgreSQL reservations and worker
+execution with synthetic image adapters: disabled configuration, raw-prompt
+rejection, retained specification/hash, owner isolation, request/cancellation
+replay, strong preconditions, concurrent owner-limit enforcement, stale
+source/specification/dependencies, the guarded 0021→head downgrade/upgrade, one
+provider call under redelivery, private 0600 output with digest and settings,
+acceptance-unknown/rejected/storage-failure outcomes that still count toward the
+cap, skipped cancelled/unconfigured/changed-model jobs, cancellation during a call
+keeping its image, interrupted claims settled without another call (and a held
+lock left alone), and a real Redis/Dramatiq worker completing a job whose first
+enqueue failed after `dispatch_renders`. The opt-in `test_live_render.py` sends
+one bounded request to the named provider; its evidence is recorded with the
+task. Image viewing, history and pixel review belong to T41/T42.

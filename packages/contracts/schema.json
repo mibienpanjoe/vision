@@ -1650,8 +1650,21 @@
       "additionalProperties": false,
       "properties": {
         "cancel_requested": {
+          "description": "A running call is never interrupted; its outcome is still kept",
           "title": "Cancel Requested",
           "type": "boolean"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Completed At"
         },
         "created_at": {
           "format": "date-time",
@@ -1662,6 +1675,17 @@
           "title": "Dispatched",
           "type": "boolean"
         },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error Code"
+        },
         "id": {
           "format": "uuid",
           "title": "Id",
@@ -1670,6 +1694,29 @@
         "model": {
           "title": "Model",
           "type": "string"
+        },
+        "output_media_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Output Media Type"
+        },
+        "output_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Digest of the privately stored image, when one was kept",
+          "title": "Output Sha256"
         },
         "provider": {
           "title": "Provider",
@@ -1722,7 +1769,11 @@
         "status",
         "cancel_requested",
         "dispatched",
-        "created_at"
+        "error_code",
+        "output_sha256",
+        "output_media_type",
+        "created_at",
+        "completed_at"
       ],
       "title": "RenderView",
       "type": "object"

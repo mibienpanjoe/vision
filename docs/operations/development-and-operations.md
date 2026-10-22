@@ -296,7 +296,7 @@ binds loopback 8000, PostgreSQL 55432 and Redis 56379. The command is local-only
 |---|---|
 | `make services migrate` | Start/check PostgreSQL/Redis and apply migrations |
 | `make api`, `make worker`, `make web` | Run one service separately in its own terminal |
-| `make dispatch` | Reconcile pending probe, ingestion and narrative queue publication after a broker outage; requeue interrupted narrative jobs |
+| `make dispatch` | Reconcile pending probe, ingestion, narrative and render queue publication after a broker outage; requeue interrupted narrative jobs; settle unheld running render jobs as `acceptance_unknown` |
 | `make reconcile-sources` | Remove old, unreferenced interrupted originals; preserve active/linked sources |
 | `make browsers` | Install the isolated Chromium browser; OS browser prerequisites may be required |
 | `make check` | Repository lint, non-infrastructure tests, deterministic contract regeneration, Node/type checks, web build and shell browser checks, documentation checks |
@@ -321,6 +321,32 @@ local clone with distinct ports/service project passed the documented clean-setu
 sequence; exact run evidence remains in the task/PR record. No external deployment,
 provider quality or book reconstruction follows from these foundation checks.
 
+
+## Image rendering — DEC-51
+
+Rendering is off by default. To enable it, set `VISION_RENDER_PROVIDER` in the
+private `.env`:
+
+- `openai` with `OPENAI_API_KEY`: `gpt-image-1`, low quality, 1024×1024 PNG at
+  `https://api.openai.com/v1/images/generations`, billed to that OpenAI project.
+- `huggingface` with `HF_TOKEN`: `black-forest-labs/FLUX.1-schnell` at
+  `https://router.huggingface.co/nscale/v1/images/generations`, billed to that
+  account's Inference Provider credit. The token must be fine-grained with
+  permission to call Inference Providers; a read-only download token fails as
+  `PROVIDER_UNAUTHORIZED`, an account without credit as `PROVIDER_QUOTA_EXCEEDED`.
+
+Rendered images
+default to ignored `storage/renders/`, or `VISION_RENDER_ROOT`, with the same
+private-directory rules as originals. Each owner may reserve five renders.
+
+The live acceptance request is opt-in and counts toward DEC-51's five-request
+acceptance budget; record each run with the task evidence:
+
+```sh
+set -a; . ./.env; set +a
+VISION_LIVE_RENDER=1 VISION_TEST_ADMIN_URL=$DATABASE_URL \
+  uv run --project apps/api --locked pytest apps/api/tests/test_live_render.py -m integration -s
+```
 
 ## Private original storage — T10
 

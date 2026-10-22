@@ -9,6 +9,7 @@ from pathlib import Path
 
 REFERENCE = re.compile(r"[a-f0-9]{32}")
 DEFAULT_ROOT = Path(__file__).resolve().parents[4] / "storage" / "originals"
+RENDER_ROOT = DEFAULT_ROOT.parent / "renders"
 
 
 class SourceLease:
@@ -60,3 +61,7 @@ class PrivateSources:
         if len(data) > max_bytes:
             raise ValueError("Stored source exceeds input budget")
         return data
+
+
+def private_renders() -> PrivateSources:
+    return PrivateSources(Path(os.environ.get("VISION_RENDER_ROOT", str(RENDER_ROOT))))

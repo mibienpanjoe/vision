@@ -24,9 +24,13 @@ class RenderView(ContractModel):
     model: str
     revision: int
     status: Literal["queued", "running", "succeeded", "failed", "cancelled", "acceptance_unknown"]
-    cancel_requested: bool
+    cancel_requested: bool = Field(description="A running call is never interrupted; its outcome is still kept")
     dispatched: bool
+    error_code: str | None
+    output_sha256: str | None = Field(description="Digest of the privately stored image, when one was kept")
+    output_media_type: str | None
     created_at: datetime
+    completed_at: datetime | None
 
     @classmethod
     def from_job(cls, job):
