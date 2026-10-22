@@ -167,6 +167,18 @@ The [asset manifest](../../assets/brand/asset-manifest.md) owns actual filenames
 dimensions, generation provenance, prompts, conversion commands, and inspection
 limitations. The table distinguishes existing exports from deferred work.
 
+## Interface illustrations
+
+At the maintainer's request (2026-10-22), quiet generated spot illustrations
+fill otherwise empty space: beside sign-in, in the library heading, under the
+workspace entity list and in empty states. They reuse the book-and-doorway motif
+in charcoal or ivory ink with restrained gold, and never show people, story
+scenes or text, so they cannot be mistaken for a reconstruction of a reader's
+book. They are decorative, hidden on narrow screens and never placed inside
+evidence, source or specification panels. The
+[illustration manifest](../../assets/illustrations/asset-manifest.md) owns
+prompts, master digests, processing and placement.
+
 ## Review criteria
 
 Inspect actual files on warm light and charcoal backgrounds, at full size and

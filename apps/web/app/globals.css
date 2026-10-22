@@ -39,6 +39,24 @@ select:hover { background: var(--muted); }
 main { flex: 1; padding-block: 4rem; }
 main:focus { outline: none; }
 .library-heading { margin-bottom: 2.5rem; }
+.library-hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2rem; }
+/* The wrapper blends, not the image: sticky placement isolates its children from the page. */
+.illustration { pointer-events: none; user-select: none; mix-blend-mode: multiply; }
+.dark .illustration { mix-blend-mode: screen; }
+.illustration img { display: block; width: 100%; height: auto; }
+.illustration .illustration-dark, .dark .illustration .illustration-light { display: none; }
+.dark .illustration .illustration-dark { display: block; }
+.library-art { width: 17rem; margin-block: -1.5rem; }
+.workspace:has(.sign-in-layout) .library-art { display: none; }
+.sign-in-layout { display: grid; grid-template-columns: minmax(0, 30rem) minmax(0, 1fr); align-items: center; gap: 3rem; }
+.sign-in-art { justify-self: center; width: min(100%, 24rem); }
+.sign-in-art img { aspect-ratio: 1; object-fit: cover; }
+.explorer-aside { display: grid; gap: 1.5rem; align-self: stretch; align-content: start; }
+.explorer-art { width: min(100%, 13rem); justify-self: center; position: sticky; top: 1.5rem; }
+.empty-state { display: flex; align-items: center; gap: 1.5rem; }
+.empty-state > div > :last-child { margin-bottom: 0; }
+.empty-art { width: 6rem; flex-shrink: 0; }
+.entity-list .empty-state { flex-direction: column; text-align: center; gap: .5rem; }
 .eyebrow { margin: 0 0 .75rem; color: var(--muted-foreground); font-size: .875rem; }
 h1, h2 { font-family: "Source Serif 4", Georgia, serif; font-weight: 400; letter-spacing: -.025em; text-wrap: balance; }
 h1 { font-size: clamp(2rem, 4vw, 2.75rem); line-height: 1.2; margin: 0 0 1rem; }
@@ -125,6 +143,10 @@ button.source-highlight:hover { text-decoration: underline; filter: none; }
 .canonical-locks input { width: 1rem; height: 1rem; flex-shrink: 0; }
 .library-note { margin-top: 1.25rem; color: var(--muted-foreground); font-family: "Source Serif 4", Georgia, serif; font-style: italic; }
 footer { display: flex; justify-content: space-between; gap: 1rem; padding-block: 1.5rem; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: .8125rem; }
+@media (max-width: 56rem) {
+  .library-hero, .sign-in-layout { grid-template-columns: minmax(0, 1fr); }
+  .library-art, .sign-in-art { display: none; }
+}
 @media (max-width: 36rem) {
   .workspace { width: calc(100% - 2rem); }
   .theme-control > span { display: none; }
@@ -135,6 +157,8 @@ footer { display: flex; justify-content: space-between; gap: 1rem; padding-block
   .library-mark, .library-mark img { width: 5rem; height: 5rem; }
   .upload-panel, .form-row, .readiness { grid-template-columns: 1fr; gap: 1rem; }
   .explorer-columns, .explorer-filters { grid-template-columns: minmax(0, 1fr); }
+  .explorer-art { display: none; }
+  .empty-art { width: 4.5rem; }
   footer { flex-direction: column; gap: .25rem; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }

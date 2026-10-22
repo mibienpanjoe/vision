@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Illustration } from "@/components/illustration";
 import { api, message, type ChapterPage, type EntityDetail, type EntityPage, type SourceSpan } from "@/lib/api";
 import { ReconstructionWorkspace } from "@/features/visualization/workspace";
 import { SourceReader } from "@/features/reader/source-reader";
@@ -43,10 +44,10 @@ export function Entities({ workId, source, cutoff }: { workId: string; source: C
         <div><label htmlFor="entity-kind">Kind</label><select id="entity-kind" value={kind} onChange={event => setKind(event.target.value)}>
           <option value="all">All kinds</option><option value="character">Characters</option><option value="place">Places</option><option value="object">Objects</option><option value="organization">Organizations</option>
         </select></div></div>
-      <div className="explorer-columns"><div className="panel entity-list">
-        {!items.length && <p>No matching entities within this reading boundary.</p>}
+      <div className="explorer-columns"><div className="explorer-aside"><div className="panel entity-list">
+        {!items.length && <div className="empty-state"><Illustration name="empty" className="empty-art" /><p>No matching entities within this reading boundary.</p></div>}
         <ul>{items.map(entity => <li key={entity.id}><button className="entity-option" aria-pressed={selected === entity.id} onClick={() => choose(entity.id)}>{entity.label}</button><span>{entity.kind} · {entity.mention_count} mentions</span></li>)}</ul>
-      </div>
+      </div><Illustration name="workspace" className="explorer-art" /></div>
         <div className="entity-content">
           {selected && !detail && !error && <p role="status">Loading entity…</p>}
           {detail && <section className="panel" aria-label="Entity details">
