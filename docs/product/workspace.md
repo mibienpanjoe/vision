@@ -82,3 +82,23 @@ failed lookup removes the excerpt and shows the safe denial/mismatch result;
 an old response cannot restore text after a new reference or scope is selected.
 Boundary changes clear the result and open excerpt together. The reader never
 widens scope to recover a missing reference.
+
+## Reconstruction and export — T37
+
+The composer accepts a query, explicit subject, moment, scene, canon-first or
+interpretation mode, and optional visual style. Context outcomes offer buttons
+that fill the relevant field; choosing another subject clears conflicting query
+wording. Input changes clear the old result before another request can run.
+An uncertain creation preserves its key/payload for replay. Failed or insufficient
+outcomes retain editable inputs and never offer a stale result for export.
+
+A resolved result displays the stored revision and scope, canonical, inferred,
+disputed and unknown details, inference reasons, separately labelled creative
+additions, exclusions, evidence and prompt/verification information. Model
+verification and evidence-selection limits stay visible. The profile uses text
+labels as well as selection color.
+
+Export downloads exactly the stored server `VisualSpecification`, including its
+scope, evidence and lineage, as JSON. It adds no browser-derived claims. Style
+and interpretation do not relabel canonical traits; mutation of a stored result
+and immutable revision history remain T38.

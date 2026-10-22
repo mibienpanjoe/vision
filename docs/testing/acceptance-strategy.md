@@ -212,3 +212,14 @@ rejects altered/normalized/out-of-excerpt highlights. Overlap logic is a domain
 test; browser checks use the actual persisted spans. The workspace model adapters
 remain deterministic; this is source-reader/persistence proof, not live-model
 quality evidence.
+
+## Reconstruction workspace browser checks — T37
+
+`tests/visualization.spec.ts` exercises context choices, a stored profile, exact
+attribute evidence and a downloaded JSON file that deep-equals the server's
+stored specification. It checks canonical, inferred, disputed, unknown and
+creative states, interpretation with unchanged canonical traits, insufficient
+evidence under an early cutoff, and a deterministic provider-rate-limit failure.
+Input/scope changes remove the old profile/export action. This is a real
+browser/API/worker/database path with deterministic model adapters; provider
+failure is simulated by that adapter, not a live provider outage.

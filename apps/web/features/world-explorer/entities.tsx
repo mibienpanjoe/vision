@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, message, type ChapterPage, type EntityDetail, type EntityPage, type SourceSpan } from "@/lib/api";
-import { Contexts } from "./contexts";
+import { ReconstructionWorkspace } from "@/features/visualization/workspace";
 import { SourceReader } from "@/features/reader/source-reader";
 
 export function Entities({ workId, source, cutoff }: { workId: string; source: ChapterPage; cutoff: string | null }) {
@@ -64,7 +64,7 @@ export function Entities({ workId, source, cutoff }: { workId: string; source: C
             </div>
           </section>}
           {detail && sourceSpan && <SourceReader workId={workId} parserRevision={source.parser_revision} cutoff={cutoff} span={sourceSpan} />}
-          {detail && <Contexts key={detail.entity.id} workId={workId} entity={detail.entity} cutoff={cutoff} />}
+          {detail && <ReconstructionWorkspace key={detail.entity.id} workId={workId} entity={detail.entity} cutoff={cutoff} boundaryLabel={cutoff ? `Through chapter ${source.items.find(chapter => chapter.id === cutoff)?.ordinal}` : "Whole book"} />}
         </div>
       </div>
     </>}

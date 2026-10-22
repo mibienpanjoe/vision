@@ -21,10 +21,12 @@ values = dict(
 )
 library = os.environ.get("VISION_TEST_LIBRARY") == "1"
 workspace = os.environ.get("VISION_TEST_WORKSPACE") == "1"
+api_port = int(os.environ.get("VISION_TEST_API_PORT", "8000"))
 url = make_url(os.environ.get("DATABASE_URL", values["DATABASE_URL"]))
 name = "vision_test_" + uuid.uuid4().hex
 with socket.socket() as port_probe:
-    port_probe.bind(("127.0.0.1", 8000))
+    port_probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    port_probe.bind(("127.0.0.1", api_port))
 admin = create_engine(url.set(database="postgres"), isolation_level="AUTOCOMMIT")
 with admin.connect() as db:
     db.execute(text(f'CREATE DATABASE "{name}"'))
@@ -84,7 +86,7 @@ try:
             "--host",
             "127.0.0.1",
             "--port",
-            "8000",
+            str(api_port),
         ],
         cwd=root / "apps/api",
         env=env,
@@ -94,7 +96,7 @@ try:
     for _ in range(80):
         try:
             with urllib.request.urlopen(
-                "http://127.0.0.1:8000/health/ready", timeout=1
+                f"http://127.0.0.1:{api_port}/health/ready", timeout=1
             ) as r:
                 if r.status == 200:
                     break
@@ -103,7 +105,7 @@ try:
     else:
         raise RuntimeError("Isolated API did not become ready")
     subprocess.run(
-        ["pnpm", "--dir", "apps/web", "test", *(os.environ.get("VISION_TEST_WORKSPACE_SPECS", "tests/explorer.spec.ts tests/evidence.spec.ts").split() if workspace else ["tests/library.spec.ts" if library else "tests/session.spec.ts"]), "--workers=1"],
+        ["pnpm", "--dir", "apps/web", "test", *(os.environ.get("VISION_TEST_WORKSPACE_SPECS", "tests/explorer.spec.ts tests/evidence.spec.ts tests/visualization.spec.ts").split() if workspace else ["tests/library.spec.ts" if library else "tests/session.spec.ts"]), "--workers=1"],
         env={**env, "VISION_TEST_WEB_SESSION": "1"},
         check=True,
     )

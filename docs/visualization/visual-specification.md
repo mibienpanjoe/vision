@@ -2,8 +2,9 @@
 
 **Status:** executable schema `vision-spec-1.0` (`app/schemas/visualization.py`,
 T31) behind `POST /v1/works/{work_id}/visualizations/compose`; see the
-[API contract](../api/api-contract.md#visualization-compose--t31). Results are
-not stored yet (T32), and there is no image-provider integration.
+[API contract](../api/api-contract.md#visualization-compose--t31). Resolved results
+are stored and cached (T32); the browser composes, inspects and exports their
+specifications (T37). There is no image-provider integration.
 
 ## Inputs and outcomes
 

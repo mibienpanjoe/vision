@@ -20,6 +20,7 @@ export function EvidenceInspector({ workId, specification, cutoff }: { workId: s
     <ul className="evidence-attributes">{attributes.map(attribute => <li key={attribute.id}>
       <button className="secondary" disabled={!attribute.trait.evidence.length} aria-pressed={selected.includes(attribute.id)}
         onClick={() => { setSelected([attribute.id]); setSpan(attribute.trait.evidence[0]); }}>{attribute.label}: {attribute.trait.values.join(" / ")}</button>
+      <p className="trait-support">{({ canonical: "Canonical", inferred: "Inferred", disputed: "Disputed" })[attribute.trait.status]}{attribute.trait.reason ? ` · ${attribute.trait.reason}` : ""}</p>
       {selected.includes(attribute.id) && attribute.trait.evidence.length > 1 && <div className="actions">{attribute.trait.evidence.map((source, index) =>
         <button className="secondary" key={index} onClick={() => setSpan(source)}>Evidence {index + 1} for {attribute.label}</button>)}</div>}
     </li>)}</ul>

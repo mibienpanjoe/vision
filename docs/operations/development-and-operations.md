@@ -384,3 +384,16 @@ For scoped exploration and persisted context checks, use
 with deterministic model adapters, and a test-only API bootstrap supplies
 deterministic consolidation/adjudication. Production code has no fixture switch;
 the test modules are selected explicitly by the harness. No live model is called.
+
+The workspace harness includes explorer, evidence and reconstruction tests.
+`VISION_TEST_WORKSPACE_SPECS` can select specific Playwright files. If another
+local service uses port 8000, choose a dedicated test API port and build the web
+proxy for that same origin, for example:
+
+```sh
+VISION_API_ORIGIN=http://127.0.0.1:18000 pnpm --dir apps/web build
+VISION_TEST_API_PORT=18000 VISION_TEST_WORKSPACE=1 make browser-session
+```
+
+A later normal build uses the default API origin again; never exercise a test
+harness against an unrelated listener or a build with a different proxy target.
