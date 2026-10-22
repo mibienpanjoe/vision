@@ -3,8 +3,9 @@
 import { useRef, useState, type FormEvent } from "react";
 import { api, json, message, type EntitySummary, type VisualizationCreated, type VisualizationRequest } from "@/lib/api";
 
-export function Composer({ workId, entity, cutoff, result, onResult }: {
+export function Composer({ workId, entity, cutoff, result, onResult, onBusy }: {
   workId: string; entity: EntitySummary; cutoff: string | null; result: VisualizationCreated | null; onResult: (result: VisualizationCreated | null) => void;
+  onBusy: (busy: boolean) => void;
 }) {
   const [subject, setSubject] = useState({ id: entity.id, label: entity.label });
   const [query, setQuery] = useState("");
@@ -21,12 +22,12 @@ export function Composer({ workId, entity, cutoff, result, onResult }: {
     if (!pending.current) pending.current = { key: crypto.randomUUID(), body: { entity_id: subject.id, query: query.trim() || null,
       moment: moment.trim() ? { kind: "phrase", text: moment.trim() } : null,
       context: context.trim() || null, through_chapter_id: cutoff, creative_mode: mode, style: style.trim() || null } };
-    setBusy(true); setError(""); onResult(null);
+    setBusy(true); onBusy(true); setError(""); onResult(null);
     try {
       const response = await api<VisualizationCreated>(`/works/${workId}/visualizations`, json(pending.current.body, pending.current.key));
       onResult(response); pending.current = null;
     } catch (error) { setError(message(error)); }
-    finally { setBusy(false); }
+    finally { setBusy(false); onBusy(false); }
   }
   return <section className="panel context-panel" aria-labelledby="context-title">
     <h3 id="context-title">Create a visual specification</h3>

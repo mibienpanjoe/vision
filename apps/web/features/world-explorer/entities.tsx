@@ -64,7 +64,7 @@ export function Entities({ workId, source, cutoff }: { workId: string; source: C
             </div>
           </section>}
           {detail && sourceSpan && <SourceReader workId={workId} parserRevision={source.parser_revision} cutoff={cutoff} span={sourceSpan} />}
-          {detail && <ReconstructionWorkspace key={detail.entity.id} workId={workId} entity={detail.entity} cutoff={cutoff} boundaryLabel={cutoff ? `Through chapter ${source.items.find(chapter => chapter.id === cutoff)?.ordinal}` : "Whole book"} />}
+          {detail && <ReconstructionWorkspace key={detail.entity.id} workId={workId} entity={detail.entity} cutoff={cutoff} generationId={source.generation_id} boundaryLabel={cutoff ? `Through chapter ${source.items.find(chapter => chapter.id === cutoff)?.ordinal}` : "Whole book"} />}
         </div>
       </div>
     </>}

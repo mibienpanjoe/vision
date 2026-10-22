@@ -102,3 +102,18 @@ Export downloads exactly the stored server `VisualSpecification`, including its
 scope, evidence and lineage, as JSON. It adds no browser-derived claims. Style
 and interpretation do not relabel canonical traits; mutation of a stored result
 and immutable revision history remain T38.
+
+## Refinement and history — T38
+
+Saved specifications and revisions are requested with the active generation and
+exact reading boundary. Incompatible subjects/labels never enter that filtered
+history response. An explicitly opened historical revision is read-only, retains
+its own scope/evidence/export, and points back to the current saved view for edits.
+Changing boundary unmounts the whole history, result, source and refinement draft.
+
+Refinement sends the displayed revision, style/mode and selected canonical locks.
+It waits for the stored revision response before updating the profile. A stale
+tab cannot save again until the reader reloads the current revision; that action
+loads its locks/mode and retains the draft style for review. Uncertain network
+outcomes retain their exact key/payload/revision for replay. A source or processing
+change requires a new reconstruction instead of silently restyling stale inputs.

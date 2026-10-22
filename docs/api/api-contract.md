@@ -484,3 +484,11 @@ immutable revision results. Migration 0020 can reconstruct their style/mode
 requests from those results on a subsequent upgrade.
 Generated types: `VisualizationCreated`, `VisualizationView`,
 `VisualizationPage`, `RevisionPage`.
+
+History list/read/revision endpoints accept optional `generation_id` and
+`through_chapter_id` filters. The browser always supplies the current generation;
+with that filter, omitting the chapter means exact whole-book scope. The generation
+must be the work's current published generation, and the chapter must belong to
+it. Lists include only exact scope matches, and incompatible reads/revision lists
+return the common 404. Omitting both filters retains the existing owner-authorized
+archive API; it is not used by a chapter-limited browser view.

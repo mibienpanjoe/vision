@@ -183,3 +183,18 @@ def test_revision_requests_survive_a_full_refinement_schema_round_trip(api):
     for number, expected in [(1, original), (2, edited)]:
         response = clients["reader"].get(f"/v1/works/{work_id}/visualizations/{original['id']}/revisions/{number}")
         assert response.status_code == 200 and response.json() == expected
+
+
+def test_history_filters_never_return_incompatible_scope_labels_or_revisions(api):
+    original = stored(api)
+    _, clients, work_id, story = api
+    endpoint = f"/v1/works/{work_id}/visualizations"
+    exact = {"generation_id": str(story.generation), "through_chapter_id": str(story.chapters[3])}
+    early = {**exact, "through_chapter_id": str(story.chapters[1])}
+    assert len(clients["reader"].get(endpoint, params=exact).json()["items"]) == 1
+    assert clients["reader"].get(endpoint, params=early).json()["items"] == []
+    for suffix in [f"/{original['id']}", f"/{original['id']}/revisions", f"/{original['id']}/revisions/1"]:
+        assert clients["reader"].get(endpoint + suffix, params=exact).status_code == 200
+        assert clients["reader"].get(endpoint + suffix, params=early).status_code == 404
+        assert clients["stranger"].get(endpoint + suffix, params=exact).status_code == 404
+    assert clients["reader"].get(endpoint, params={"generation_id": str(uuid.uuid4())}).status_code == 404

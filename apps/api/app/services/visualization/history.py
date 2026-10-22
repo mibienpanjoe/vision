@@ -26,6 +26,7 @@ from app.schemas.visualization import (
     VisualizationSummary,
     VisualizationView,
 )
+from app.services.narrative.browse import chapter_ordinal, current_generation
 from app.services.visualization.specification import compose
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -41,14 +42,35 @@ def conflict():
     return PublicError(409, "IDEMPOTENCY_CONFLICT", "Key already used for a different request.")
 
 
-def view(db, visualization: Visualization, number: int | None = None) -> VisualizationView:
+def read_scope(db, actor, work_id, generation_id, chapter_id):
+    if generation_id is None and chapter_id is None:
+        return None
+    document, generation = current_generation(db, actor, work_id)
+    if generation_id is not None and generation_id != generation.id:
+        raise not_found()
+    chapter_ordinal(db, document, generation, chapter_id)
+    return generation.id, chapter_id
+
+
+def scoped_rows(query, scope):
+    if scope is None:
+        return query
+    chapter = VisualizationRevision.result["data"]["scope"]["through_chapter_id"].astext
+    return query.where(VisualizationRevision.generation_id == scope[0],
+                       chapter == str(scope[1]) if scope[1] else chapter.is_(None))
+
+
+def view(db, visualization: Visualization, number: int | None = None, scope=None) -> VisualizationView:
     revision = db.get(VisualizationRevision, (visualization.id, number or visualization.revision))
     if revision is None:
         raise not_found()
-    return VisualizationView(id=visualization.id, work_id=visualization.work_id, revision=revision.number,
+    found = VisualizationView(id=visualization.id, work_id=visualization.work_id, revision=revision.number,
                              created_at=revision.created_at,
                              request=VisualizationRequest.model_validate_json(json.dumps(revision.request)),
                              result=ResolvedSpecification.model_validate_json(json.dumps(revision.result)))
+    if scope is not None and (found.result.data.scope.generation_id, found.result.data.scope.through_chapter_id) != scope:
+        raise not_found()
+    return found
 
 
 def owned(db, actor, work_id, visualization_id) -> Visualization:
@@ -101,22 +123,25 @@ def create(db, actor, work_id: uuid.UUID, body, key: str, correlation_id: str) -
     return 201, VisualizationCreated(visualization=stored, result=VisualizationResult(stored.result))
 
 
-def list_visualizations(db, actor, work_id) -> VisualizationPage:
+def list_visualizations(db, actor, work_id, scope=None) -> VisualizationPage:
     owned_object(db, Work, work_id, actor)
-    rows = db.execute(select(Visualization, VisualizationRevision).join(
+    query = (select(Visualization, VisualizationRevision).join(
         VisualizationRevision, (VisualizationRevision.visualization_id == Visualization.id)
         & (VisualizationRevision.number == Visualization.revision))
         .where(Visualization.work_id == work_id, Visualization.owner_id == actor.owner_id)
-        .order_by(Visualization.created_at.desc(), Visualization.id).limit(PAGE)).all()
+        .order_by(Visualization.created_at.desc(), Visualization.id).limit(PAGE))
+    rows = db.execute(scoped_rows(query, scope)).all()
     return VisualizationPage(items=[VisualizationSummary(
         id=v.id, revision=v.revision, subject=r.result["data"]["subject"]["entity"]["label"],
         created_at=v.created_at) for v, r in rows])
 
 
-def revisions(db, actor, work_id, visualization_id) -> RevisionPage:
+def revisions(db, actor, work_id, visualization_id, scope=None) -> RevisionPage:
     found = owned(db, actor, work_id, visualization_id)
-    rows = db.scalars(select(VisualizationRevision).where(VisualizationRevision.visualization_id == found.id)
-                      .order_by(VisualizationRevision.number.desc()))
+    rows = list(db.scalars(scoped_rows(select(VisualizationRevision).where(VisualizationRevision.visualization_id == found.id)
+                      .order_by(VisualizationRevision.number.desc()), scope)))
+    if scope is not None and not rows:
+        raise not_found()
     return RevisionPage(items=[RevisionSummary(number=r.number, created_at=r.created_at,
                                                generation_id=r.generation_id, parser_revision=r.parser_revision,
                                                consolidation_id=r.consolidation_id) for r in rows])

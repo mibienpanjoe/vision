@@ -234,5 +234,12 @@ body limits. Two concurrent writes at one revision yield one success and one
 citation still resolves after the source pointer changes. Guarded migration
 round trips exercise 0020/0021 backfill and retain each revision's style/mode.
 Downgrading the receipt table intentionally drops idempotency receipts.
-These are API/database checks; the two-tab browser and history consumer follow
-as the next T38 increment.
+These API/database checks are distinct from the browser consumer checks below.
+
+T38's scoped-history API regression verifies that incompatible labels are absent
+from list responses and direct/revision reads return 404 under the active scope.
+`tests/refinement.spec.ts` adds two real tabs: the first stores a lock/style revision,
+the second receives 412, reloads its locks/revision while retaining its style draft,
+and then stores the next revision. It revisits revision 1 with its original source,
+keeps it read-only and clears it when the boundary narrows. Canonical profiles and
+source spans are compared to the original stored result.

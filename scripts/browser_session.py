@@ -105,7 +105,7 @@ try:
     else:
         raise RuntimeError("Isolated API did not become ready")
     subprocess.run(
-        ["pnpm", "--dir", "apps/web", "test", *(os.environ.get("VISION_TEST_WORKSPACE_SPECS", "tests/explorer.spec.ts tests/evidence.spec.ts tests/visualization.spec.ts").split() if workspace else ["tests/library.spec.ts" if library else "tests/session.spec.ts"]), "--workers=1"],
+        ["pnpm", "--dir", "apps/web", "test", *(os.environ.get("VISION_TEST_WORKSPACE_SPECS", "tests/explorer.spec.ts tests/evidence.spec.ts tests/visualization.spec.ts tests/refinement.spec.ts").split() if workspace else ["tests/library.spec.ts" if library else "tests/session.spec.ts"]), "--workers=1"],
         env={**env, "VISION_TEST_WEB_SESSION": "1"},
         check=True,
     )

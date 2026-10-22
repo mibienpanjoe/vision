@@ -44,26 +44,33 @@ def create_visualization(work_id: uuid.UUID, body: VisualizationRequest, actor: 
 
 
 @router.get("/{work_id}/visualizations", response_model=VisualizationPage)
-def list_visualizations(work_id: uuid.UUID, actor: Actor, db: Database):
-    return history.list_visualizations(db, actor, work_id)
+def list_visualizations(work_id: uuid.UUID, actor: Actor, db: Database,
+                        generation_id: uuid.UUID | None = None, through_chapter_id: uuid.UUID | None = None):
+    scope = history.read_scope(db, actor, work_id, generation_id, through_chapter_id)
+    return history.list_visualizations(db, actor, work_id, scope)
 
 
 @router.get("/{work_id}/visualizations/{visualization_id}", response_model=VisualizationView)
 def read_visualization(work_id: uuid.UUID, visualization_id: uuid.UUID, actor: Actor, db: Database,
-                       response: Response):
-    found = history.view(db, history.owned(db, actor, work_id, visualization_id))
+                       response: Response, generation_id: uuid.UUID | None = None, through_chapter_id: uuid.UUID | None = None):
+    scope = history.read_scope(db, actor, work_id, generation_id, through_chapter_id)
+    found = history.view(db, history.owned(db, actor, work_id, visualization_id), scope=scope)
     response.headers["ETag"] = f'"{found.revision}"'
     return found
 
 
 @router.get("/{work_id}/visualizations/{visualization_id}/revisions", response_model=RevisionPage)
-def list_revisions(work_id: uuid.UUID, visualization_id: uuid.UUID, actor: Actor, db: Database):
-    return history.revisions(db, actor, work_id, visualization_id)
+def list_revisions(work_id: uuid.UUID, visualization_id: uuid.UUID, actor: Actor, db: Database,
+                   generation_id: uuid.UUID | None = None, through_chapter_id: uuid.UUID | None = None):
+    scope = history.read_scope(db, actor, work_id, generation_id, through_chapter_id)
+    return history.revisions(db, actor, work_id, visualization_id, scope)
 
 
 @router.get("/{work_id}/visualizations/{visualization_id}/revisions/{number}", response_model=VisualizationView)
-def read_revision(work_id: uuid.UUID, visualization_id: uuid.UUID, number: int, actor: Actor, db: Database):
-    return history.view(db, history.owned(db, actor, work_id, visualization_id), number)
+def read_revision(work_id: uuid.UUID, visualization_id: uuid.UUID, number: int, actor: Actor, db: Database,
+                   generation_id: uuid.UUID | None = None, through_chapter_id: uuid.UUID | None = None):
+    scope = history.read_scope(db, actor, work_id, generation_id, through_chapter_id)
+    return history.view(db, history.owned(db, actor, work_id, visualization_id), number, scope)
 
 
 @mutations.post("/{work_id}/visualizations/{visualization_id}/refinements", response_model=VisualizationView)

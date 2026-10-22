@@ -11,6 +11,7 @@ from app.models.visualizations import (
     VisualizationMutation,
     VisualizationRevision,
 )
+from app.models.works import Document
 from app.schemas.evidence import EvidenceRequest
 from app.schemas.visualization import CreativeAddition
 from app.services.narrative import pipeline
@@ -61,6 +62,8 @@ def refine(db, actor, work_id, visualization_id, body, match, key):
         raise PublicError(412, "REVISION_CONFLICT", "Result changed. Reload its current revision.")
     base = history.view(db, visualization)
     spec = base.result.data.model_copy(deep=True)
+    # Parse publication takes this same lock before advancing the source pointer.
+    db.scalar(select(Document).where(Document.work_id == work_id, Document.revision == 1).with_for_update())
     _, generation = current_generation(db, actor, work_id)
     if generation.id != spec.scope.generation_id or generation.parser_revision != spec.scope.parser_revision:
         raise conflict("SCOPE_CHANGED", "The source changed. Create a new reconstruction.")
