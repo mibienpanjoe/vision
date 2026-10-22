@@ -163,13 +163,22 @@ export type Id8 = string;
 export type Username1 = string;
 export type Kind3 = "probe";
 export type Value2 = number;
+export type CreativeMode = "canon_first" | "interpretation";
+export type Attribute1 = string;
+export type EntityId1 = string;
+export type Value3 = string;
+/**
+ * @maxItems 32
+ */
+export type Locks = CanonicalLock[];
+export type Style = string | null;
 export type ConsolidationId = string;
 export type CreatedAt = string;
 export type GenerationId2 = string;
 export type Number = number;
 export type ParserRevision5 = string;
 export type Items4 = RevisionSummary[];
-export type CreativeMode = "canon_first" | "interpretation";
+export type CreativeMode1 = "canon_first" | "interpretation";
 export type DocumentRevisionId3 = string;
 export type GenerationId3 = string;
 export type ReadingBoundary1 = WholeBook | ThroughChapter;
@@ -206,23 +215,23 @@ export type Id10 = string;
  * Scene context such as "at home"
  */
 export type Context = string | null;
-export type CreativeMode1 = "canon_first" | "interpretation";
-export type EntityId1 = string | null;
+export type CreativeMode2 = "canon_first" | "interpretation";
+export type EntityId2 = string | null;
 export type Moment = (AgeMoment | PhraseMoment) | null;
 export type Kind4 = "age";
 export type Years = number;
 export type Kind5 = "phrase";
 export type Text = string;
 export type Query = string | null;
-export type Style = string | null;
+export type Style1 = string | null;
 /**
  * Reading cutoff; null means the whole book
  */
 export type ThroughChapterId1 = string | null;
-export type Attribute1 = string;
+export type Attribute2 = string;
 export type Reason = string;
 export type Support1 = "creative";
-export type Value3 = string;
+export type Value4 = string;
 export type Creative = CreativeAddition[];
 export type Label4 = string;
 export type Reason1 = string;
@@ -233,8 +242,9 @@ export type Excluded = ExclusionView[];
 export type ExcludedValues = string[];
 export type NegativePrompt = string;
 export type Prompt = string;
-export type Style1 = string | null;
+export type Style2 = string | null;
 export type ConsolidationId1 = string;
+export type Locks1 = CanonicalLock[];
 /**
  * @minItems 1
  */
@@ -243,7 +253,7 @@ export type Kind6 = "character" | "place" | "object" | "organization";
 export type Label5 = string;
 export type Role = "subject" | "participant" | "place" | "object";
 export type Adjudication = "unchecked" | "entailed";
-export type Attribute2 = string;
+export type Attribute3 = string;
 export type Evidence2 = SourceSpan[];
 /**
  * Why an inferred trait is not canonical
@@ -261,7 +271,7 @@ export type Traits = TraitView[];
 export type Unknown = string[];
 export type Participants = MemberView[];
 export type Context1 = string | null;
-export type CreativeMode2 = "canon_first" | "interpretation";
+export type CreativeMode3 = "canon_first" | "interpretation";
 export type GenerationId4 = string;
 export type Moment1 = (AgeMoment | PhraseMoment) | null;
 export type ParserRevision6 = string;
@@ -313,6 +323,7 @@ export interface SchemaCatalog {
   login_request: LoginRequest;
   principal: PrincipalView;
   probe_request: ProbeRequest;
+  refinement_request: RefinementRequest;
   revision_page: RevisionPage;
   scope: RequestScope;
   source_span: SourceSpan;
@@ -534,6 +545,16 @@ export interface ProbeRequest {
   kind?: Kind3;
   value?: Value2;
 }
+export interface RefinementRequest {
+  creative_mode: CreativeMode;
+  locks?: Locks;
+  style: Style;
+}
+export interface CanonicalLock {
+  attribute: Attribute1;
+  entity_id: EntityId1;
+  value: Value3;
+}
 export interface RevisionPage {
   items: Items4;
 }
@@ -545,7 +566,7 @@ export interface RevisionSummary {
   parser_revision: ParserRevision5;
 }
 export interface RequestScope {
-  creative_mode: CreativeMode;
+  creative_mode: CreativeMode1;
   document_revision_id: DocumentRevisionId3;
   generation_id: GenerationId3;
   reading_boundary: ReadingBoundary1;
@@ -595,11 +616,11 @@ export interface VisualizationView {
 }
 export interface VisualizationRequest {
   context?: Context;
-  creative_mode?: CreativeMode1;
-  entity_id?: EntityId1;
+  creative_mode?: CreativeMode2;
+  entity_id?: EntityId2;
   moment?: Moment;
   query?: Query;
-  style?: Style;
+  style?: Style1;
   through_chapter_id?: ThroughChapterId1;
 }
 /**
@@ -626,6 +647,7 @@ export interface VisualSpecification {
   excluded: Excluded;
   generation: GenerationIntent;
   lineage: Lineage;
+  locks?: Locks1;
   participants: Participants;
   scope: ScopeView;
   spec_version: SpecVersion;
@@ -635,10 +657,10 @@ export interface VisualSpecification {
   world: World;
 }
 export interface CreativeAddition {
-  attribute: Attribute1;
+  attribute: Attribute2;
   reason: Reason;
   support?: Support1;
-  value: Value3;
+  value: Value4;
 }
 export interface ExclusionView {
   label: Label4;
@@ -648,7 +670,7 @@ export interface GenerationIntent {
   excluded_values?: ExcludedValues;
   negative_prompt: NegativePrompt;
   prompt: Prompt;
-  style: Style1;
+  style: Style2;
 }
 export interface Lineage {
   consolidation_id: ConsolidationId1;
@@ -677,7 +699,7 @@ export interface EntityRef {
 }
 export interface TraitView {
   adjudication?: Adjudication;
-  attribute: Attribute2;
+  attribute: Attribute3;
   evidence: Evidence2;
   reason?: Reason2;
   status: Status5;
@@ -685,7 +707,7 @@ export interface TraitView {
 }
 export interface ScopeView {
   context: Context1;
-  creative_mode: CreativeMode2;
+  creative_mode: CreativeMode3;
   generation_id: GenerationId4;
   moment: Moment1;
   parser_revision: ParserRevision6;

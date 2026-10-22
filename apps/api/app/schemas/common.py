@@ -17,6 +17,7 @@ from app.schemas.outcomes import (  # noqa: F401  (re-exported: the shared envel
 from app.schemas.retrieval import VisualizationRequest
 from app.schemas.scope import RequestScope, SourceSpan
 from app.schemas.visualization import (
+    RefinementRequest,
     RevisionPage,
     VisualizationCreated,
     VisualizationPage,
@@ -72,3 +73,4 @@ class SchemaCatalog(ContractModel):
     visualization: VisualizationView
     visualization_page: VisualizationPage
     revision_page: RevisionPage
+    refinement_request: RefinementRequest

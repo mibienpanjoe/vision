@@ -136,6 +136,8 @@ def test_prompt_gate_checks_exclusions_disputes_locks_quotes_and_instructions():
                            ["sepia ink wash"]) == []
     assert prompt_problems(good + ", wearing steel armor", verified, ["steel armor"], {}, []) == [
         "excluded_value:steel armor"]
+    assert prompt_problems(good + "; style: steel armor", verified, ["steel armor"], {}, ["steel armor"]) == [
+        "excluded_value:steel armor"]
     assert prompt_problems(good + ", green eyes", verified, [], {}, []) == ["disputed_as_settled:eyes"]
     assert prompt_problems(good, verified, [], {"attire": "steel armor"}, []) == ["lock_unsupported:attire"]
     assert prompt_problems("Arthur at dinner", verified, [], {"left_cheek": "scar still visible"}, []) == [

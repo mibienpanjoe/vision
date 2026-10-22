@@ -223,3 +223,16 @@ evidence under an early cutoff, and a deterministic provider-rate-limit failure.
 Input/scope changes remove the old profile/export action. This is a real
 browser/API/worker/database path with deterministic model adapters; provider
 failure is simulated by that adapter, not a live provider outage.
+
+## Revision protocol checks — T38 backend
+
+`test_refinement.py` uses disposable PostgreSQL databases to prove revision
+preconditions, cross-owner denial, exact mutation replay, conflicting replay,
+immutable historical requests/evidence, canonical locks, prompt conflicts and
+body limits. Two concurrent writes at one revision yield one success and one
+412. Source, entity, appearance and embedding changes refuse refinement; an old
+citation still resolves after the source pointer changes. Guarded migration
+round trips exercise 0020/0021 backfill and retain each revision's style/mode.
+Downgrading the receipt table intentionally drops idempotency receipts.
+These are API/database checks; the two-tab browser and history consumer follow
+as the next T38 increment.

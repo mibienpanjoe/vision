@@ -80,6 +80,35 @@
       "title": "AnchorView",
       "type": "object"
     },
+    "CanonicalLock": {
+      "additionalProperties": false,
+      "properties": {
+        "attribute": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Attribute",
+          "type": "string"
+        },
+        "entity_id": {
+          "format": "uuid",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "attribute",
+        "value"
+      ],
+      "title": "CanonicalLock",
+      "type": "object"
+    },
     "ChapterNumber": {
       "additionalProperties": false,
       "properties": {
@@ -1526,6 +1555,46 @@
       "title": "ProbeRequest",
       "type": "object"
     },
+    "RefinementRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "creative_mode": {
+          "enum": [
+            "canon_first",
+            "interpretation"
+          ],
+          "title": "Creative Mode",
+          "type": "string"
+        },
+        "locks": {
+          "items": {
+            "$ref": "#/$defs/CanonicalLock"
+          },
+          "maxItems": 32,
+          "title": "Locks",
+          "type": "array"
+        },
+        "style": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Style"
+        }
+      },
+      "required": [
+        "style",
+        "creative_mode"
+      ],
+      "title": "RefinementRequest",
+      "type": "object"
+    },
     "RelationView": {
       "additionalProperties": false,
       "properties": {
@@ -2143,6 +2212,13 @@
         "lineage": {
           "$ref": "#/$defs/Lineage"
         },
+        "locks": {
+          "items": {
+            "$ref": "#/$defs/CanonicalLock"
+          },
+          "title": "Locks",
+          "type": "array"
+        },
         "participants": {
           "items": {
             "$ref": "#/$defs/MemberView"
@@ -2578,6 +2654,9 @@
     "probe_request": {
       "$ref": "#/$defs/ProbeRequest"
     },
+    "refinement_request": {
+      "$ref": "#/$defs/RefinementRequest"
+    },
     "revision_page": {
       "$ref": "#/$defs/RevisionPage"
     },
@@ -2640,7 +2719,8 @@
     "visualization_created",
     "visualization",
     "visualization_page",
-    "revision_page"
+    "revision_page",
+    "refinement_request"
   ],
   "title": "SchemaCatalog",
   "type": "object"

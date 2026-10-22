@@ -11,7 +11,13 @@ from datetime import UTC, datetime
 from app.models.access import Base
 from app.models.model_runs import Derivation  # noqa: F401  (registers the referenced tables)
 from app.models.works import Work  # noqa: F401
-from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -51,3 +57,14 @@ class CachedResult(Base):
     scope: Mapped[dict] = mapped_column(JSONB)
     result: Mapped[dict] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
+
+class VisualizationMutation(Base):
+    __tablename__ = "visualization_mutations"
+    __table_args__ = (ForeignKeyConstraint(["visualization_id", "result_revision"],
+                                          ["visualization_revisions.visualization_id", "visualization_revisions.number"]),)
+    visualization_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("visualizations.id"), primary_key=True)
+    key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    expected_revision: Mapped[int]
+    request_hash: Mapped[str] = mapped_column(String(64))
+    result_revision: Mapped[int]

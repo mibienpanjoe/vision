@@ -453,7 +453,34 @@ T38's snapshot preparation retains each revision's own request, exact input
 derivation IDs in `lineage.inputs`, and structured excluded values beside the
 generation prompt. Migration 0020 backfills revision requests from the original
 request and that revision's style/mode. Creation replay returns revision 1 even
-after later refinement. Older specs remain readable; new cache keys (`verify-v2`)
-require fresh dependency snapshots. The mutation consumer is a separate increment.
+after later refinement. Older specs remain readable; new cache keys (`verify-v3`)
+require fresh dependency snapshots and the strengthened creative/exclusion gate.
+
+## Presentation refinements — T38
+
+`POST /v1/works/{work_id}/visualizations/{id}/refinements` accepts a required
+nullable `style`, required `creative_mode`, and up to 32 `locks` (entity ID,
+attribute and exact canonical value). It requires the current strong `If-Match`
+and `Idempotency-Key`, and returns the new stored `VisualizationView` with its
+revision ETag. The body/deadline share the evidence route's 32 KiB/10-second bound.
+
+The owned visualization row serializes updates. Missing preconditions give 428,
+stale/malformed revisions 412, conflicting replay 409. A durable receipt replays
+the exact revision created by that key/body/expected revision, even if newer
+revisions exist. Canonical/inferred/disputed profiles and evidence are copied
+unchanged; style, creative additions and prompt intent are recomposed and gated.
+Locks must match canonical values and survive the prompt. Creative style cannot
+override a source exclusion. Unsupported locks or a failed prompt gate give safe
+409 errors and publish no revision.
+
+Source-generation or entity/appearance/index changes require a new reconstruction
+(409 `SCOPE_CHANGED`/`DEPENDENCIES_CHANGED`). Subject, moment and boundary are not
+mutation fields; changing them uses compose and revalidation. Every citation is
+re-resolved under the stored scope before publication. No provider call is needed
+for this presentation-only mutation. Older specifications without dependency
+snapshots remain readable but require a new reconstruction before refinement.
+Migration 0021 adds receipts; downgrading it discards receipts while retaining
+immutable revision results. Migration 0020 can reconstruct their style/mode
+requests from those results on a subsequent upgrade.
 Generated types: `VisualizationCreated`, `VisualizationView`,
 `VisualizationPage`, `RevisionPage`.
