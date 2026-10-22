@@ -234,6 +234,7 @@ long-running ingestion stages, failures/cancellation and broader recovery.
 | `POST /v1/works` | Authenticated multipart `title`, `format` (`txt`/`md`/`pdf`/`epub`), and one `file`; required `Idempotency-Key`; `202` with work and ingestion reference |
 | `GET /v1/works` | Owner-scoped UUID-ascending keyset page; `limit` 1–100 (default 20), optional UUID `after`; `items` and nullable `next_cursor` |
 | `GET /v1/works/{id}` | Owned work metadata, its first immutable document revision and `current_parser_revision` (null until a generation is published) |
+| `GET /v1/works/{id}/chapters` | Current published source generation's chapter numbers and IDs, without titles; ordinal-ascending page, `after` >= 0 (default 0), `limit` 1–100 (default 100); `next_after` or null; source/generation/parser lineage retained |
 | `GET /v1/works/{id}/original` | Owned original bytes as a nosniff attachment with a fixed safe filename; no public storage URL |
 | `GET /v1/works/{id}/ingestions/{job_id}` | Job resolved through the owned work/document; lifecycle state, `revision` (also the `ETag`), cancel request, attempts, safe error code and structure warnings |
 | `POST /v1/works/{id}/ingestions/{job_id}/retry` and `.../cancel` | Owned conditional mutation; see [ingestion recovery](#ingestion-retry-and-cancellation--t13) |
@@ -257,6 +258,11 @@ committed: replay recovers the persisted reference without deleting its source.
 Pagination cursors are positions, not authority; every page reapplies owner scope.
 Response models are generated from `schemas/works.py`; storage references,
 private filesystem paths, owner identifiers and original filenames are excluded.
+The shared TypeScript catalog also exports `GenerationPage` and `GenerationView`,
+including narrative status/error and separate parse, narrative and search readiness.
+The chapter catalog returns `409 SOURCE_NOT_READY` until a source generation is
+published, and the common owned `404` otherwise. It requires parsing, not narrative
+readiness. It never returns chapter titles, source text or obsolete parser chapters.
 
 T11 publishes text-ingestion intents through Redis to the real parser worker.
 An unavailable broker leaves SQL intent visibly pending for `make dispatch`.
@@ -442,5 +448,47 @@ or a missing revision, is the common `404`. A revision stores the full
 validated result with its generation, parser revision and consolidation
 (migration 0018), so its cited spans still resolve through the evidence route
 after later consolidations. New revisions (refinement) arrive with T38.
+
+T38's snapshot preparation retains each revision's own request, exact input
+derivation IDs in `lineage.inputs`, and structured excluded values beside the
+generation prompt. Migration 0020 backfills revision requests from the original
+request and that revision's style/mode. Creation replay returns revision 1 even
+after later refinement. Older specs remain readable; new cache keys (`verify-v3`)
+require fresh dependency snapshots and the strengthened creative/exclusion gate.
+
+## Presentation refinements — T38
+
+`POST /v1/works/{work_id}/visualizations/{id}/refinements` accepts a required
+nullable `style`, required `creative_mode`, and up to 32 `locks` (entity ID,
+attribute and exact canonical value). It requires the current strong `If-Match`
+and `Idempotency-Key`, and returns the new stored `VisualizationView` with its
+revision ETag. The body/deadline share the evidence route's 32 KiB/10-second bound.
+
+The owned visualization row serializes updates. Missing preconditions give 428,
+stale/malformed revisions 412, conflicting replay 409. A durable receipt replays
+the exact revision created by that key/body/expected revision, even if newer
+revisions exist. Canonical/inferred/disputed profiles and evidence are copied
+unchanged; style, creative additions and prompt intent are recomposed and gated.
+Locks must match canonical values and survive the prompt. Creative style cannot
+override a source exclusion. Unsupported locks or a failed prompt gate give safe
+409 errors and publish no revision.
+
+Source-generation or entity/appearance/index changes require a new reconstruction
+(409 `SCOPE_CHANGED`/`DEPENDENCIES_CHANGED`). Subject, moment and boundary are not
+mutation fields; changing them uses compose and revalidation. Every citation is
+re-resolved under the stored scope before publication. No provider call is needed
+for this presentation-only mutation. Older specifications without dependency
+snapshots remain readable but require a new reconstruction before refinement.
+Migration 0021 adds receipts; downgrading it discards receipts while retaining
+immutable revision results. Migration 0020 can reconstruct their style/mode
+requests from those results on a subsequent upgrade.
 Generated types: `VisualizationCreated`, `VisualizationView`,
 `VisualizationPage`, `RevisionPage`.
+
+History list/read/revision endpoints accept optional `generation_id` and
+`through_chapter_id` filters. The browser always supplies the current generation;
+with that filter, omitting the chapter means exact whole-book scope. The generation
+must be the work's current published generation, and the chapter must belong to
+it. Lists include only exact scope matches, and incompatible reads/revision lists
+return the common 404. Omitting both filters retains the existing owner-authorized
+archive API; it is not used by a chapter-limited browser view.

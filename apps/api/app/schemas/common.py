@@ -17,6 +17,7 @@ from app.schemas.outcomes import (  # noqa: F401  (re-exported: the shared envel
 from app.schemas.retrieval import VisualizationRequest
 from app.schemas.scope import RequestScope, SourceSpan
 from app.schemas.visualization import (
+    RefinementRequest,
     RevisionPage,
     VisualizationCreated,
     VisualizationPage,
@@ -24,6 +25,8 @@ from app.schemas.visualization import (
     VisualizationView,
 )
 from app.schemas.works import (
+    ChapterPage,
+    GenerationPage,
     IngestionView,
     LibraryPage,
     UploadAccepted,
@@ -54,6 +57,8 @@ class SchemaCatalog(ContractModel):
     work: WorkView
     library_page: LibraryPage
     ingestion: IngestionView
+    generations: GenerationPage
+    chapters: ChapterPage
     evidence_request: EvidenceRequest
     evidence: EvidenceView
     source_span: SourceSpan
@@ -68,3 +73,4 @@ class SchemaCatalog(ContractModel):
     visualization: VisualizationView
     visualization_page: VisualizationPage
     revision_page: RevisionPage
+    refinement_request: RefinementRequest

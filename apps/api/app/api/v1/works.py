@@ -9,6 +9,7 @@ from app.core.security import ActorScope, current_actor, database_session, owned
 from app.core.storage import PrivateSources
 from app.models.works import IngestionJob, Work
 from app.schemas.works import (
+    ChapterPage,
     GenerationPage,
     GenerationView,
     IngestionView,
@@ -17,6 +18,7 @@ from app.schemas.works import (
     UploadMetadata,
     WorkView,
 )
+from app.services.ingestion.chapters import list_chapters
 from app.services.ingestion.inputs import MAX_SOURCE_BYTES, UPLOAD_SECONDS
 from app.services.ingestion.jobs import mutate_job
 from app.services.ingestion.reprocess import create_generation, list_generations
@@ -114,6 +116,12 @@ def original(work_id: uuid.UUID, actor: Actor, db: Database):
         raise storage_error() from None
     return Response(data, media_type="application/octet-stream",
                     headers={"Content-Disposition": f'attachment; filename="source.{document.format}"'})
+
+
+@router.get("/{work_id}/chapters", response_model=ChapterPage)
+def chapters(work_id: uuid.UUID, actor: Actor, db: Database,
+             after: Annotated[int, Query(ge=0)] = 0, limit: Annotated[int, Query(ge=1, le=100)] = 100):
+    return list_chapters(db, actor, work_id, after, limit)
 
 
 @router.get("/{work_id}/ingestions/{job_id}", response_model=IngestionView)

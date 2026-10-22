@@ -36,6 +36,10 @@ jobs:
         run: make check
       - name: Real database, broker, worker and browser session checks
         run: make integration browser-session
+      - name: Real library upload, retry and cancellation controls
+        run: VISION_TEST_LIBRARY=1 make browser-session
+      - name: Workspace, evidence, revisions and accessibility browser checks
+        run: VISION_TEST_WORKSPACE=1 make browser-session
       - name: Known JavaScript dependency advisories
         run: pnpm audit --audit-level=high
       - name: Remove disposable CI services

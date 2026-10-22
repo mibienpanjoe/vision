@@ -7,6 +7,8 @@ if (api.protocol !== "http:" || !["127.0.0.1", "localhost"].includes(api.hostnam
 
 const config: NextConfig = {
   poweredByHeader: false,
+  // A cold local embedding query plus bounded consolidation/adjudication exceeds 30 s.
+  experimental: { proxyTimeout: 300_000 },
   async rewrites() { return [{ source: "/api/v1/:path*", destination: `${api.origin}/v1/:path*` }]; },
   async headers() { return [{ source: "/:path*", headers: [
     { key: "X-Content-Type-Options", value: "nosniff" },

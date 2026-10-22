@@ -210,7 +210,6 @@ def prompt_problems(prompt: str, verification: Verification, excluded: list[str]
     """
     text = prompt.casefold()
     kept = [v.casefold() for t in verification.traits.values() if t.status != "disputed" for v in t.values]
-    kept += [c.casefold() for c in creative]
     problems = [f"excluded_value:{value}" for value in dict.fromkeys(excluded)
                 if value.casefold() in text and not any(value.casefold() in k for k in kept)]
     problems += [f"disputed_as_settled:{t.attribute}" for t in verification.traits.values()

@@ -75,6 +75,7 @@ class GenerationIntent(ContractModel):
     style: Text | None
     prompt: str = Field(min_length=1, max_length=4_000)
     negative_prompt: str = Field(max_length=2_000)
+    excluded_values: list[Text] = Field(default_factory=list, description="Structured exclusions retained for refinement gates")
 
 
 class VerificationView(ContractModel):
@@ -86,6 +87,19 @@ class VerificationView(ContractModel):
 class Lineage(ContractModel):
     consolidation_id: uuid.UUID
     processing: dict[str, str]
+    inputs: dict[str, str | None] = Field(default_factory=dict, description="Entity, appearance and index derivation snapshots")
+
+
+class CanonicalLock(ContractModel):
+    entity_id: Annotated[uuid.UUID, Field(strict=False)]
+    attribute: Text
+    value: Text
+
+
+class RefinementRequest(ContractModel):
+    style: Text | None
+    creative_mode: Literal["canon_first", "interpretation"]
+    locks: list[CanonicalLock] = Field(default_factory=list, max_length=32)
 
 
 class VisualSpecification(ContractModel):
@@ -100,6 +114,7 @@ class VisualSpecification(ContractModel):
     creative: list[CreativeAddition]
     generation: GenerationIntent
     verification: VerificationView
+    locks: list[CanonicalLock] = Field(default_factory=list)
 
 
 class ResolvedSpecification(ContractModel):

@@ -1,9 +1,13 @@
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({ page }) => {
+  await page.route("**/api/v1/auth/me", route => route.fulfill({ status: 401, json: { error: { code: "AUTHENTICATION_REQUIRED", message: "Sign in required." } } }));
+});
+
 test("library shell has no invented books and persists an explicit theme", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Your library" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your library", exact: true })).toBeVisible();
   await expect(page.locator("html")).toHaveClass("dark");
   const theme = page.getByRole("combobox", { name: "Color theme" });
   await expect(theme).toBeEnabled();
@@ -12,7 +16,7 @@ test("library shell has no invented books and persists an explicit theme", async
   await page.reload();
   await expect(theme).toHaveValue("light");
   await expect(page.locator("html")).toHaveClass("light");
-  await expect(page.getByText("Book uploads are not available yet.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in to your library" })).toBeVisible();
 });
 
 test("shell remains usable at narrow widths and by keyboard", async ({ page }) => {
@@ -49,5 +53,5 @@ test("fonts and approved icons are served locally in both themes", async ({ page
   await page.screenshot({ path: "../../.local/vision-shell-dark.png", fullPage: true });
   await page.setViewportSize({ width: 320, height: 720 });
   await page.screenshot({ path: "../../.local/vision-shell-narrow.png", fullPage: true });
-  expect(errors).toEqual([]);
+  expect(errors.filter(error => !error.includes("401 (Unauthorized)"))).toEqual([]);
 });

@@ -358,3 +358,62 @@ development CPU a five-page fixture takes about 10 seconds, including model
 load; book-length timing is not yet measured. CI allows 25 minutes for the
 larger install. The model files are fetched by Docling's own downloader and not
 redistributed by this repository.
+
+## Library browser harness — T34
+
+After `make services` and a current `pnpm --dir apps/web build`, run:
+
+```sh
+VISION_TEST_LIBRARY=1 make browser-session
+```
+
+The harness creates a disposable database, private source directory and unique
+Redis namespace, provisions two synthetic accounts, and starts an isolated API
+on port 8000 plus a real ingestion-only Dramatiq worker. Playwright serves the
+built web app on port 13000. These ports must be free. The suite pauses only its
+own worker process group for queued cancellation, then resumes it in cleanup.
+A test-only bootstrap adds a file gate before the real parse call for running
+cancellation; no test hook enters production code.
+The harness removes its database, sources and Redis keys afterward. It does not
+modify the developer's library or run external models. Logs and screenshots stay
+in `.local/`. The standard `make browser-session` retains its session-transport
+check; the library option adds the controls and lifecycle acceptance cases.
+
+For scoped exploration and persisted context checks, use
+`VISION_TEST_WORKSPACE=1 make browser-session`. This starts both worker queues
+with deterministic model adapters, and a test-only API bootstrap supplies
+deterministic consolidation/adjudication. Production code has no fixture switch;
+the test modules are selected explicitly by the harness. No live model is called.
+
+The workspace harness includes accessibility, explorer, evidence, reconstruction
+and two-tab refinement/history tests.
+`VISION_TEST_WORKSPACE_SPECS` can select specific Playwright files. If another
+local service uses port 8000, choose a dedicated test API port and build the web
+proxy for that same origin, for example:
+
+```sh
+VISION_API_ORIGIN=http://127.0.0.1:18000 pnpm --dir apps/web build
+VISION_TEST_API_PORT=18000 VISION_TEST_WORKSPACE=1 make browser-session
+```
+
+A later normal build uses the default API origin again; never exercise a test
+harness against an unrelated listener or a build with a different proxy target.
+
+For the explicit live product gate, use
+`VISION_TEST_LIVE_WORKSPACE=1 make browser-session` (with the same port override
+when needed). It uses the production API and worker bootstraps, pinned local
+entity/coreference/embedding models and the configured Groq adapter, never the
+fixture adapters. Only the committed synthetic story is uploaded. This opt-in
+loads provider configuration from the private `.env`; Groq must be configured,
+and model snapshots must already be cached. `HF_HUB_OFFLINE=1` prevents implicit
+model downloads; set `HF_HOME` if the snapshots use a separate cache directory.
+The test inspects the stored specification, source highlights and identical JSON
+export; the harness additionally asserts successful local/Groq run records,
+persisted vectors and revisions before removing its disposable data. CI uses the
+deterministic workspace suite and does not require provider credentials.
+
+The web rewrite proxy has a bounded 300-second timeout. The framework's default
+30 seconds can close a cold local embedding query followed by consolidation
+(90-second provider budget) and adjudication (60-second budget). Provider calls
+retain those smaller bounds; an uncertain browser mutation retains its replay
+key and payload. This setting is part of the built web configuration.

@@ -69,5 +69,5 @@ tools, and licensed content acquisition are not defined product capabilities.
 Agent-interface component libraries do not change those boundaries.
 
 The [acceptance strategy](../testing/acceptance-strategy.md) maps these IDs to
-future executable scenarios. The [roadmap](implementation-roadmap.md) sets their
+executable scenarios and remaining verification limits. The [roadmap](implementation-roadmap.md) sets their
 delivery sequence without removing foundational safety and provenance requirements.

@@ -46,6 +46,7 @@ def scope_of(plan, expanded: Expanded) -> dict:
     return {"cutoff": plan.cutoff, "subject": sorted(map(str, plan.subject.entity_ids)),
             "participants": sorted(str(i) for p in plan.participants for i in p.entity_ids),
             "moment": plan.moment.model_dump() if plan.moment else None, "context": plan.context,
+            "query_sha256": hashlib.sha256((plan.query or "").encode()).hexdigest(),
             "creative_mode": plan.creative_mode, "spans": sorted(spans, key=lambda s: (s[0], s[1]))}
 
 

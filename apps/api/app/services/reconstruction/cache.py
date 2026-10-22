@@ -18,7 +18,7 @@ from app.models.visualizations import CachedResult
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 
-GATES_VERSION = "verify-v1"
+GATES_VERSION = "verify-v3"
 
 
 def cache_scope(owner_id, plan, versions: dict, locks: dict | None = None) -> dict:
@@ -26,6 +26,7 @@ def cache_scope(owner_id, plan, versions: dict, locks: dict | None = None) -> di
             "cutoff": plan.cutoff, "subject": sorted(map(str, plan.subject.entity_ids)),
             "participants": sorted(str(i) for p in plan.participants for i in p.entity_ids),
             "moment": plan.moment.model_dump() if plan.moment else None, "context": plan.context,
+            "query_sha256": hashlib.sha256((plan.query or "").encode()).hexdigest(),
             "creative_mode": plan.creative_mode, "style": plan.style, "locks": locks or {}, "versions": versions}
 
 

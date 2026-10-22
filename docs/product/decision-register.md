@@ -55,6 +55,28 @@
 | DEC-47 | Visualization compose: synchronous `POST /v1/works/{work_id}/visualizations/compose` returning 200 with `resolved`/`needs_context`/`insufficient_evidence`/`failed`; `vision-spec-1.0` with lineage, scope, subject/participants/world members, exclusions, unknowns, creative additions, prompt intent and verification summary; choices carry their request `field`; interpretation adds labelled creative choices without changing canon; no stored result until T32 | T31; [API](../api/api-contract.md#visualization-compose--t31) |
 | DEC-48 | Stored visualizations: only resolved results are stored (201 + ETag); other outcomes 200 without reservation; key scoped to owner+work with request fingerprint (replay / 409); immutable revisions keep full result, generation, parser revision and consolidation; owner-scoped list/read/history with 404 otherwise | T32a; [API](../api/api-contract.md#stored-visualizations--t32a) |
 | DEC-49 | Adopt PROP-05: resolved results cached per owner under the hash of work, generation, cutoff, subject/participants, moment, context, creative mode, style, locks and every processing version (derivations in use, prompts, models, gates, spec, fusion weights); lookup only after the plan re-checks ownership and current generation | T32b; [architecture](../architecture/system-architecture.md#scoped-result-cache--t32b) |
+| DEC-50 | Presentation refinement uses a conditional, idempotent revision append: style/mode and canonical locks only; profiles/evidence remain unchanged, provenance and prompt gates rerun; changed source or derivation inputs require a new reconstruction; replay returns its captured revision | T38; [API](../api/api-contract.md#presentation-refinements--t38) |
+
+## Workspace implementation
+
+T34 consumes DEC-23/26/27 without changing lifecycle policy: native project forms,
+same-origin session requests, two-second processing polling, server-confirmed
+retry/cancel, and separate parse/extraction/index states. No Agents Kit source is
+copied, so D4 has no imported-component license selection in this increment.
+The [workspace contract](workspace.md) owns these controls. Narrative retry remains
+PROP-06; parsing retry does not claim to retry a failed narrative job.
+T35's chapter catalog is an owned, paginated current-generation read exposing
+numbers and IDs without narrative titles. This implements DEC-10's reading boundary
+without disclosing future chapter labels; it does not enumerate story chronology.
+T36 consumes DEC-20/23 through the bounded evidence endpoint: browser highlights
+use code points, text remains escaped, and a failed/stale reference clears its
+excerpt without widening the reading boundary.
+T37's natural-language consumer includes a query SHA-256 in both result-cache
+and consolidation identity: the reader's exact words affect the provider input
+even when the structured plan is identical. Existing revisions remain immutable.
+T38 snapshots each revision's request and the exact entity/appearance/index
+inputs; structured exclusions remain with the specification for subsequent prompt
+gates. Existing creation keys keep replaying revision 1 rather than a later edit.
 
 ## Proposed elaborations
 

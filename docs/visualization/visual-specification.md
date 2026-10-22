@@ -2,8 +2,9 @@
 
 **Status:** executable schema `vision-spec-1.0` (`app/schemas/visualization.py`,
 T31) behind `POST /v1/works/{work_id}/visualizations/compose`; see the
-[API contract](../api/api-contract.md#visualization-compose--t31). Results are
-not stored yet (T32), and there is no image-provider integration.
+[API contract](../api/api-contract.md#visualization-compose--t31). Resolved results
+are stored and cached (T32); the browser composes, inspects and exports their
+specifications (T37). There is no image-provider integration.
 
 ## Inputs and outcomes
 
@@ -92,7 +93,11 @@ Changing style does not change canon. Changing the subject, moment, reading
 boundary, or locked facts requires revalidation and a correctly scoped derived
 state. Preserve output revisions and processing lineage; exact revision tokens
 follow the [API conventions](../api/api-contract.md#selected-first-slice-wire-conventions);
-T38 still owns the exact mutation endpoint/payload.
+The [presentation refinement API](../api/api-contract.md#presentation-refinements--t38)
+implements conditional style/mode/lock changes. It retains every profile and
+source span unchanged, gates the recomposed prompt, and refuses stale dependencies
+until a fresh reconstruction. Creative additions never exempt excluded values
+from the prompt gate.
 
 An optional rendered image references its specification revision, provider/model,
 settings, and outcome. The image can be aesthetically plausible and still fail

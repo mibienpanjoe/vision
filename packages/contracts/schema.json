@@ -80,6 +80,103 @@
       "title": "AnchorView",
       "type": "object"
     },
+    "CanonicalLock": {
+      "additionalProperties": false,
+      "properties": {
+        "attribute": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Attribute",
+          "type": "string"
+        },
+        "entity_id": {
+          "format": "uuid",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "attribute",
+        "value"
+      ],
+      "title": "CanonicalLock",
+      "type": "object"
+    },
+    "ChapterNumber": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "ordinal": {
+          "minimum": 1,
+          "title": "Ordinal",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "ordinal"
+      ],
+      "title": "ChapterNumber",
+      "type": "object"
+    },
+    "ChapterPage": {
+      "additionalProperties": false,
+      "properties": {
+        "document_revision_id": {
+          "format": "uuid",
+          "title": "Document Revision Id",
+          "type": "string"
+        },
+        "generation_id": {
+          "format": "uuid",
+          "title": "Generation Id",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ChapterNumber"
+          },
+          "maxItems": 100,
+          "title": "Items",
+          "type": "array"
+        },
+        "next_after": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next After"
+        },
+        "parser_revision": {
+          "title": "Parser Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_revision_id",
+        "generation_id",
+        "parser_revision",
+        "items",
+        "next_after"
+      ],
+      "title": "ChapterPage",
+      "type": "object"
+    },
     "ConflictView": {
       "additionalProperties": false,
       "properties": {
@@ -817,6 +914,16 @@
     "GenerationIntent": {
       "additionalProperties": false,
       "properties": {
+        "excluded_values": {
+          "description": "Structured exclusions retained for refinement gates",
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Excluded Values",
+          "type": "array"
+        },
         "negative_prompt": {
           "maxLength": 2000,
           "title": "Negative Prompt",
@@ -848,6 +955,120 @@
         "negative_prompt"
       ],
       "title": "GenerationIntent",
+      "type": "object"
+    },
+    "GenerationPage": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/GenerationView"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "GenerationPage",
+      "type": "object"
+    },
+    "GenerationView": {
+      "additionalProperties": false,
+      "properties": {
+        "current": {
+          "title": "Current",
+          "type": "boolean"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "job_id": {
+          "format": "uuid",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "narrative_error": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Safe error code of the last narrative attempt",
+          "title": "Narrative Error"
+        },
+        "narrative_ready": {
+          "title": "Narrative Ready",
+          "type": "boolean"
+        },
+        "narrative_status": {
+          "enum": [
+            "not_started",
+            "queued",
+            "running",
+            "succeeded",
+            "failed"
+          ],
+          "title": "Narrative Status",
+          "type": "string"
+        },
+        "ordinal": {
+          "minimum": 1,
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "parsed": {
+          "title": "Parsed",
+          "type": "boolean"
+        },
+        "parser_revision": {
+          "title": "Parser Revision",
+          "type": "string"
+        },
+        "search_ready": {
+          "title": "Search Ready",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "building",
+            "available",
+            "failed",
+            "cancelled"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "ordinal",
+        "parser_revision",
+        "status",
+        "current",
+        "parsed",
+        "narrative_ready",
+        "narrative_status",
+        "narrative_error",
+        "search_ready",
+        "job_id",
+        "warnings"
+      ],
+      "title": "GenerationView",
       "type": "object"
     },
     "IngestionView": {
@@ -1075,6 +1296,21 @@
           "format": "uuid",
           "title": "Consolidation Id",
           "type": "string"
+        },
+        "inputs": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": "Entity, appearance and index derivation snapshots",
+          "title": "Inputs",
+          "type": "object"
         },
         "processing": {
           "additionalProperties": {
@@ -1317,6 +1553,46 @@
         }
       },
       "title": "ProbeRequest",
+      "type": "object"
+    },
+    "RefinementRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "creative_mode": {
+          "enum": [
+            "canon_first",
+            "interpretation"
+          ],
+          "title": "Creative Mode",
+          "type": "string"
+        },
+        "locks": {
+          "items": {
+            "$ref": "#/$defs/CanonicalLock"
+          },
+          "maxItems": 32,
+          "title": "Locks",
+          "type": "array"
+        },
+        "style": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Style"
+        }
+      },
+      "required": [
+        "style",
+        "creative_mode"
+      ],
+      "title": "RefinementRequest",
       "type": "object"
     },
     "RelationView": {
@@ -1936,6 +2212,13 @@
         "lineage": {
           "$ref": "#/$defs/Lineage"
         },
+        "locks": {
+          "items": {
+            "$ref": "#/$defs/CanonicalLock"
+          },
+          "title": "Locks",
+          "type": "array"
+        },
         "participants": {
           "items": {
             "$ref": "#/$defs/MemberView"
@@ -2332,6 +2615,9 @@
   "additionalProperties": false,
   "description": "Build-time export root only; this is not an HTTP request/response.",
   "properties": {
+    "chapters": {
+      "$ref": "#/$defs/ChapterPage"
+    },
     "entity_detail": {
       "$ref": "#/$defs/EntityDetail"
     },
@@ -2346,6 +2632,9 @@
     },
     "evidence_request": {
       "$ref": "#/$defs/EvidenceRequest"
+    },
+    "generations": {
+      "$ref": "#/$defs/GenerationPage"
     },
     "ingestion": {
       "$ref": "#/$defs/IngestionView"
@@ -2364,6 +2653,9 @@
     },
     "probe_request": {
       "$ref": "#/$defs/ProbeRequest"
+    },
+    "refinement_request": {
+      "$ref": "#/$defs/RefinementRequest"
     },
     "revision_page": {
       "$ref": "#/$defs/RevisionPage"
@@ -2412,6 +2704,8 @@
     "work",
     "library_page",
     "ingestion",
+    "generations",
+    "chapters",
     "evidence_request",
     "evidence",
     "source_span",
@@ -2425,7 +2719,8 @@
     "visualization_created",
     "visualization",
     "visualization_page",
-    "revision_page"
+    "revision_page",
+    "refinement_request"
   ],
   "title": "SchemaCatalog",
   "type": "object"

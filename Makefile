@@ -29,6 +29,7 @@ contracts:
 	pnpm --dir packages/contracts test
 	pnpm --dir packages/contracts typecheck
 web-check:
+	pnpm --dir apps/web test:spans
 	pnpm --dir apps/web build
 	pnpm --dir apps/web typecheck
 	pnpm --dir apps/web test tests/shell.spec.ts --workers=1

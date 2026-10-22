@@ -1,0 +1,38 @@
+import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { chooseArthur, signIn, uploadCorpus } from "./fixtures";
+
+test.skip(process.env.VISION_TEST_LIVE_WORKSPACE !== "1", "Explicit live local-model/Groq browser gate");
+test("real local models and Groq produce a stored profile with exact evidence and identical JSON export", async ({ page }) => {
+  test.setTimeout(420000);
+  await signIn(page);
+  const workId = await uploadCorpus(page, "Live product gate");
+  await chooseArthur(page);
+  await page.getByLabel("Describe the view", { exact: true }).fill("Arthur at dinner after the war");
+  await page.getByLabel("Story moment", { exact: true }).fill("after the war");
+  await page.getByLabel("Scene context", { exact: true }).fill("at dinner");
+  const response = page.waitForResponse(r => /\/visualizations$/.test(r.url()) && r.request().method() === "POST", { timeout: 300000 });
+  await page.getByRole("button", { name: "Create visual specification", exact: true }).click();
+  const created = await (await response).json();
+  expect(created.result.outcome, JSON.stringify(created.result)).toBe("resolved");
+  expect(created.visualization).not.toBeNull();
+  const view = created.visualization;
+  const stored = await (await page.request.get(`/api/v1/works/${workId}/visualizations/${view.id}`)).json();
+  expect(stored.result.data).toEqual(view.result.data);
+  expect(stored.result.data.lineage.processing.index).toContain("/local/embeddinggemma");
+  expect(stored.result.data.subject.traits.some((trait: { status: string }) => trait.status === "canonical")).toBe(true);
+  const profile = page.getByRole("region", { name: "Visual specification", exact: true });
+  await expect(profile).toContainText("Canonical");
+  const evidenceResponse = page.waitForResponse(r => r.url().endsWith("/evidence") && r.request().method() === "POST");
+  await profile.locator(".evidence-attributes button").first().click();
+  const evidence = await (await evidenceResponse).json();
+  expect(Array.from(evidence.excerpt).slice(evidence.highlight_start, evidence.highlight_end).join("")).toBe(evidence.span.quote);
+  const selectedSource = profile.getByRole("region", { name: "Source reader" }).locator('mark[data-selected="true"]');
+  await expect(selectedSource.first()).toBeVisible();
+  expect((await selectedSource.allTextContents()).join("")).toBe(evidence.span.quote);
+  const download = page.waitForEvent("download");
+  await profile.getByRole("button", { name: "Export JSON", exact: true }).click();
+  const path = await (await download).path();
+  expect(JSON.parse(readFileSync(path!, "utf8"))).toEqual(stored.result.data);
+  await page.screenshot({ path: "../../.local/live-product-gate.png", fullPage: true });
+});
