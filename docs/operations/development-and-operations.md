@@ -327,8 +327,10 @@ provider quality or book reconstruction follows from these foundation checks.
 Rendering is off by default. To enable it, set `VISION_RENDER_PROVIDER` in the
 private `.env`:
 
-- `openai` with `OPENAI_API_KEY`: `gpt-image-1`, low quality, 1024×1024 PNG at
+- `openai` with `OPENAI_API_KEY`: `gpt-image-1` by default, or `gpt-image-2` with
+  `VISION_RENDER_MODEL=gpt-image-2`; low quality, 1024×1024 PNG at
   `https://api.openai.com/v1/images/generations`, billed to that OpenAI project.
+  Any other model leaves rendering disabled.
 - `huggingface` with `HF_TOKEN`: `black-forest-labs/FLUX.1-schnell` at
   `https://router.huggingface.co/nscale/v1/images/generations`, billed to that
   account's Inference Provider credit. The token must be fine-grained with

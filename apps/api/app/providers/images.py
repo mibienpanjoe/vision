@@ -88,9 +88,10 @@ class ImageGateway:
     path: str
     settings: dict
 
-    def __init__(self, token: str, base_url: str | None = None, timeout: float = TIMEOUT_SECONDS):
+    def __init__(self, token: str, base_url: str | None = None, timeout: float = TIMEOUT_SECONDS,
+                 model: str | None = None):
         self._token, self.timeout = token, timeout
-        self.base_url = (base_url or self.base_url).rstrip("/")
+        self.base_url, self.model = (base_url or self.base_url).rstrip("/"), model or self.model
 
     def body(self, prompt: str) -> dict:
         raise NotImplementedError
@@ -144,18 +145,25 @@ class HuggingFaceImages(ImageGateway):
 
 
 PROVIDERS = {"openai": ("OPENAI_API_KEY", OpenAIImages), "huggingface": ("HF_TOKEN", HuggingFaceImages)}
+# Maintainer-approved models per provider (DEC-51); the first is the default, anything else disables rendering.
+MODELS = {"openai": ("gpt-image-1", "gpt-image-2"), "huggingface": ("black-forest-labs/FLUX.1-schnell",)}
 
 
-def selected():
-    choice = PROVIDERS.get(os.environ.get("VISION_RENDER_PROVIDER", ""))
-    return choice if choice and os.environ.get(choice[0]) else None
+def selected() -> tuple[str, str] | None:
+    name = os.environ.get("VISION_RENDER_PROVIDER", "")
+    if name not in PROVIDERS or not os.environ.get(PROVIDERS[name][0]):
+        return None
+    model = os.environ.get("VISION_RENDER_MODEL") or MODELS[name][0]
+    return (name, model) if model in MODELS[name] else None
 
 
 def configured_policy() -> RenderPolicy | None:
     choice = selected()
-    return RenderPolicy(choice[1].provider, choice[1].model, MAX_RESERVATIONS) if choice else None
+    return RenderPolicy(*choice, MAX_RESERVATIONS) if choice else None
 
 
 def image_adapter() -> ImageGateway | None:
-    choice = selected()
-    return choice[1](os.environ[choice[0]]) if choice else None
+    if (choice := selected()) is None:
+        return None
+    key, gateway = PROVIDERS[choice[0]]
+    return gateway(os.environ[key], model=choice[1])

@@ -56,7 +56,7 @@
 | DEC-48 | Stored visualizations: only resolved results are stored (201 + ETag); other outcomes 200 without reservation; key scoped to owner+work with request fingerprint (replay / 409); immutable revisions keep full result, generation, parser revision and consolidation; owner-scoped list/read/history with 404 otherwise | T32a; [API](../api/api-contract.md#stored-visualizations--t32a) |
 | DEC-49 | Adopt PROP-05: resolved results cached per owner under the hash of work, generation, cutoff, subject/participants, moment, context, creative mode, style, locks and every processing version (derivations in use, prompts, models, gates, spec, fusion weights); lookup only after the plan re-checks ownership and current generation | T32b; [architecture](../architecture/system-architecture.md#scoped-result-cache--t32b) |
 | DEC-50 | Presentation refinement uses a conditional, idempotent revision append: style/mode and canonical locks only; profiles/evidence remain unchanged, provenance and prompt gates rerun; changed source or derivation inputs require a new reconstruction; replay returns its captured revision | T38; [API](../api/api-contract.md#presentation-refinements--t38) |
-| DEC-51 | D5 rendering: OpenAI `gpt-image-1`, low quality, 1024×1024 PNG with `OPENAI_API_KEY`; FLUX.1-schnell through the Hugging Face router (`nscale` route) with `HF_TOKEN` remains selectable; explicit opt-in by `VISION_RENDER_PROVIDER`; only the specification's gated `generation.prompt` is sent (derived attributes, locks and style; never source quotes, spans, titles or owner identifiers); negative prompt not sent; at most five reservations per owner; live acceptance (T40, T42) is limited to five requests in total; one charged call per reservation, no automatic retry, unanswered sends recorded as `acceptance_unknown` | Maintainer decision, 2026-10-22; [API](../api/api-contract.md#image-rendering--t40) |
+| DEC-51 | D5 rendering: OpenAI `gpt-image-1` (default) or `gpt-image-2` via `VISION_RENDER_MODEL`, low quality, 1024×1024 PNG with `OPENAI_API_KEY`; FLUX.1-schnell through the Hugging Face router (`nscale` route) with `HF_TOKEN` remains selectable; explicit opt-in by `VISION_RENDER_PROVIDER`; only the specification's gated `generation.prompt` is sent (derived attributes, locks and style; never source quotes, spans, titles or owner identifiers); negative prompt not sent; at most five reservations per owner; live acceptance (T40, T42) is limited to five requests in total; one charged call per reservation, no automatic retry, unanswered sends recorded as `acceptance_unknown` | Maintainer decision, 2026-10-22; [API](../api/api-contract.md#image-rendering--t40) |
 
 ## Workspace implementation
 
@@ -83,7 +83,9 @@ T40a implements provider-neutral owned render reservations and conditional
 cancellation receipts; T40 consumes DEC-51 with the adapter, dispatch and worker.
 The Hugging Face account had no Inference Provider credit (HTTP 402), so the
 maintainer selected OpenAI the same day; FLUX stays as an alternative selected by
-environment. Provider retention follows their terms and has not been verified as
+environment. Two further live requests were approved on 2026-10-22 to compare
+`gpt-image-1` and `gpt-image-2` on the single-scene prompt; other models are refused.
+Provider retention follows their terms and has not been verified as
 zero-retention; trait values in the prompt can echo short source
 wording as derived attributes.
 

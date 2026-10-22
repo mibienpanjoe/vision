@@ -1,8 +1,8 @@
 """Opt-in live render: one billed image request through the real API, queue and worker (DEC-51).
 
 Set VISION_LIVE_RENDER=1 and VISION_TEST_REDIS_URL with the selected provider's key; VISION_RENDER_PROVIDER
-defaults to openai (OPENAI_API_KEY), or huggingface (HF_TOKEN). The prompt comes from the synthetic
-corpus's stored specification. The image is copied to .local/measurements/render-live.<ext> for review.
+defaults to openai (OPENAI_API_KEY), or huggingface (HF_TOKEN); VISION_RENDER_MODEL picks an approved model. The prompt comes from the synthetic
+corpus's stored specification. The image is copied to .local/measurements/render-live-<model>.<ext> for review.
 """
 
 import json
@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 from app.models.renders import RenderJob
-from app.providers.images import PROVIDERS
+from app.providers.images import configured_policy
 from tests.test_refinement import ORIGIN, stored
 
 pytestmark = [pytest.mark.integration, pytest.mark.skipif(
@@ -40,7 +40,7 @@ def test_live_render_of_a_stored_specification(api, monkeypatch, tmp_path):
                                           headers={**ORIGIN, "Idempotency-Key": "live-render"})
         assert response.status_code == 202, response.text
         job = response.json()
-        assert job["dispatched"] is True and job["model"] == PROVIDERS[provider][1].model
+        assert job["dispatched"] is True and job["model"] == configured_policy().model
         for _ in range(1800):
             view = clients["reader"].get(f"/v1/works/{work_id}/renders/{job['id']}").json()
             if view["status"] not in {"queued", "running"}:
@@ -59,5 +59,6 @@ def test_live_render_of_a_stored_specification(api, monkeypatch, tmp_path):
     assert view["status"] == "succeeded", report
     MEASUREMENTS.mkdir(parents=True, exist_ok=True)
     image = (tmp_path / "renders" / row.output_reference).read_bytes()
-    (MEASUREMENTS / f"render-live.{row.output_media_type.split('/')[1]}").write_bytes(image)
-    (MEASUREMENTS / "render-live.json").write_text(json.dumps(report, indent=2))
+    name = f"render-live-{row.model.replace('/', '_')}"
+    (MEASUREMENTS / f"{name}.{row.output_media_type.split('/')[1]}").write_bytes(image)
+    (MEASUREMENTS / f"{name}.json").write_text(json.dumps(report, indent=2))

@@ -346,3 +346,11 @@ left-cheek scar in either image, a roofed house although the roof is missing,
 an ambiguous or wrong compass, and a four-panel layout instead of one scene,
 induced by the composer's "each shown separately" wording. Locks keep facts in
 the prompt; they do not make the image model draw them.
+
+Two approved follow-up requests used `test_live_render.py` with the `compose-v3`
+single-scene prompt on revision 1. `gpt-image-1` drew one scene with three distinct
+people, the linen shirt and a partly missing roof, but no scar and a wine glass
+instead of the compass. `gpt-image-2` drew one scene with three distinct people,
+the linen shirt, a roofless ruin beside a large tree and an open brass compass
+with a dial; the left-cheek scar was still not visible. Both stored, decoded and
+matched their snapshots.

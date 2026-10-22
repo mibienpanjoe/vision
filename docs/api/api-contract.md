@@ -498,7 +498,7 @@ archive API; it is not used by a chapter-limited browser view.
 Rendering follows DEC-51 (D5). It is off unless the private environment sets
 `VISION_RENDER_PROVIDER` and that provider's key; otherwise a new reservation
 returns `503 RENDER_NOT_CONFIGURED`. `openai` (`OPENAI_API_KEY`) selects
-`gpt-image-1` at low quality, PNG; `huggingface` (`HF_TOKEN`) selects
+`gpt-image-1`, or `gpt-image-2` with `VISION_RENDER_MODEL`, at low quality, PNG; `huggingface` (`HF_TOKEN`) selects
 `black-forest-labs/FLUX.1-schnell` through the Hugging Face router's `nscale`
 route. Both render 1024×1024. Each reservation records its provider/model and
 allows at most one charged provider call.

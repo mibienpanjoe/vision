@@ -21,9 +21,9 @@ def test_people_are_counted_and_a_held_object_is_not_repeated():
                     member("brass compass", "object", "object")]
     world = [member("house by the ash tree", "place", "place", roof="missing")]
     prompt, negative = compose_prompt(arthur, participants, world, [], "charcoal", False, ["steel armor"])
-    assert prompt == ("Arthur (attire: plain linen shirt; left cheek: scar still visible). "
-                      "2 other people, each shown separately: Élodie; Mira (held object: brass compass). "
-                      "Setting: house by the ash tree (roof: missing). Style: charcoal")
+    assert prompt == ("One single scene, not a grid or panels, showing Arthur (attire: plain linen shirt; "
+                      "left cheek: scar still visible). Also in the scene, 2 distinct people: Élodie; Mira (held object: "
+                      "brass compass). Setting: house by the ash tree (roof: missing). Style: charcoal")
     assert prompt.count("brass compass") == 1 and negative == "steel armor"
 
 
@@ -31,4 +31,4 @@ def test_unheld_objects_and_single_people_keep_their_own_phrases():
     subject = member("Wren", "character", "subject")
     participants = [member("Brann", "character", "participant"), member("silver sword", "object", "object")]
     prompt, _ = compose_prompt(subject, participants, [], [], None, False, [])
-    assert prompt == "Wren. 1 other person: Brann. Objects: silver sword"
+    assert prompt == "One single scene, not a grid or panels, showing Wren. Also in the scene, 1 other person: Brann. Objects: silver sword"
