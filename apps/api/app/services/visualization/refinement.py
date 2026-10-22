@@ -43,6 +43,19 @@ def current_inputs(db, generation, index):
             "appearance": str(appearance.id) if appearance else None, "index": str(indexed) if indexed else None}
 
 
+def require_current_inputs(db, actor, work_id, spec):
+    # Parse publication takes this same lock before advancing the source pointer.
+    db.scalar(select(Document).where(Document.work_id == work_id, Document.revision == 1).with_for_update())
+    _, generation = current_generation(db, actor, work_id)
+    if generation.id != spec.scope.generation_id or generation.parser_revision != spec.scope.parser_revision:
+        raise conflict("SCOPE_CHANGED", "The source changed. Create a new reconstruction.")
+    index = index_version(pipeline.local_embedder())
+    if (not spec.lineage.inputs or spec.lineage.inputs != current_inputs(db, generation, index)
+            or (spec.lineage.inputs.get("index") and spec.lineage.processing["index"] != index)):
+        raise conflict("DEPENDENCIES_CHANGED", "Processing changed. Create a new reconstruction.")
+    return generation
+
+
 def refine(db, actor, work_id, visualization_id, body, match, key):
     history.owned(db, actor, work_id, visualization_id)
     visualization = db.scalar(select(Visualization).where(Visualization.id == visualization_id)
@@ -62,15 +75,7 @@ def refine(db, actor, work_id, visualization_id, body, match, key):
         raise PublicError(412, "REVISION_CONFLICT", "Result changed. Reload its current revision.")
     base = history.view(db, visualization)
     spec = base.result.data.model_copy(deep=True)
-    # Parse publication takes this same lock before advancing the source pointer.
-    db.scalar(select(Document).where(Document.work_id == work_id, Document.revision == 1).with_for_update())
-    _, generation = current_generation(db, actor, work_id)
-    if generation.id != spec.scope.generation_id or generation.parser_revision != spec.scope.parser_revision:
-        raise conflict("SCOPE_CHANGED", "The source changed. Create a new reconstruction.")
-    index = index_version(pipeline.local_embedder())
-    if (not spec.lineage.inputs or spec.lineage.inputs != current_inputs(db, generation, index)
-            or (spec.lineage.inputs.get("index") and spec.lineage.processing["index"] != index)):
-        raise conflict("DEPENDENCIES_CHANGED", "Processing changed. Create a new reconstruction.")
+    generation = require_current_inputs(db, actor, work_id, spec)
 
     members = [spec.subject, *spec.participants, *spec.world]
     boundary = {"mode": "through_chapter", "chapter_id": str(spec.scope.through_chapter_id)} if spec.scope.through_chapter_id else {"mode": "whole_book"}

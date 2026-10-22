@@ -1625,6 +1625,108 @@
       "title": "RelationView",
       "type": "object"
     },
+    "RenderCancel": {
+      "additionalProperties": false,
+      "properties": {},
+      "title": "RenderCancel",
+      "type": "object"
+    },
+    "RenderCreate": {
+      "additionalProperties": false,
+      "properties": {
+        "specification_revision": {
+          "minimum": 1,
+          "title": "Specification Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "specification_revision"
+      ],
+      "title": "RenderCreate",
+      "type": "object"
+    },
+    "RenderView": {
+      "additionalProperties": false,
+      "properties": {
+        "cancel_requested": {
+          "title": "Cancel Requested",
+          "type": "boolean"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dispatched": {
+          "title": "Dispatched",
+          "type": "boolean"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        },
+        "specification_revision": {
+          "title": "Specification Revision",
+          "type": "integer"
+        },
+        "specification_sha256": {
+          "title": "Specification Sha256",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed",
+            "cancelled",
+            "acceptance_unknown"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "visualization_id": {
+          "format": "uuid",
+          "title": "Visualization Id",
+          "type": "string"
+        },
+        "work_id": {
+          "format": "uuid",
+          "title": "Work Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "work_id",
+        "visualization_id",
+        "specification_revision",
+        "specification_sha256",
+        "provider",
+        "model",
+        "revision",
+        "status",
+        "cancel_requested",
+        "dispatched",
+        "created_at"
+      ],
+      "title": "RenderView",
+      "type": "object"
+    },
     "RequestScope": {
       "additionalProperties": false,
       "properties": {
@@ -2657,6 +2759,15 @@
     "refinement_request": {
       "$ref": "#/$defs/RefinementRequest"
     },
+    "render": {
+      "$ref": "#/$defs/RenderView"
+    },
+    "render_cancel": {
+      "$ref": "#/$defs/RenderCancel"
+    },
+    "render_create": {
+      "$ref": "#/$defs/RenderCreate"
+    },
     "revision_page": {
       "$ref": "#/$defs/RevisionPage"
     },
@@ -2720,6 +2831,9 @@
     "visualization",
     "visualization_page",
     "revision_page",
+    "render_create",
+    "render_cancel",
+    "render",
     "refinement_request"
   ],
   "title": "SchemaCatalog",

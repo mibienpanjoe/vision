@@ -172,8 +172,21 @@ export type Value3 = string;
  */
 export type Locks = CanonicalLock[];
 export type Style = string | null;
-export type ConsolidationId = string;
+export type CancelRequested1 = boolean;
 export type CreatedAt = string;
+export type Dispatched = boolean;
+export type Id9 = string;
+export type Model = string;
+export type Provider = string;
+export type Revision2 = number;
+export type SpecificationRevision = number;
+export type SpecificationSha256 = string;
+export type Status5 = "queued" | "running" | "succeeded" | "failed" | "cancelled" | "acceptance_unknown";
+export type VisualizationId = string;
+export type WorkId = string;
+export type SpecificationRevision1 = number;
+export type ConsolidationId = string;
+export type CreatedAt1 = string;
 export type GenerationId2 = string;
 export type Number = number;
 export type ParserRevision5 = string;
@@ -183,7 +196,7 @@ export type DocumentRevisionId3 = string;
 export type GenerationId3 = string;
 export type ReadingBoundary1 = WholeBook | ThroughChapter;
 export type StoryEventId = string | null;
-export type WorkId = string;
+export type WorkId1 = string;
 export type SpanResolution = ResolvedSourceSpan | NeedsContext | InsufficientEvidence | Failed;
 export type Outcome = "resolved";
 export type SchemaVersion = "1.0";
@@ -195,7 +208,7 @@ export type Choices = [ContextChoice, ...ContextChoice[]];
  * Which request field the choice fills; a moment choice is resubmitted as its label
  */
 export type Field = ("subject" | "moment" | "context") | null;
-export type Id9 = string;
+export type Id10 = string;
 export type Label3 = string;
 export type Outcome1 = "needs_context";
 export type SchemaVersion1 = "1.0";
@@ -209,8 +222,8 @@ export type Outcome3 = "failed";
 export type SchemaVersion3 = "1.0";
 export type Format1 = "txt" | "md" | "pdf" | "epub";
 export type Title1 = string;
-export type CreatedAt1 = string;
-export type Id10 = string;
+export type CreatedAt2 = string;
+export type Id11 = string;
 /**
  * Scene context such as "at home"
  */
@@ -259,7 +272,7 @@ export type Evidence2 = SourceSpan[];
  * Why an inferred trait is not canonical
  */
 export type Reason2 = string | null;
-export type Status5 = "canonical" | "disputed" | "inferred";
+export type Status6 = "canonical" | "disputed" | "inferred";
 /**
  * @minItems 1
  */
@@ -297,12 +310,12 @@ export type SchemaVersion4 = "1.0";
 /**
  * Current revision; also the strong ETag
  */
-export type Revision2 = number;
-export type WorkId1 = string;
-export type VisualizationResult = ResolvedSpecification | NeedsContext | InsufficientEvidence | Failed;
-export type CreatedAt2 = string;
-export type Id11 = string;
 export type Revision3 = number;
+export type WorkId2 = string;
+export type VisualizationResult = ResolvedSpecification | NeedsContext | InsufficientEvidence | Failed;
+export type CreatedAt3 = string;
+export type Id12 = string;
+export type Revision4 = number;
 export type Subject = string;
 export type Items5 = VisualizationSummary[];
 
@@ -324,6 +337,9 @@ export interface SchemaCatalog {
   principal: PrincipalView;
   probe_request: ProbeRequest;
   refinement_request: RefinementRequest;
+  render: RenderView;
+  render_cancel: RenderCancel;
+  render_create: RenderCreate;
   revision_page: RevisionPage;
   scope: RequestScope;
   source_span: SourceSpan;
@@ -555,12 +571,30 @@ export interface CanonicalLock {
   entity_id: EntityId1;
   value: Value3;
 }
+export interface RenderView {
+  cancel_requested: CancelRequested1;
+  created_at: CreatedAt;
+  dispatched: Dispatched;
+  id: Id9;
+  model: Model;
+  provider: Provider;
+  revision: Revision2;
+  specification_revision: SpecificationRevision;
+  specification_sha256: SpecificationSha256;
+  status: Status5;
+  visualization_id: VisualizationId;
+  work_id: WorkId;
+}
+export interface RenderCancel {}
+export interface RenderCreate {
+  specification_revision: SpecificationRevision1;
+}
 export interface RevisionPage {
   items: Items4;
 }
 export interface RevisionSummary {
   consolidation_id: ConsolidationId;
-  created_at: CreatedAt;
+  created_at: CreatedAt1;
   generation_id: GenerationId2;
   number: Number;
   parser_revision: ParserRevision5;
@@ -571,7 +605,7 @@ export interface RequestScope {
   generation_id: GenerationId3;
   reading_boundary: ReadingBoundary1;
   story_event_id?: StoryEventId;
-  work_id: WorkId;
+  work_id: WorkId1;
 }
 export interface ResolvedSourceSpan {
   data: SourceSpan;
@@ -585,7 +619,7 @@ export interface NeedsContext {
 }
 export interface ContextChoice {
   field?: Field;
-  id: Id9;
+  id: Id10;
   label: Label3;
 }
 export interface InsufficientEvidence {
@@ -607,12 +641,12 @@ export interface UploadMetadata {
   title: Title1;
 }
 export interface VisualizationView {
-  created_at: CreatedAt1;
-  id: Id10;
+  created_at: CreatedAt2;
+  id: Id11;
   request: VisualizationRequest;
   result: ResolvedSpecification;
-  revision: Revision2;
-  work_id: WorkId1;
+  revision: Revision3;
+  work_id: WorkId2;
 }
 export interface VisualizationRequest {
   context?: Context;
@@ -702,7 +736,7 @@ export interface TraitView {
   attribute: Attribute3;
   evidence: Evidence2;
   reason?: Reason2;
-  status: Status5;
+  status: Status6;
   values: Values;
 }
 export interface ScopeView {
@@ -730,8 +764,8 @@ export interface VisualizationPage {
   items: Items5;
 }
 export interface VisualizationSummary {
-  created_at: CreatedAt2;
-  id: Id11;
-  revision: Revision3;
+  created_at: CreatedAt3;
+  id: Id12;
+  revision: Revision4;
   subject: Subject;
 }

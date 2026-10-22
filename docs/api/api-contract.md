@@ -492,3 +492,38 @@ must be the work's current published generation, and the chapter must belong to
 it. Lists include only exact scope matches, and incompatible reads/revision lists
 return the common 404. Omitting both filters retains the existing owner-authorized
 archive API; it is not used by a chapter-limited browser view.
+
+## Render reservations — T40a
+
+Production image rendering is disabled until D5 selects the provider/model, data
+handling, usage cap and acceptance/reconciliation policy. The reservation routes
+and migration are implemented and integration-tested using an injected policy;
+there is no provider adapter or render worker yet. No image call is made by these
+routes. This increment is not a completed T40 render operation.
+
+| Route | Behavior |
+|---|---|
+| `POST /v1/works/{work_id}/visualizations/{id}/renders` | Body contains only positive integer `specification_revision`; `Idempotency-Key` required. Returns `202 RenderView` for a durable reservation under a configured policy, or `503 RENDER_NOT_CONFIGURED`. |
+| `GET /v1/works/{work_id}/renders/{id}` | Owner-authorized `RenderView` with strong revision ETag; wrong owner/work returns safe 404. |
+| `POST /v1/works/{work_id}/renders/{id}/cancel` | Empty JSON object, `If-Match` and `Idempotency-Key`; returns the saved cancellation receipt and ETag. |
+
+A new reservation locks the visualization head and source pointer, requires the
+current specification revision and exact source/derivation inputs, and retains
+the entire immutable specification plus its SHA-256 and provider/model identity.
+Raw prompts and arbitrary provider settings are rejected. Request keys are scoped
+to owner and visualization: the same request returns that reservation's current
+state, while changed input returns 409. Replay precedes current configuration and
+dependency checks, so it cannot reserve a second call after configuration changes.
+
+The injected policy's maximum reservation count is serialized per owner and
+counts all reservations, including cancelled ones. It is a conservative testable
+reservation bound, not an approved currency budget or provider charging policy.
+`dispatched: false` means publication has not occurred; queued does not mean
+accepted by an image provider. There is no retry or reconciliation route yet.
+
+Queued cancellation becomes cancelled immediately. Running cancellation remains
+requested/running until a future executor confirms its outcome; this transition
+is tested with a seeded running row, not a real worker. Missing/stale preconditions
+return 428/412; reusing a cancellation key with another expected revision returns
+409. Exact cancellation replay returns the captured response even if later state
+changes. No cancellation or timeout claims that an external charge was reversed.

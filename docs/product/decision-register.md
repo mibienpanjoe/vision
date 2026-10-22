@@ -78,6 +78,11 @@ T38 snapshots each revision's request and the exact entity/appearance/index
 inputs; structured exclusions remain with the specification for subsequent prompt
 gates. Existing creation keys keep replaying revision 1 rather than a later edit.
 
+T40a implements provider-neutral owned render reservations and conditional
+cancellation receipts. Production configuration remains disabled, with no image
+adapter, dispatch or charging behavior. The test-only reservation cap does not
+resolve D5's provider, data handling, cancellation/reconciliation or spend policy.
+
 ## Proposed elaborations
 
 These make implementation discussions concrete without pretending the source
@@ -102,6 +107,7 @@ documents fixed all details.
 | OPEN-07 | Shared revision/idempotency resolved by DEC-23; route payloads, pagination, deletion and retention remain open | Executable API and persistent lifecycle |
 | OPEN-08 | External deployment excluded by DEC-25; local recovery, retention and deletion remain required | External deployment |
 | OPEN-09 | Project license, exact component selections, final wordmark/vector assets, and any future optically simplified favicon | Redistribution or relevant implementation increment |
+| OPEN-10 | D5: image provider/model, specification-data handling/retention, explicit usage/spend cap, cancellation, uncertain acceptance, reconciliation and charging semantics | Before T40 sends its first image-provider request |
 
 OPEN-04 is resolved conservatively by DEC-22. PROP-01/02/03 were promoted to
 DEC-20/21/23; executable tests and runtime proof still belong to their task owners.

@@ -289,3 +289,15 @@ outcome or the previously measured recall limits.
 | REQ-21 | Provider-envelope conformance and deterministic/live adapters exercise role boundaries; optional image adapter awaits Phase 6. |
 | REQ-22 | Provider instruction/data separation, hostile-upload limits, wrong-owner grounding rejection and literal source-markup browser rendering. These checks do not prove universal prompt-injection resistance. |
 | REQ-20 | Optional image rendering remains Phase 6 and is excluded from G5. |
+
+## Render reservation checks — T40a
+
+`test_render_contract.py` exercises real HTTP/PostgreSQL reservations with an
+injected synthetic provider policy, not an image provider. It checks disabled
+production configuration, raw-prompt rejection, retained specification/hash,
+owner isolation, request/cancellation replay, strong preconditions, concurrent
+owner-limit enforcement, stale source/specification/dependencies and a guarded
+disposable-database 0022 downgrade/upgrade that preserves parent specifications.
+Running cancellation is a seeded-state test; no render worker, uncertain-provider
+acceptance, asset storage, visible image or charging behavior has been verified.
+T40 remains incomplete until its selected adapter and real bounded request pass.
