@@ -17,7 +17,8 @@ if os.environ.get("VISION_TEST_WORKSPACE") == "1":
     from app.services.visualization import render
     from tests.image_fixtures import SyntheticImages
 
-    render.image_adapter = SyntheticImages
+    if os.environ.get("VISION_TEST_LIVE_RENDER") != "1":
+        render.image_adapter = SyntheticImages
 
 actual_parse = parse.parse_source
 

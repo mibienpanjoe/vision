@@ -105,7 +105,9 @@ the textual contract; generated pixels never become evidence for new facts.
 [Image rendering](../api/api-contract.md#image-rendering--t40) sends only the
 gated `generation.prompt`; the selected model takes no negative prompt, so
 excluded values are not enforced by the provider and must be checked in the
-pixels.
+pixels. The composed prompt (`compose-v2`, part of the result cache key) counts
+the other people present and omits an object already named as a member's trait
+value, so image models neither merge people nor redraw the object twice.
 
 ## Synthetic example policy
 

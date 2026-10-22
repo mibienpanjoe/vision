@@ -326,3 +326,23 @@ Dramatiq worker with a synthetic adapter: render, decoded image, authenticated
 download and anonymous 401, the older-specification note after a refinement and
 reopening revision 1 without render or refinement controls. Pixel review against
 a live provider belongs to T42.
+
+## Real render acceptance — T42
+
+`render-flow.spec.ts` runs the workspace harness (deterministic consolidation of
+the synthetic corpus) with the configured image provider and a real Dramatiq
+worker. `VISION_TEST_LIVE_RENDER=synthetic` rehearses the flow without billing;
+`=1` sends exactly two requests: the canon-first revision 1, then revision 2 with
+style "ink wash", interpretation mode and all four canonical facts locked. It
+checks both images stored, served and decoded at 1024 px, the replayed
+idempotency key returning the first job, two history entries, the older
+specification note and an anonymous 401.
+
+Run on 2026-10-22 with OpenAI `gpt-image-1` (low): both succeeded and their
+lineage matched revisions 1 and 2. Pixel review found the linen shirt, distinct
+people (Élodie and Mira had merged in an earlier single request), no steel armor
+and the ink-wash style. It also found contradictions that are not excused: no
+left-cheek scar in either image, a roofed house although the roof is missing,
+an ambiguous or wrong compass, and a four-panel layout instead of one scene,
+induced by the composer's "each shown separately" wording. Locks keep facts in
+the prompt; they do not make the image model draw them.

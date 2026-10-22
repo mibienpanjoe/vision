@@ -1,6 +1,7 @@
 """Isolated browser API: real persistence and domain services, deterministic model adapters."""
 
 import json
+import os
 
 from app.main import create_app
 from app.providers.contracts import ProviderRateLimited
@@ -25,6 +26,7 @@ def consolidation_rule(sources):
 
 specification.consolidation_adapter = lambda: RuleAdapter(consolidation_rule)
 specification.adjudicator = lambda _: RuleAdapter(verdict_rule({"plain linen shirt": ("entailed", None)}))
-# Synthetic renders: the worker returns a fixture PNG; no image provider is called.
-render.configured_policy = lambda: RenderPolicy("synthetic", "fixture-v1", 5)
+# Synthetic renders unless a billed live render run was requested explicitly.
+if os.environ.get("VISION_TEST_LIVE_RENDER") != "1":
+    render.configured_policy = lambda: RenderPolicy("synthetic", "fixture-v1", 5)
 app = create_app()

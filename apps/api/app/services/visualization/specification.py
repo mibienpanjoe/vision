@@ -66,7 +66,7 @@ from app.services.verification.claims import (
     prompt_problems,
     verify_state,
 )
-from app.services.visualization.prompts import compose_prompt
+from app.services.visualization.prompts import COMPOSE_VERSION, compose_prompt
 from sqlalchemy import select as select_rows
 
 RULED_OUT = frozenset({"removed", "negated", "superseded at this moment"})
@@ -204,4 +204,4 @@ def versions(db, plan, adapter, embedder, judge) -> dict:
             "index": str(indexed) if indexed else None, "query_plan": plan.rules_version,
             "consolidation": f"{CONSOLIDATION_PROMPT}/{Consolidation.schema_version}/{adapter.provider}/{adapter.model}",
             "adjudication": f"{ADJUDICATION_PROMPT}/{judge.provider}/{judge.model}" if judge else None,
-            "gates": GATES_VERSION, "spec": SPEC_VERSION, "fusion": json.dumps(WEIGHTS, sort_keys=True)}
+            "gates": GATES_VERSION, "prompt": COMPOSE_VERSION, "spec": SPEC_VERSION, "fusion": json.dumps(WEIGHTS, sort_keys=True)}
