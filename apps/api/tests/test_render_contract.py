@@ -178,12 +178,6 @@ def current(api, job):
     return clients["reader"].get(f"/v1/works/{work_id}/renders/{job['id']}").json()
 
 
-@pytest.fixture
-def renders(monkeypatch, tmp_path):
-    monkeypatch.setenv("VISION_RENDER_ROOT", str(tmp_path / "renders"))
-    return tmp_path / "renders"
-
-
 def test_worker_sends_only_the_specification_prompt_once_and_keeps_private_output(api, monkeypatch, renders):
     original = stored(api)
     enable(monkeypatch)

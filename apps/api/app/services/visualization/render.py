@@ -15,12 +15,13 @@ from app.models.access import Principal
 from app.models.renders import RenderJob
 from app.models.visualizations import Visualization
 from app.providers.images import (
+    MAX_IMAGE_BYTES,
     AcceptanceUnknown,
     RenderRejected,
     configured_policy,
     image_adapter,
 )
-from app.schemas.render import RenderView
+from app.schemas.render import RenderPage, RenderView
 from app.services.dispatch import dispatch_renders
 from app.services.ingestion.jobs import job_lock
 from app.services.visualization import history
@@ -74,6 +75,28 @@ def owned(db, actor, work_id, job_id):
     if job.work_id != work_id:
         raise history.not_found()
     return job
+
+
+def history_page(db, actor, work_id, visualization_id) -> RenderPage:
+    visualization = history.owned(db, actor, work_id, visualization_id)
+    jobs = db.scalars(select(RenderJob).where(RenderJob.visualization_id == visualization.id,
+                                              RenderJob.owner_id == actor.owner_id)
+                      .order_by(RenderJob.created_at.desc(), RenderJob.id).limit(history.PAGE))
+    return RenderPage(current_revision=visualization.revision, items=[RenderView.from_job(job) for job in jobs])
+
+
+def output(db, actor, work_id, job_id):
+    job = owned(db, actor, work_id, job_id)
+    if job.output_reference is None:
+        raise PublicError(409, "RENDER_OUTPUT_UNAVAILABLE", "This render has no stored image.")
+    try:
+        data = private_renders().read(job.output_reference, MAX_IMAGE_BYTES)
+    except (OSError, ValueError):
+        data = None
+    # Serve only the exact bytes recorded at completion; a missing or altered file is not this render.
+    if data is None or hashlib.sha256(data).hexdigest() != job.output_sha256:
+        raise PublicError(409, "RENDER_OUTPUT_UNAVAILABLE", "This render's stored image is unavailable.")
+    return job, data
 
 
 def cancel(db, actor, work_id, job_id, match, key):

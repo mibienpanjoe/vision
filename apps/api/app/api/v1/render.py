@@ -3,9 +3,9 @@ from typing import Annotated
 
 from app.core.http import BoundedJsonRoute
 from app.core.security import ActorScope, current_actor, database_session
-from app.schemas.render import RenderCancel, RenderCreate, RenderView
+from app.schemas.render import RenderCancel, RenderCreate, RenderPage, RenderView
 from app.services.visualization import render
-from fastapi import APIRouter, Depends, Header, Response
+from fastapi import APIRouter, Depends, Header, Query, Response
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/v1/works", tags=["render"], route_class=BoundedJsonRoute)
@@ -36,3 +36,18 @@ def cancel_render(work_id: uuid.UUID, job_id: uuid.UUID, body: RenderCancel, act
     found = render.cancel(db, actor, work_id, job_id, match, key)
     response.headers["ETag"] = f'"{found.revision}"'
     return found
+
+
+@router.get("/{work_id}/visualizations/{visualization_id}/renders", response_model=RenderPage)
+def list_renders(work_id: uuid.UUID, visualization_id: uuid.UUID, actor: Actor, db: Database):
+    return render.history_page(db, actor, work_id, visualization_id)
+
+
+@router.get("/{work_id}/renders/{job_id}/image")
+def render_image(work_id: uuid.UUID, job_id: uuid.UUID, actor: Actor, db: Database,
+                 download: Annotated[bool, Query()] = False):
+    job, data = render.output(db, actor, work_id, job_id)
+    name = f"vision-render-{job.id.hex[:12]}.{job.output_media_type.split('/')[1]}"
+    return Response(data, media_type=job.output_media_type, headers={
+        "X-Content-Type-Options": "nosniff", "ETag": f'"{job.output_sha256}"',
+        "Content-Disposition": f'{"attachment" if download else "inline"}; filename="{name}"'})

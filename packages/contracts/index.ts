@@ -195,12 +195,20 @@ export type Status5 = "queued" | "running" | "succeeded" | "failed" | "cancelled
 export type VisualizationId = string;
 export type WorkId = string;
 export type SpecificationRevision1 = number;
+/**
+ * The visualization's current revision; older renders show an earlier specification
+ */
+export type CurrentRevision = number;
+/**
+ * Newest first
+ */
+export type Items4 = RenderView[];
 export type ConsolidationId = string;
 export type CreatedAt1 = string;
 export type GenerationId2 = string;
 export type Number = number;
 export type ParserRevision5 = string;
-export type Items4 = RevisionSummary[];
+export type Items5 = RevisionSummary[];
 export type CreativeMode1 = "canon_first" | "interpretation";
 export type DocumentRevisionId3 = string;
 export type GenerationId3 = string;
@@ -327,7 +335,7 @@ export type CreatedAt3 = string;
 export type Id12 = string;
 export type Revision4 = number;
 export type Subject = string;
-export type Items5 = VisualizationSummary[];
+export type Items6 = VisualizationSummary[];
 
 /**
  * Build-time export root only; this is not an HTTP request/response.
@@ -350,6 +358,7 @@ export interface SchemaCatalog {
   render: RenderView;
   render_cancel: RenderCancel;
   render_create: RenderCreate;
+  render_page: RenderPage;
   revision_page: RevisionPage;
   scope: RequestScope;
   source_span: SourceSpan;
@@ -603,8 +612,12 @@ export interface RenderCancel {}
 export interface RenderCreate {
   specification_revision: SpecificationRevision1;
 }
-export interface RevisionPage {
+export interface RenderPage {
+  current_revision: CurrentRevision;
   items: Items4;
+}
+export interface RevisionPage {
+  items: Items5;
 }
 export interface RevisionSummary {
   consolidation_id: ConsolidationId;
@@ -775,7 +788,7 @@ export interface VisualizationCreated {
   visualization: VisualizationView | null;
 }
 export interface VisualizationPage {
-  items: Items5;
+  items: Items6;
 }
 export interface VisualizationSummary {
   created_at: CreatedAt3;

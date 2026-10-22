@@ -36,3 +36,8 @@ class RenderView(ContractModel):
     def from_job(cls, job):
         return cls(**{name: getattr(job, name) for name in cls.model_fields if name != "dispatched"},
                    dispatched=job.dispatched_at is not None)
+
+
+class RenderPage(ContractModel):
+    current_revision: int = Field(ge=1, description="The visualization's current revision; older renders show an earlier specification")
+    items: list[RenderView] = Field(description="Newest first")

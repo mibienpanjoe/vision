@@ -14,7 +14,7 @@ from app.schemas.outcomes import (  # noqa: F401  (re-exported: the shared envel
     Resolved,
     SafeError,
 )
-from app.schemas.render import RenderCancel, RenderCreate, RenderView
+from app.schemas.render import RenderCancel, RenderCreate, RenderPage, RenderView
 from app.schemas.retrieval import VisualizationRequest
 from app.schemas.scope import RequestScope, SourceSpan
 from app.schemas.visualization import (
@@ -77,4 +77,5 @@ class SchemaCatalog(ContractModel):
     render_create: RenderCreate
     render_cancel: RenderCancel
     render: RenderView
+    render_page: RenderPage
     refinement_request: RefinementRequest

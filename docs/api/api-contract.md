@@ -508,6 +508,8 @@ allows at most one charged provider call.
 | `POST /v1/works/{work_id}/visualizations/{id}/renders` | Body contains only positive integer `specification_revision`; `Idempotency-Key` required. Returns `202 RenderView` for a durable reservation, or `503 RENDER_NOT_CONFIGURED`. |
 | `GET /v1/works/{work_id}/renders/{id}` | Owner-authorized `RenderView` with strong revision ETag; wrong owner/work returns safe 404. |
 | `POST /v1/works/{work_id}/renders/{id}/cancel` | Empty JSON object, `If-Match` and `Idempotency-Key`; returns the saved cancellation receipt and ETag. |
+| `GET /v1/works/{work_id}/visualizations/{id}/renders` | Owner's `RenderPage` for that visualization: `current_revision` plus at most 100 renders, newest first. Wrong owner/work returns safe 404. |
+| `GET /v1/works/{work_id}/renders/{id}/image` | The stored image bytes with their media type, `ETag` = output SHA-256, `no-store`, `nosniff` and an inline (or, with `download=true`, attachment) `vision-render-<id>.<ext>` filename. Wrong owner/work returns safe 404; no stored image, or a stored file that is missing or no longer matches its digest, returns `409 RENDER_OUTPUT_UNAVAILABLE`. |
 
 A new reservation locks the visualization head and source pointer, requires the
 current specification revision and exact source/derivation inputs, and retains
@@ -552,5 +554,17 @@ that an external charge was reversed.
 
 The image's lineage is the reserved specification revision and hash, provider,
 model, recorded settings (size, quality or route, `negative_prompt: not_sent`,
-prompt SHA-256) and any provider-reported token usage. The private storage reference is never returned. Viewing or
-downloading the image belongs to T41; generated pixels never become evidence.
+prompt SHA-256) and any provider-reported token usage. The private storage
+reference is never returned. The image is stored once, beside originals, and
+recorded on its render job rather than in a separate asset table; each job has at
+most one image. Reopening a render's `specification_revision` through the
+revision route returns the same immutable specification and evidence the job
+snapshotted. Generated pixels never become evidence or narrative facts.
+
+The workspace's rendered-images panel (T41) starts a render of the displayed
+current revision, reusing one idempotency key for a retried click, polls queued
+or running renders, shows each succeeded image with an "older specification" note
+when the current revision has moved, opens the exact revision behind any render,
+offers conditional cancellation and a download, and explains failed and
+acceptance-unknown outcomes. Historical revisions can be viewed with their
+renders but not rendered again.

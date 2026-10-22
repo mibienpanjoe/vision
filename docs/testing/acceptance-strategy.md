@@ -313,4 +313,16 @@ keeping its image, interrupted claims settled without another call (and a held
 lock left alone), and a real Redis/Dramatiq worker completing a job whose first
 enqueue failed after `dispatch_renders`. The opt-in `test_live_render.py` sends
 one bounded request to the named provider; its evidence is recorded with the
-task. Image viewing, history and pixel review belong to T41/T42.
+task.
+
+`test_render_assets.py` (T41) checks over real HTTP, PostgreSQL and private
+storage: exact image bytes with media type, digest ETag, `no-store`, `nosniff`
+and inline/attachment filenames; history ordering with the current revision after
+a refinement; the reserved snapshot equal to the reopened revision; safe 404s for
+another owner, another work and unknown renders; 409 for queued renders, failed
+storage after provider acceptance, and stored files that are missing or altered.
+`render-history.spec.ts` drives the browser against the real API and a real
+Dramatiq worker with a synthetic adapter: render, decoded image, authenticated
+download and anonymous 401, the older-specification note after a refinement and
+reopening revision 1 without render or refinement controls. Pixel review against
+a live provider belongs to T42.

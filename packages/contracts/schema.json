@@ -1646,6 +1646,31 @@
       "title": "RenderCreate",
       "type": "object"
     },
+    "RenderPage": {
+      "additionalProperties": false,
+      "properties": {
+        "current_revision": {
+          "description": "The visualization's current revision; older renders show an earlier specification",
+          "minimum": 1,
+          "title": "Current Revision",
+          "type": "integer"
+        },
+        "items": {
+          "description": "Newest first",
+          "items": {
+            "$ref": "#/$defs/RenderView"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "current_revision",
+        "items"
+      ],
+      "title": "RenderPage",
+      "type": "object"
+    },
     "RenderView": {
       "additionalProperties": false,
       "properties": {
@@ -2819,6 +2844,9 @@
     "render_create": {
       "$ref": "#/$defs/RenderCreate"
     },
+    "render_page": {
+      "$ref": "#/$defs/RenderPage"
+    },
     "revision_page": {
       "$ref": "#/$defs/RevisionPage"
     },
@@ -2885,6 +2913,7 @@
     "render_create",
     "render_cancel",
     "render",
+    "render_page",
     "refinement_request"
   ],
   "title": "SchemaCatalog",
