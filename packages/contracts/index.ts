@@ -227,6 +227,10 @@ export type Creative = CreativeAddition[];
 export type Label4 = string;
 export type Reason1 = string;
 export type Excluded = ExclusionView[];
+/**
+ * Structured exclusions retained for refinement gates
+ */
+export type ExcludedValues = string[];
 export type NegativePrompt = string;
 export type Prompt = string;
 export type Style1 = string | null;
@@ -641,13 +645,21 @@ export interface ExclusionView {
   reason: Reason1;
 }
 export interface GenerationIntent {
+  excluded_values?: ExcludedValues;
   negative_prompt: NegativePrompt;
   prompt: Prompt;
   style: Style1;
 }
 export interface Lineage {
   consolidation_id: ConsolidationId1;
+  inputs?: Inputs;
   processing: Processing;
+}
+/**
+ * Entity, appearance and index derivation snapshots
+ */
+export interface Inputs {
+  [k: string]: string | null;
 }
 export interface Processing {
   [k: string]: string;

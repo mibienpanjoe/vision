@@ -885,6 +885,16 @@
     "GenerationIntent": {
       "additionalProperties": false,
       "properties": {
+        "excluded_values": {
+          "description": "Structured exclusions retained for refinement gates",
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Excluded Values",
+          "type": "array"
+        },
         "negative_prompt": {
           "maxLength": 2000,
           "title": "Negative Prompt",
@@ -1257,6 +1267,21 @@
           "format": "uuid",
           "title": "Consolidation Id",
           "type": "string"
+        },
+        "inputs": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": "Entity, appearance and index derivation snapshots",
+          "title": "Inputs",
+          "type": "object"
         },
         "processing": {
           "additionalProperties": {

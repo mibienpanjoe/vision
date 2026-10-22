@@ -18,7 +18,7 @@ from app.models.visualizations import CachedResult
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 
-GATES_VERSION = "verify-v1"
+GATES_VERSION = "verify-v2"
 
 
 def cache_scope(owner_id, plan, versions: dict, locks: dict | None = None) -> dict:

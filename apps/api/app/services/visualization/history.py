@@ -47,7 +47,7 @@ def view(db, visualization: Visualization, number: int | None = None) -> Visuali
         raise not_found()
     return VisualizationView(id=visualization.id, work_id=visualization.work_id, revision=revision.number,
                              created_at=revision.created_at,
-                             request=VisualizationRequest.model_validate_json(json.dumps(visualization.request)),
+                             request=VisualizationRequest.model_validate_json(json.dumps(revision.request)),
                              result=ResolvedSpecification.model_validate_json(json.dumps(revision.result)))
 
 
@@ -72,7 +72,7 @@ def create(db, actor, work_id: uuid.UUID, body, key: str, correlation_id: str) -
     def replay(found):
         if found.request_hash != digest:
             raise conflict()
-        stored = view(db, found)
+        stored = view(db, found, 1)
         return 201, VisualizationCreated(visualization=stored, result=VisualizationResult(stored.result))
 
     if (found := prior()) is not None:
@@ -89,7 +89,7 @@ def create(db, actor, work_id: uuid.UUID, body, key: str, correlation_id: str) -
         db.add(VisualizationRevision(visualization_id=visualization.id, number=1, generation_id=scope.generation_id,
                                      parser_revision=scope.parser_revision,
                                      consolidation_id=outcome.data.lineage.consolidation_id,
-                                     result=outcome.model_dump(mode="json")))
+                                     result=outcome.model_dump(mode="json"), request=request))
         db.commit()
     except IntegrityError:
         db.rollback()

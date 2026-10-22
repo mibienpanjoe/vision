@@ -73,6 +73,9 @@ excerpt without widening the reading boundary.
 T37's natural-language consumer includes a query SHA-256 in both result-cache
 and consolidation identity: the reader's exact words affect the provider input
 even when the structured plan is identical. Existing revisions remain immutable.
+T38 snapshots each revision's request and the exact entity/appearance/index
+inputs; structured exclusions remain with the specification for subsequent prompt
+gates. Existing creation keys keep replaying revision 1 rather than a later edit.
 
 ## Proposed elaborations
 

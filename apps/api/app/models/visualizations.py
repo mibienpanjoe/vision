@@ -37,6 +37,7 @@ class VisualizationRevision(Base):
     parser_revision: Mapped[str] = mapped_column(String(32))
     consolidation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("derivations.id"))
     result: Mapped[dict] = mapped_column(JSONB)
+    request: Mapped[dict] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
 

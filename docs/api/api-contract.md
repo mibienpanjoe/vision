@@ -448,5 +448,12 @@ or a missing revision, is the common `404`. A revision stores the full
 validated result with its generation, parser revision and consolidation
 (migration 0018), so its cited spans still resolve through the evidence route
 after later consolidations. New revisions (refinement) arrive with T38.
+
+T38's snapshot preparation retains each revision's own request, exact input
+derivation IDs in `lineage.inputs`, and structured excluded values beside the
+generation prompt. Migration 0020 backfills revision requests from the original
+request and that revision's style/mode. Creation replay returns revision 1 even
+after later refinement. Older specs remain readable; new cache keys (`verify-v2`)
+require fresh dependency snapshots. The mutation consumer is a separate increment.
 Generated types: `VisualizationCreated`, `VisualizationView`,
 `VisualizationPage`, `RevisionPage`.

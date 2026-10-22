@@ -174,7 +174,8 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
 
     spec = VisualSpecification(
         spec_version=SPEC_VERSION,
-        lineage=Lineage(consolidation_id=derivation_id, processing={
+        lineage=Lineage(consolidation_id=derivation_id,
+                        inputs={key: scope["versions"][key] for key in ("entities", "appearance", "index")}, processing={
             "query_plan": plan.rules_version, "consolidation": derivation.processing_version,
             "index": index_version(embedder) if similar is not None else "unavailable",
             "parser": plan.parser_revision}),
@@ -185,7 +186,7 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
         subject=subject_view, participants=participants, world=world,
         excluded=[ExclusionView(label=label[:256], reason=reason) for label, reason in composed.excluded.items()],
         unknown=composed.unknown, creative=creative,
-        generation=GenerationIntent(style=plan.style, prompt=prompt, negative_prompt=negative),
+        generation=GenerationIntent(style=plan.style, prompt=prompt, negative_prompt=negative, excluded_values=excluded_values),
         verification=VerificationView(adjudication=adjudication, removed=removed, selection=selection.outcome))
     resolved = ResolvedSpecification(outcome="resolved", schema_version="1.0", data=spec)
     remember(db, actor.owner_id, plan, scope, resolved.model_dump(mode="json"))
