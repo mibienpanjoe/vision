@@ -62,9 +62,8 @@ Moment and scene context are user phrases, not an invented precomputed timeline:
 DEC-38 derives events per question. The context form submits the selected entity,
 moment and scene under the exact cutoff to the stored-visualization endpoint.
 Only a resolved server result displays a saved revision receipt. Other outcomes
-explain what is missing or failed. This initial context consumer proves stored
-request scope; the full profile, evidence inspector, export and refinement are
-T36–T38.
+explain what is missing or failed. The profile, evidence inspector, export and
+refinement below consume that stored result and exact request scope.
 
 ## Exact source reader — T36
 
@@ -100,8 +99,8 @@ labels as well as selection color.
 
 Export downloads exactly the stored server `VisualSpecification`, including its
 scope, evidence and lineage, as JSON. It adds no browser-derived claims. Style
-and interpretation do not relabel canonical traits; mutation of a stored result
-and immutable revision history remain T38.
+and interpretation do not relabel canonical traits. Refinement appends revisions
+as described below.
 
 ## Refinement and history — T38
 

@@ -385,7 +385,8 @@ with deterministic model adapters, and a test-only API bootstrap supplies
 deterministic consolidation/adjudication. Production code has no fixture switch;
 the test modules are selected explicitly by the harness. No live model is called.
 
-The workspace harness includes explorer, evidence and reconstruction tests.
+The workspace harness includes accessibility, explorer, evidence, reconstruction
+and two-tab refinement/history tests.
 `VISION_TEST_WORKSPACE_SPECS` can select specific Playwright files. If another
 local service uses port 8000, choose a dedicated test API port and build the web
 proxy for that same origin, for example:
@@ -397,3 +398,22 @@ VISION_TEST_API_PORT=18000 VISION_TEST_WORKSPACE=1 make browser-session
 
 A later normal build uses the default API origin again; never exercise a test
 harness against an unrelated listener or a build with a different proxy target.
+
+For the explicit live product gate, use
+`VISION_TEST_LIVE_WORKSPACE=1 make browser-session` (with the same port override
+when needed). It uses the production API and worker bootstraps, pinned local
+entity/coreference/embedding models and the configured Groq adapter, never the
+fixture adapters. Only the committed synthetic story is uploaded. This opt-in
+loads provider configuration from the private `.env`; Groq must be configured,
+and model snapshots must already be cached. `HF_HUB_OFFLINE=1` prevents implicit
+model downloads; set `HF_HOME` if the snapshots use a separate cache directory.
+The test inspects the stored specification, source highlights and identical JSON
+export; the harness additionally asserts successful local/Groq run records,
+persisted vectors and revisions before removing its disposable data. CI uses the
+deterministic workspace suite and does not require provider credentials.
+
+The web rewrite proxy has a bounded 300-second timeout. The framework's default
+30 seconds can close a cold local embedding query followed by consolidation
+(90-second provider budget) and adjudication (60-second budget). Provider calls
+retain those smaller bounds; an uncertain browser mutation retains its replay
+key and payload. This setting is part of the built web configuration.

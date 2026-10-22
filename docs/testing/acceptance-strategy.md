@@ -1,11 +1,10 @@
 # Acceptance and verification strategy
 
-**Status:** corpus, local foundation and TXT/Markdown upload → parser → authorized
-evidence checks are implemented; the provider envelope has deterministic
-contract tests (T17); entity, event and visual-fact derivation, ambiguity,
-chronology, modality, attribution gates, conflicts and cutoff-filtered browse
-have deterministic fixture, PostgreSQL and API evidence (T18–T21). Live
-extraction quality and the remaining scenarios below remain pending.
+**Status:** executable unit, contract, PostgreSQL/Redis/worker and browser checks
+cover the local non-rendering workspace. Live extraction/reconstruction evidence
+and its measured recall limits are recorded below; deterministic adapters remain
+the reproducible regression oracle. Optional rendering and release-environment
+acceptance require their separate gates.
 The [requirements](../product/requirements-and-acceptance.md) own product promises;
 this page owns how to demonstrate them without relying on attractive output.
 
@@ -41,9 +40,9 @@ T03 ran three passing integrity tests, a Node code-point probe for all 33 spans,
 and temporary mutation probes that rejected quote corruption, unknown entities,
 late cutoff evidence, wrong ownership and stale source identity. These establish
 fixture consistency. The expected temporal states, ambiguity and support labels
-were reviewed against the story; automated narrative extraction and reconstructed
-outputs have not been evaluated. T06/T36 must still prove executable client
-contracts and DOM highlighting.
+were reviewed against the story. Extraction and reconstructed outputs were
+evaluated separately in T22/T33. Client contracts and DOM highlighting have their
+own executable checks below.
 
 ## Scenario matrix
 
@@ -161,8 +160,8 @@ sample on a 14-passage fixture. They are not whole-book recall and not a
 quality target. OPEN-05 records them as the first measured baseline, and
 PROP-07 proposes targets.
 
-This evidence covers the API and the real pipeline. A browser product flow is
-Phase 5.
+This evidence covers the API and the real pipeline. T39 below separately proves
+the browser product flow and retains these broader quality limitations.
 
 ## Library browser checks — T34
 
@@ -243,3 +242,50 @@ the second receives 412, reloads its locks/revision while retaining its style dr
 and then stores the next revision. It revisits revision 1 with its original source,
 keeps it read-only and clears it when the boundary narrows. Canonical profiles and
 source spans are compared to the original stored result.
+
+## Product acceptance coverage — T39
+
+The deterministic workspace browser suite covers empty/populated libraries,
+ambiguous identities and moments, insufficient evidence, safe provider failure,
+exact Unicode evidence, exported data and stale two-tab refinement. Its model
+adapters are fixtures; its HTTP, PostgreSQL, Redis and worker publication are real.
+`tests/accessibility.spec.ts` checks the populated profile/source controls in
+light/dark themes, visible text and placeholder contrast, named controls, heading
+order, unique IDs, skip-link focus, reduced-motion preference, 320/768/1440-pixel
+layouts and 200% text. Enlarged nested panels must retain readable excerpt width
+as well as avoid horizontal scrolling. These are targeted Chromium checks, not a
+complete WCAG audit, screen-reader assessment or physical-device certification.
+
+`tests/product-flow.spec.ts` is the separate opt-in live browser gate described
+in [operations](../operations/development-and-operations.md#library-browser-harness--t34).
+It uploads the synthetic story through production bootstraps and requires a
+resolved, persisted specification from local extraction/embeddings and Groq.
+The browser opens exact evidence and downloads JSON equal to the stored result;
+the harness verifies persisted successful provider records, vectors and revisions.
+It does not replace T33's broader quality measurement or establish whole-book
+recall, throughput, deployment readiness or physical-device coverage.
+
+The 2026-10-22 local live dinner run passed in 47 seconds: source upload through
+the production worker, scoped Groq reconstruction, stored profile, exact source
+DOM highlight and identical downloaded JSON. The disposable database contained
+successful `local` and `groq` records, 14 passage vectors and one saved revision.
+An earlier broader "at home after the war" request returned insufficient moment
+evidence; this gate uses the source's explicit dinner scene. A separate attempt
+returned provider-unavailable safely. The successful run does not remove either
+outcome or the previously measured recall limits.
+
+| Requirements | Named evidence and limits |
+|---|---|
+| REQ-01 | `test_authorization.py`, owner cases in evidence/visualization/refinement/cache integration tests; `library.spec.ts` and scoped history browser checks. Private assets await optional rendering. |
+| REQ-02, REQ-04 | Text/PDF/EPUB parsing and source-generation tests, `test_evidence_api.py`; `evidence.spec.ts` exact Unicode DOM spans and `refinement.spec.ts` old revision citations. PDF OCR is excluded. |
+| REQ-03 | `test_ingestion_recovery.py`, `test_worker_integration.py`, `library.spec.ts`: queued/running cancellation, retry, stale guards, persisted publication. Narrative-stage retry remains PROP-06. |
+| REQ-05–REQ-07 | Entity, chronology, appearance and visual-fact tests; T22 live extraction measurement; explorer identity options. Live extraction retains its measured limitations. |
+| REQ-08–REQ-10 | Fusion, semantic/lexical integration, scene/reconstruction tests and T33's deterministic/live scored cases; live recall misses remain recorded above. |
+| REQ-11, REQ-12 | Spoiler-eligibility, query-resolution, scoped-cache and history tests; explorer/context/boundary browser cases. |
+| REQ-13, REQ-14 | Grounding/adjudication regressions, evidence API and browser source/profile tests distinguish support, conflict, inference and unknowns. |
+| REQ-15, REQ-16 | Contracts, stored visualization/refinement integration and browser mode/lock/history/export tests preserve canon and exact portable JSON. |
+| REQ-17, REQ-18 | Source-generation, scoped-cache and refinement tests; immutable request/result/lineage frames and dependency/source invalidation. |
+| REQ-19 | Upload-limit, provider-contract, bounded-evidence/refinement-body and ingestion-failure tests. Whole-book performance/cost targets and operational drills await Phase 7. |
+| REQ-21 | Provider-envelope conformance and deterministic/live adapters exercise role boundaries; optional image adapter awaits Phase 6. |
+| REQ-22 | Provider instruction/data separation, hostile-upload limits, wrong-owner grounding rejection and literal source-markup browser rendering. These checks do not prove universal prompt-injection resistance. |
+| REQ-20 | Optional image rendering remains Phase 6 and is excluded from G5. |

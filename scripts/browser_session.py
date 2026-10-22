@@ -20,7 +20,8 @@ values = dict(
     if line and not line.startswith("#")
 )
 library = os.environ.get("VISION_TEST_LIBRARY") == "1"
-workspace = os.environ.get("VISION_TEST_WORKSPACE") == "1"
+live = os.environ.get("VISION_TEST_LIVE_WORKSPACE") == "1"
+workspace = os.environ.get("VISION_TEST_WORKSPACE") == "1" or live
 api_port = int(os.environ.get("VISION_TEST_API_PORT", "8000"))
 url = make_url(os.environ.get("DATABASE_URL", values["DATABASE_URL"]))
 name = "vision_test_" + uuid.uuid4().hex
@@ -38,6 +39,7 @@ log = None
 source_directory = tempfile.TemporaryDirectory(prefix="vision-session-")
 try:
     env = {
+        **(values if live else {}),
         **os.environ,
         "DATABASE_URL": test_url,
         "VISION_WEB_ORIGINS": "http://127.0.0.1:13000",
@@ -47,6 +49,8 @@ try:
         "VISION_NARRATIVE_PROVIDER": "local" if workspace else "off",
         "VISION_TEST_PARSE_GATE": str(Path(source_directory.name) / "parse-gate"),
     }
+    if live:
+        env["HF_HUB_OFFLINE"] = "1"
     os.environ["DATABASE_URL"] = test_url
     command.upgrade(Config(str(root / "apps/api/alembic.ini")), "head")
     if library or workspace:
@@ -56,7 +60,7 @@ try:
         )
         worker_log = (root / ".local/library-worker.log").open("w")
         worker = subprocess.Popen(
-            [str(root / "apps/api/.venv/bin/dramatiq"), "tests.browser_worker", "--processes", "1", "--threads", "1", "--queues", "ingestion", *( ["narrative"] if workspace else [] )],
+            [str(root / "apps/api/.venv/bin/dramatiq"), "app.workers.bootstrap" if live else "tests.browser_worker", "--processes", "1", "--threads", "1", "--queues", "ingestion", *( ["narrative"] if workspace else [] )],
             cwd=root / "apps/api", env=env, stdout=worker_log, stderr=worker_log, start_new_session=True,
         )
         env["VISION_TEST_WORKER_PID"] = str(worker.pid)
@@ -82,7 +86,7 @@ try:
             "run",
             "--locked",
             "uvicorn",
-            "tests.browser_app:app" if workspace else "app.main:app",
+            "tests.browser_app:app" if workspace and not live else "app.main:app",
             "--host",
             "127.0.0.1",
             "--port",
@@ -104,8 +108,18 @@ try:
             time.sleep(0.1)
     else:
         raise RuntimeError("Isolated API did not become ready")
+    if live:
+        specs = ["tests/product-flow.spec.ts"]
+    elif workspace:
+        specs = os.environ.get(
+            "VISION_TEST_WORKSPACE_SPECS",
+            "tests/accessibility.spec.ts tests/explorer.spec.ts tests/evidence.spec.ts "
+            "tests/visualization.spec.ts tests/refinement.spec.ts",
+        ).split()
+    else:
+        specs = ["tests/library.spec.ts" if library else "tests/session.spec.ts"]
     subprocess.run(
-        ["pnpm", "--dir", "apps/web", "test", *(os.environ.get("VISION_TEST_WORKSPACE_SPECS", "tests/explorer.spec.ts tests/evidence.spec.ts tests/visualization.spec.ts tests/refinement.spec.ts").split() if workspace else ["tests/library.spec.ts" if library else "tests/session.spec.ts"]), "--workers=1"],
+        ["pnpm", "--dir", "apps/web", "test", *specs, "--workers=1"],
         env={**env, "VISION_TEST_WEB_SESSION": "1"},
         check=True,
     )
@@ -120,6 +134,18 @@ try:
                 ), {"title": "Slow parsing"}).one()
                 assert (status, passages) == ("cancelled", 0)
                 print("Running cancellation persisted: cancelled, zero published passages.")
+        finally:
+            fixture_db.dispose()
+    if live:
+        fixture_db = create_engine(test_url)
+        try:
+            with fixture_db.connect() as db:
+                providers = set(db.scalars(text("SELECT DISTINCT provider FROM model_runs WHERE outcome = 'succeeded'")))
+                vectors = db.scalar(text("SELECT count(*) FROM passage_embeddings"))
+                revisions = db.scalar(text("SELECT count(*) FROM visualization_revisions"))
+                assert {"local", "groq"} <= providers, providers
+                assert vectors > 0 and revisions > 0
+                print(f"Live gate persisted: providers={sorted(providers)}, vectors={vectors}, revisions={revisions}.")
         finally:
             fixture_db.dispose()
 finally:

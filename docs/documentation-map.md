@@ -1,10 +1,12 @@
 # Documentation map
 
-**Status:** executable local foundation and checked synthetic corpus, 2026-10-19.
-TXT, Markdown, PDF (no OCR) and EPUB ingestion with retry/cancellation and
-bounded evidence reads are implemented, as are source-grounded entity, event and
-visual-fact derivation with spoiler-safe browse; retrieval and reconstruction
-remain planned.
+**Status:** local product workspace implemented through Phase 5, 2026-10-22.
+TXT, Markdown, PDF (no OCR) and EPUB ingestion, local entity extraction and
+embeddings, scoped query-time reconstruction, stored visual specifications and
+browser library/exploration/evidence/export/refinement are implemented.
+The [acceptance strategy](testing/acceptance-strategy.md) distinguishes fixture,
+live-model and browser evidence and retains the measured model-quality limits.
+Optional image rendering and release/operations acceptance remain later phases.
 
 The structure follows FIRA's separation of product scope, domain contracts,
 canonical data, operations, and architecture decisions. FIRA's financial domain,
@@ -29,8 +31,8 @@ roles, delivery deadlines, and branch model do not apply to Vision.
 
 Supporting owners:
 
-- [Product workspace](product/workspace.md): browser library, upload and processing
-  controls, with subsequent exploration and reconstruction increments distinguished.
+- [Product workspace](product/workspace.md): browser library, processing controls,
+  scoped exploration, source reader, reconstruction, export and revision history.
 - [Development and operations](operations/development-and-operations.md): current
   local setup, runtime topology, job visibility, and remaining operational gates.
 - [Visual identity](design/visual-identity.md): logo direction, component sources,

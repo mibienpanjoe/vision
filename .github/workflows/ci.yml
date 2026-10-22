@@ -38,7 +38,7 @@ jobs:
         run: make integration browser-session
       - name: Real library upload, retry and cancellation controls
         run: VISION_TEST_LIBRARY=1 make browser-session
-      - name: Scoped entity and context browser controls
+      - name: Workspace, evidence, revisions and accessibility browser checks
         run: VISION_TEST_WORKSPACE=1 make browser-session
       - name: Known JavaScript dependency advisories
         run: pnpm audit --audit-level=high

@@ -1,7 +1,10 @@
 # Implementation roadmap
 
-**Status:** planned, no completed implementation milestones.
-The order derives from overview §12; the concrete slices below are proposals.
+**Status:** milestones 1–3 have local implementation and acceptance evidence.
+The order derives from overview §12 and the accepted phase plan; optional
+rendering and release/operations gates remain open. The
+[acceptance strategy](../testing/acceptance-strategy.md) owns the evidence and
+measured model-quality limits; local acceptance does not establish deployment readiness.
 This document owns milestone scope, not a second requirement list.
 
 ## Milestone 1 — Narrative representation
@@ -32,8 +35,9 @@ live provider path separately from deterministic adapter tests.
 ## Milestone 3 — Product experience
 
 Build the library, ingestion status, entity/context exploration, reconstruction
-workspace, evidence reader, and JSON export. Use shadcn/ui and selectively adapt
-agent-interface components to the existing domain outcomes.
+workspace, evidence reader, JSON export and revision-safe presentation refinement.
+Use shadcn/ui and selectively adapt agent-interface components to the existing
+domain outcomes, following DEC-13 and the component-origin gate.
 
 **Gate:** in a real browser, upload → status → entity/context → reconstruction →
 attribute → source span → export completes against the actual API and database.
