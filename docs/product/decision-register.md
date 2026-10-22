@@ -70,6 +70,9 @@ without disclosing future chapter labels; it does not enumerate story chronology
 T36 consumes DEC-20/23 through the bounded evidence endpoint: browser highlights
 use code points, text remains escaped, and a failed/stale reference clears its
 excerpt without widening the reading boundary.
+T37's natural-language consumer includes a query SHA-256 in both result-cache
+and consolidation identity: the reader's exact words affect the provider input
+even when the structured plan is identical. Existing revisions remain immutable.
 
 ## Proposed elaborations
 

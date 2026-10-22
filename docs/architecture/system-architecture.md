@@ -145,6 +145,11 @@ at 0.79 whatever the weights. One novel and 21 queries cannot fix a target
 
 ### Scoped result cache — T32b
 
+The reader's exact query also contributes its SHA-256 to cache and consolidation
+identity. Consolidation consumes words the planner does not parse, so identical
+structured subject/time/context cannot make different wording interchangeable.
+Old entries and citations remain immutable; changed keys cause recomputation.
+
 `services/reconstruction/cache.py` stores each resolved specification in
 `cached_results` (migration 0019) under the SHA-256 of its full scope:
 

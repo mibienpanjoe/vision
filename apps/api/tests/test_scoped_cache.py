@@ -51,6 +51,17 @@ def test_the_same_scope_is_served_from_the_cache(counted):
     assert story.db.scalar(select(func.count()).select_from(CachedResult)) == 1
 
 
+def test_unparsed_query_words_are_inputs_to_cache_and_consolidation(counted):
+    compose, adapter, _, _, _ = counted
+    first = resolved(compose(chapter=3, query="Arthur at home after the war", context="at home",
+                             moment={"kind": "phrase", "text": "after the war"}))
+    calls = adapter.calls
+    second = resolved(compose(chapter=3, query="Quietly, Arthur at home after the war", context="at home",
+                              moment={"kind": "phrase", "text": "after the war"}))
+    assert adapter.calls == calls + 1
+    assert first["lineage"]["consolidation_id"] != second["lineage"]["consolidation_id"]
+
+
 @pytest.mark.parametrize("change", [
     {"chapter": None},                                   # whole book never answers a chapter-limited reader
     {"chapter": 4},
