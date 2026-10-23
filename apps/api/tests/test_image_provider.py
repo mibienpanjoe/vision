@@ -53,7 +53,7 @@ def gateway():
 
 
 @pytest.mark.parametrize(("name", "key", "model"), [("huggingface", "HF_TOKEN", "black-forest-labs/FLUX.1-schnell"),
-                                                     ("openai", "OPENAI_API_KEY", "gpt-image-1")])
+                                                     ("openai", "OPENAI_API_KEY", "gpt-image-2")])
 def test_policy_requires_explicit_opt_in_and_its_own_key(monkeypatch, name, key, model):
     for variable in ("VISION_RENDER_PROVIDER", "VISION_RENDER_MODEL", "HF_TOKEN", "OPENAI_API_KEY"):
         monkeypatch.delenv(variable, raising=False)
@@ -83,9 +83,9 @@ def test_success_sends_only_the_prompt_and_returns_verified_image_bytes(gateway)
 def test_only_approved_models_can_be_selected(monkeypatch):
     monkeypatch.setenv("VISION_RENDER_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_API_KEY", "synthetic-key")
-    monkeypatch.setenv("VISION_RENDER_MODEL", "gpt-image-2")
-    assert images.configured_policy().model == images.image_adapter().model == "gpt-image-2"
-    assert images.image_adapter().body("p")["model"] == "gpt-image-2"
+    monkeypatch.setenv("VISION_RENDER_MODEL", "gpt-image-1")
+    assert images.configured_policy().model == images.image_adapter().model == "gpt-image-1"
+    assert images.image_adapter().body("p")["model"] == "gpt-image-1"
     for unapproved in ("dall-e-3", "black-forest-labs/FLUX.1-schnell"):
         monkeypatch.setenv("VISION_RENDER_MODEL", unapproved)
         assert images.configured_policy() is None and images.image_adapter() is None
@@ -99,7 +99,7 @@ def test_openai_sends_low_quality_png_request_and_keeps_token_usage(gateway):
     assert image.data == PNG and image.usage == {"input_tokens": 41, "output_tokens": 272, "total_tokens": 313}
     path, _, body = seen[0]
     assert path == "/v1/images/generations"
-    assert body == {"model": "gpt-image-1", "prompt": "Arthur (hair: grey)", "n": 1, "size": "1024x1024",
+    assert body == {"model": "gpt-image-2", "prompt": "Arthur (hair: grey)", "n": 1, "size": "1024x1024",
                     "quality": "low", "output_format": "png"}
 
 

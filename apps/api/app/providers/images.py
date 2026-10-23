@@ -1,4 +1,4 @@
-"""D5 image providers (DEC-51), opt-in only: OpenAI gpt-image-1 or FLUX.1-schnell through the Hugging Face router.
+"""D5 image providers (DEC-51), opt-in only: OpenAI gpt-image-2 or FLUX.1-schnell through the Hugging Face router.
 
 Only the specification's composed prompt leaves the machine, never source text,
 spans, titles or owner identifiers. The key is sent only as a bearer header.
@@ -125,9 +125,9 @@ class ImageGateway:
 
 
 class OpenAIImages(ImageGateway):
-    provider, model = "openai", "gpt-image-1"
+    provider, model = "openai", "gpt-image-2"
     base_url, path = "https://api.openai.com", "/v1/images/generations"
-    # gpt-image-1 takes no negative prompt; exclusions are not sent.
+    # GPT image models take no negative prompt; exclusions are not sent.
     settings = {"size": SIZE, "quality": "low", "output_format": "png", "negative_prompt": "not_sent"}
 
     def body(self, prompt):
@@ -146,7 +146,7 @@ class HuggingFaceImages(ImageGateway):
 
 PROVIDERS = {"openai": ("OPENAI_API_KEY", OpenAIImages), "huggingface": ("HF_TOKEN", HuggingFaceImages)}
 # Maintainer-approved models per provider (DEC-51); the first is the default, anything else disables rendering.
-MODELS = {"openai": ("gpt-image-1", "gpt-image-2"), "huggingface": ("black-forest-labs/FLUX.1-schnell",)}
+MODELS = {"openai": ("gpt-image-2", "gpt-image-1"), "huggingface": ("black-forest-labs/FLUX.1-schnell",)}
 
 
 def selected() -> tuple[str, str] | None:
