@@ -13,6 +13,7 @@ import urllib.request
 
 from app.providers.contracts import (
     ProviderCall,
+    ProviderInputTooLarge,
     ProviderRateLimited,
     ProviderResult,
     ProviderTimeout,
@@ -65,6 +66,8 @@ class ChatGateway:
                     payload = json.loads(response.read(4_000_000))
                 break
             except urllib.error.HTTPError as error:
+                if error.code == 413:
+                    raise ProviderInputTooLarge() from None
                 if error.code != 429:
                     raise ProviderUnavailable() from None
                 wait = retry_after(error.headers.get("retry-after"))

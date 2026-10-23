@@ -13,6 +13,7 @@ from app.models.model_runs import ModelRun
 from app.providers.contracts import (
     Outcome,
     ProviderAdapter,
+    ProviderInputTooLarge,
     ProviderRateLimited,
     ProviderRequest,
     ProviderTimeout,
@@ -85,6 +86,8 @@ def execute(adapter: ProviderAdapter, request: ProviderRequest, output: type[Str
         return finish("provider_unavailable")
     except ProviderRateLimited:
         return finish("rate_limited")
+    except ProviderInputTooLarge:
+        return finish("input_too_large")
     usage, version = result.usage, result.model_version
     if cancelled():
         return finish("cancelled")
