@@ -8,6 +8,7 @@ protected sentences alone exceed the budget the selection says so instead of
 dropping them silently.
 """
 
+import os
 import re
 import uuid
 from dataclasses import dataclass, field
@@ -51,6 +52,13 @@ class Ranked:
 class Budget:
     passages: int = 20
     characters: int = 20_000  # about 5,000 tokens (ADR-0003 target)
+
+
+def configured_budget() -> Budget:
+    """DEC-42 defaults unless an operator recalibrates them; the budget is part of the result-cache key."""
+    default = Budget()
+    return Budget(int(os.environ.get("VISION_CONTEXT_PASSAGES", default.passages)),
+                  int(os.environ.get("VISION_CONTEXT_CHARACTERS", default.characters)))
 
 
 @dataclass

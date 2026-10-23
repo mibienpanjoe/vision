@@ -94,7 +94,9 @@ outcomes retain editable inputs and never offer a stale result for export.
 A resolved result displays the stored revision and scope, canonical, inferred,
 disputed and unknown details, inference reasons, separately labelled creative
 additions, exclusions, evidence and prompt/verification information. Model
-verification and evidence-selection limits stay visible. The profile uses text
+verification and evidence-selection limits stay visible: when protected evidence
+overflowed or was compressed under the context budget, the profile says so above
+its evidence rather than only inside the verification details. The profile uses text
 labels as well as selection color.
 
 Export downloads exactly the stored server `VisualSpecification`, including its
