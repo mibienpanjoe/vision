@@ -354,3 +354,14 @@ instead of the compass. `gpt-image-2` drew one scene with three distinct people,
 the linen shirt, a roofless ruin beside a large tree and an open brass compass
 with a dial; the left-cheek scar was still not visible. Both stored, decoded and
 matched their snapshots.
+
+The scar was in every prompt but only as a parenthesised `left cheek:` detail of a
+small face in a three-person scene. Two further approved `gpt-image-2` requests
+on 2026-10-23 used `compose-v4`. With the subject in the foreground facing the
+viewer and the mark as its own first sentence, the scar appeared clearly for the
+first time, but on the right cheek: the image's left side. Naming the side as it
+appears in the image ("on the right side of the image as Arthur faces the
+viewer") put the scar on the left cheek, with the roof gone to bare rafters, the
+brass compass in Mira's hands and three distinct people. Both stored, decoded and
+matched their snapshots. One correct image is not a rate; side mapping is stated
+only for the subject, whose facing the prompt sets.

@@ -105,10 +105,16 @@ the textual contract; generated pixels never become evidence for new facts.
 [Image rendering](../api/api-contract.md#image-rendering--t40) sends only the
 gated `generation.prompt`; the selected model takes no negative prompt, so
 excluded values are not enforced by the provider and must be checked in the
-pixels. The composed prompt (`compose-v3`, part of the result cache key) states a
+pixels. The composed prompt (`compose-v4`, part of the result cache key) states a
 single scene, counts the other people present and omits an object already named
 as a member's trait value, so image models neither merge people, split them into
-panels nor redraw the object twice.
+panels nor redraw the object twice. The subject stands in the foreground and its
+traits are separate sentences; a mark on a facial region (face, cheek, forehead,
+brow, temple, chin, jaw, nose, neck) comes first, is asked to be in clear view and
+turns the subject toward the viewer, because a parenthesised scar was never drawn.
+A left or right mark on the subject also names the side of the image it falls on,
+since a person facing the viewer shows their left on the image's right and image
+models otherwise mirror it.
 
 ## Synthetic example policy
 
