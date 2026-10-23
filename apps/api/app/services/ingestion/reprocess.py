@@ -1,6 +1,7 @@
 """Owned source rebuilds as new generations; publication never rewrites old passages."""
 
 from app.core.errors import PublicError
+from app.core.limits import require_capacity
 from app.core.security import owned_object
 from app.models.generations import SourceGeneration
 from app.models.narrative_jobs import NarrativeJob
@@ -60,6 +61,7 @@ def create_generation(db, actor, work_id, key, correlation_id):
             if generation.id == document.current_generation_id:
                 raise PublicError(409, "GENERATION_CURRENT", "The current generation already uses this parser.")
             raise PublicError(409, "GENERATION_EXISTS", "A generation for this parser exists; retry its job.")
+    require_capacity(db, actor.owner_id, work_id)
     ordinal = (db.scalar(select(func.max(SourceGeneration.ordinal)).where(SourceGeneration.document_id == document.id)) or 0) + 1
     generation = SourceGeneration(document_id=document.id, ordinal=ordinal, parser_revision=revision, idempotency_key=key)
     db.add(generation)

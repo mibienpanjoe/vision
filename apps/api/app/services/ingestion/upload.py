@@ -4,6 +4,7 @@ import hashlib
 import json
 
 from app.core.errors import PublicError
+from app.core.limits import require_capacity
 from app.core.storage import PrivateSources
 from app.models.generations import SourceGeneration
 from app.models.works import Document, IngestionJob, Work
@@ -52,6 +53,7 @@ def create_work(db, actor, metadata, data, key, correlation_id):
         if prior.request_hash != digest:
             raise PublicError(409, "IDEMPOTENCY_CONFLICT", "Key already used for a different upload.")
         return accepted_view(db, prior)
+    require_capacity(db, actor.owner_id)
     store = PrivateSources()
     with store.create() as source:
         try:

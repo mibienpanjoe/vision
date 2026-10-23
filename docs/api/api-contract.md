@@ -585,3 +585,20 @@ unknown identifier produce the same status, code and message. A reading cutoff
 naming another work's chapter is refused rather than reinterpreted. The
 regression suite enumerates the generated OpenAPI operations, so a new route
 fails it until it is placed in this matrix.
+
+## Workload and context budgets — T44
+
+An upload, a source rebuild and an ingestion retry each start processing work.
+They answer `429 / RESOURCE_LIMIT` (retryable) when the owner already has
+`VISION_MAX_ACTIVE_WORKS` (default 3) other works with a queued or running
+ingestion or narrative job. The check runs after an idempotent replay is
+recognized and before an original is stored, under a lock on the owner, so
+concurrent requests cannot exceed the cap; another owner's work never counts.
+
+Composition selects context under `VISION_CONTEXT_PASSAGES` (default 20 whole
+passages) and `VISION_CONTEXT_CHARACTERS` (default 20,000), the DEC-42 budget.
+The budget is part of the scoped result-cache key, so recalibrating it never
+serves a result computed under another cap. Protected sentences are reserved
+before ranked passages; any that do not fit are counted and labelled
+`protected_overflow` in `verification.selection`, never dropped silently, and the
+workspace states an overflow or compression on the profile itself.
