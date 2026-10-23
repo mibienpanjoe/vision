@@ -23,8 +23,8 @@ reading desk; dark mode provides the cinematic workspace. Keep source passages,
 forms, and evidence easy to read in both. Artwork carries the visual atmosphere;
 the surrounding interface stays quiet.
 
-Follow the system color preference initially. Offer explicit light/dark choices
-and retain the reader's choice. The immersive artwork viewer can use a charcoal
+Open in dark mode until the reader chooses otherwise (maintainer, 2026-10-23).
+Offer explicit system/light/dark choices and retain the reader's choice. The immersive artwork viewer can use a charcoal
 canvas in either theme without changing the surrounding research workspace.
 
 ### Semantic tokens
