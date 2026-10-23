@@ -119,7 +119,7 @@ try:
         specs = os.environ.get(
             "VISION_TEST_WORKSPACE_SPECS",
             "tests/accessibility.spec.ts tests/explorer.spec.ts tests/evidence.spec.ts "
-            "tests/visualization.spec.ts tests/refinement.spec.ts tests/render-history.spec.ts",
+            "tests/visualization.spec.ts tests/refinement.spec.ts tests/render-history.spec.ts tests/security.spec.ts",
         ).split()
     else:
         specs = ["tests/library.spec.ts" if library else "tests/session.spec.ts"]
@@ -182,3 +182,10 @@ finally:
         broker.delete(*keys)
     broker.close()
     source_directory.cleanup()
+# Telemetry names IDs, codes and durations, never private text or credentials (SECURITY.md).
+for path in (root / ".local/session-api.log", root / ".local/library-worker.log"):
+    if path.exists():
+        logged = path.read_text(errors="replace")
+        for private in ("synthetic session transport passphrase", "Before dinner, Arthur removed", "SYSTEM OVERRIDE"):
+            assert private not in logged, f"{path.name} contains private text"
+print("API and worker logs carry no source text or passwords.")
