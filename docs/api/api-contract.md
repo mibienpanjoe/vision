@@ -25,7 +25,7 @@ and generate TypeScript types; avoid a manually duplicated frontend model.
 | `GET /v1/entities/{id}/contexts` | Available moments/appearances | `200`, admissible contextual options |
 | `POST /v1/visualizations` | Resolve scope, collect evidence, reconstruct and validate | `202` if asynchronous, or explicit domain outcome; execution mode open |
 | `GET /v1/visualizations/{id}` | State, specification revision, evidence, uncertainty | `200`, authorized result/state |
-| `POST /v1/visualizations/{id}/render` | Optional render of a validated revision | `202`, render-job reference; later milestone |
+| `POST /v1/works/{work_id}/visualizations/{id}/renders` | Optional render of a validated revision | `202`, render job; see [image rendering](#image-rendering--t40) |
 
 Work/entity/context queries require a reading boundary. A chapter label, ordinal,
 or ID must be validated against its source revision. Whole-book and cutoff modes
@@ -492,3 +492,79 @@ must be the work's current published generation, and the chapter must belong to
 it. Lists include only exact scope matches, and incompatible reads/revision lists
 return the common 404. Omitting both filters retains the existing owner-authorized
 archive API; it is not used by a chapter-limited browser view.
+
+## Image rendering — T40
+
+Rendering follows DEC-51 (D5). It is off unless the private environment sets
+`VISION_RENDER_PROVIDER` and that provider's key; otherwise a new reservation
+returns `503 RENDER_NOT_CONFIGURED`. `openai` (`OPENAI_API_KEY`) selects
+`gpt-image-2`, or `gpt-image-1` with `VISION_RENDER_MODEL`, at low quality, PNG; `huggingface` (`HF_TOKEN`) selects
+`black-forest-labs/FLUX.1-schnell` through the Hugging Face router's `nscale`
+route. Both render 1024×1024. Each reservation records its provider/model and
+allows at most one charged provider call.
+
+| Route | Behavior |
+|---|---|
+| `POST /v1/works/{work_id}/visualizations/{id}/renders` | Body contains only positive integer `specification_revision`; `Idempotency-Key` required. Returns `202 RenderView` for a durable reservation, or `503 RENDER_NOT_CONFIGURED`. |
+| `GET /v1/works/{work_id}/renders/{id}` | Owner-authorized `RenderView` with strong revision ETag; wrong owner/work returns safe 404. |
+| `POST /v1/works/{work_id}/renders/{id}/cancel` | Empty JSON object, `If-Match` and `Idempotency-Key`; returns the saved cancellation receipt and ETag. |
+| `GET /v1/works/{work_id}/visualizations/{id}/renders` | Owner's `RenderPage` for that visualization: `current_revision` plus at most 100 renders, newest first. Wrong owner/work returns safe 404. |
+| `GET /v1/works/{work_id}/renders/{id}/image` | The stored image bytes with their media type, `ETag` = output SHA-256, `no-store`, `nosniff` and an inline (or, with `download=true`, attachment) `vision-render-<id>.<ext>` filename. Wrong owner/work returns safe 404; no stored image, or a stored file that is missing or no longer matches its digest, returns `409 RENDER_OUTPUT_UNAVAILABLE`. |
+
+A new reservation locks the visualization head and source pointer, requires the
+current specification revision and exact source/derivation inputs, and retains
+the entire immutable specification plus its SHA-256 and provider/model identity.
+Raw prompts and arbitrary provider settings are rejected. Request keys are scoped
+to owner and visualization: the same request returns that reservation's current
+state, while changed input returns 409. Replay precedes current configuration and
+dependency checks, so it cannot reserve a second call after configuration changes.
+
+Reservations are serialized per owner and capped at five, counting every
+reservation whatever its outcome (`429 RENDER_LIMIT`). A retry after any outcome
+is a new, explicit, counted reservation; there is no automatic retry and no
+reconciliation route, because the provider exposes neither request lookup nor
+idempotency keys.
+
+After commit the reservation is published to the `render` queue; `dispatched:
+false` means publication has not occurred and `make dispatch` retries it. The
+worker claims a queued job (`running`, revision +1), sends only the snapshot's
+`generation.prompt`, and settles atomically with a terminal revision:
+
+| Status / `error_code` | Meaning |
+|---|---|
+| `succeeded` | Image bytes verified as PNG/JPEG/WebP (≤ 16 MiB) and stored privately; `output_sha256` and `output_media_type` describe them |
+| `failed` `PROVIDER_UNAUTHORIZED` / `PROVIDER_QUOTA_EXCEEDED` / `PROVIDER_RATE_LIMITED` / `PROVIDER_CONTENT_REFUSED` / `PROVIDER_REJECTED` | The provider answered with an HTTP refusal (401/403; 402 or an exhausted-quota code; 429; a moderation block; other) and returned no image; provider messages are discarded |
+| `failed` `PROVIDER_UNAVAILABLE` | The connection was refused or the name did not resolve; nothing was sent |
+| `failed` `PROVIDER_INVALID_OUTPUT` | The provider answered 200 but returned no verifiable image; the call may have been charged |
+| `failed` `RENDER_STORAGE_FAILED` | The provider returned an image that could not be stored; the call was charged |
+| `failed` `RENDER_NOT_CONFIGURED` | Rendering was disabled, or the configured model differs from the reserved one, when the worker ran; nothing was sent |
+| `acceptance_unknown` `PROVIDER_ACCEPTANCE_UNKNOWN` | The request may have been sent but no response arrived (timeout of 120 s, reset); it may have been charged |
+| `acceptance_unknown` `RENDER_INTERRUPTED` | A claimed job was redelivered or found running by `make dispatch` with no worker holding it |
+
+A claimed job is never sent again: the actor has no retries, and a redelivered
+`running` job settles as `acceptance_unknown` without calling the provider.
+
+Queued cancellation becomes cancelled immediately and the worker then skips it.
+Cancelling a running job records `cancel_requested` and keeps it running; the
+in-flight call is not interrupted and its outcome, including a stored image, is
+kept. Missing/stale preconditions return 428/412; reusing a cancellation key with
+another expected revision returns 409. Exact cancellation replay returns the
+captured response even if later state changes. No cancellation or timeout claims
+that an external charge was reversed.
+
+The image's lineage is the reserved specification revision and hash, provider,
+model, recorded settings (size, quality or route, `negative_prompt: not_sent`,
+prompt SHA-256) and any provider-reported token usage. The private storage
+reference is never returned. The image is stored once, beside originals, and
+recorded on its render job rather than in a separate asset table; each job has at
+most one image. Reopening a render's `specification_revision` through the
+revision route returns the same immutable specification and evidence the job
+snapshotted. Generated pixels never become evidence or narrative facts.
+
+The workspace's rendered-images panel (T41) starts a render of the displayed
+current revision, reusing one idempotency key for a retried click, polls queued
+or running renders, shows each succeeded image with an "older specification" note
+when the current revision has moved, opens the exact revision behind any render,
+offers conditional cancellation and a download, and explains failed and
+acceptance-unknown outcomes. Historical revisions can be viewed with their
+renders but not rendered again.

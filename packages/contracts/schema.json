@@ -1625,6 +1625,184 @@
       "title": "RelationView",
       "type": "object"
     },
+    "RenderCancel": {
+      "additionalProperties": false,
+      "properties": {},
+      "title": "RenderCancel",
+      "type": "object"
+    },
+    "RenderCreate": {
+      "additionalProperties": false,
+      "properties": {
+        "specification_revision": {
+          "minimum": 1,
+          "title": "Specification Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "specification_revision"
+      ],
+      "title": "RenderCreate",
+      "type": "object"
+    },
+    "RenderPage": {
+      "additionalProperties": false,
+      "properties": {
+        "current_revision": {
+          "description": "The visualization's current revision; older renders show an earlier specification",
+          "minimum": 1,
+          "title": "Current Revision",
+          "type": "integer"
+        },
+        "items": {
+          "description": "Newest first",
+          "items": {
+            "$ref": "#/$defs/RenderView"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "current_revision",
+        "items"
+      ],
+      "title": "RenderPage",
+      "type": "object"
+    },
+    "RenderView": {
+      "additionalProperties": false,
+      "properties": {
+        "cancel_requested": {
+          "description": "A running call is never interrupted; its outcome is still kept",
+          "title": "Cancel Requested",
+          "type": "boolean"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Completed At"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dispatched": {
+          "title": "Dispatched",
+          "type": "boolean"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error Code"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "output_media_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Output Media Type"
+        },
+        "output_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Digest of the privately stored image, when one was kept",
+          "title": "Output Sha256"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        },
+        "specification_revision": {
+          "title": "Specification Revision",
+          "type": "integer"
+        },
+        "specification_sha256": {
+          "title": "Specification Sha256",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed",
+            "cancelled",
+            "acceptance_unknown"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "visualization_id": {
+          "format": "uuid",
+          "title": "Visualization Id",
+          "type": "string"
+        },
+        "work_id": {
+          "format": "uuid",
+          "title": "Work Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "work_id",
+        "visualization_id",
+        "specification_revision",
+        "specification_sha256",
+        "provider",
+        "model",
+        "revision",
+        "status",
+        "cancel_requested",
+        "dispatched",
+        "error_code",
+        "output_sha256",
+        "output_media_type",
+        "created_at",
+        "completed_at"
+      ],
+      "title": "RenderView",
+      "type": "object"
+    },
     "RequestScope": {
       "additionalProperties": false,
       "properties": {
@@ -2657,6 +2835,18 @@
     "refinement_request": {
       "$ref": "#/$defs/RefinementRequest"
     },
+    "render": {
+      "$ref": "#/$defs/RenderView"
+    },
+    "render_cancel": {
+      "$ref": "#/$defs/RenderCancel"
+    },
+    "render_create": {
+      "$ref": "#/$defs/RenderCreate"
+    },
+    "render_page": {
+      "$ref": "#/$defs/RenderPage"
+    },
     "revision_page": {
       "$ref": "#/$defs/RevisionPage"
     },
@@ -2720,6 +2910,10 @@
     "visualization",
     "visualization_page",
     "revision_page",
+    "render_create",
+    "render_cancel",
+    "render",
+    "render_page",
     "refinement_request"
   ],
   "title": "SchemaCatalog",

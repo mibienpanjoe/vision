@@ -20,8 +20,10 @@ values = dict(
     if line and not line.startswith("#")
 )
 library = os.environ.get("VISION_TEST_LIBRARY") == "1"
+# Billed: the workspace harness with the configured image provider instead of the synthetic one.
+live_render = os.environ.get("VISION_TEST_LIVE_RENDER") == "1"
 live = os.environ.get("VISION_TEST_LIVE_WORKSPACE") == "1"
-workspace = os.environ.get("VISION_TEST_WORKSPACE") == "1" or live
+workspace = os.environ.get("VISION_TEST_WORKSPACE") == "1" or live or live_render
 api_port = int(os.environ.get("VISION_TEST_API_PORT", "8000"))
 url = make_url(os.environ.get("DATABASE_URL", values["DATABASE_URL"]))
 name = "vision_test_" + uuid.uuid4().hex
@@ -44,6 +46,7 @@ try:
         "DATABASE_URL": test_url,
         "VISION_WEB_ORIGINS": "http://127.0.0.1:13000",
         "VISION_SOURCE_ROOT": str(Path(source_directory.name) / "originals"),
+        "VISION_RENDER_ROOT": str(Path(source_directory.name) / "renders"),
         "REDIS_URL": values["REDIS_URL"],
         "VISION_QUEUE_NAMESPACE": name,
         "VISION_NARRATIVE_PROVIDER": "local" if workspace else "off",
@@ -60,7 +63,7 @@ try:
         )
         worker_log = (root / ".local/library-worker.log").open("w")
         worker = subprocess.Popen(
-            [str(root / "apps/api/.venv/bin/dramatiq"), "app.workers.bootstrap" if live else "tests.browser_worker", "--processes", "1", "--threads", "1", "--queues", "ingestion", *( ["narrative"] if workspace else [] )],
+            [str(root / "apps/api/.venv/bin/dramatiq"), "app.workers.bootstrap" if live else "tests.browser_worker", "--processes", "1", "--threads", "1", "--queues", "ingestion", *( ["narrative", "render"] if workspace else [] )],
             cwd=root / "apps/api", env=env, stdout=worker_log, stderr=worker_log, start_new_session=True,
         )
         env["VISION_TEST_WORKER_PID"] = str(worker.pid)
@@ -110,11 +113,13 @@ try:
         raise RuntimeError("Isolated API did not become ready")
     if live:
         specs = ["tests/product-flow.spec.ts"]
+    elif live_render:
+        specs = ["tests/render-flow.spec.ts"]
     elif workspace:
         specs = os.environ.get(
             "VISION_TEST_WORKSPACE_SPECS",
             "tests/accessibility.spec.ts tests/explorer.spec.ts tests/evidence.spec.ts "
-            "tests/visualization.spec.ts tests/refinement.spec.ts",
+            "tests/visualization.spec.ts tests/refinement.spec.ts tests/render-history.spec.ts",
         ).split()
     else:
         specs = ["tests/library.spec.ts" if library else "tests/session.spec.ts"]

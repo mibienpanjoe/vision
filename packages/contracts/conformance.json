@@ -393,5 +393,46 @@
       },
       "creative_mode": "interpretation"
     }
+  },
+  {
+    "model": "RenderCreate",
+    "valid": true,
+    "value": {
+      "specification_revision": 1
+    }
+  },
+  {
+    "model": "RenderCreate",
+    "valid": false,
+    "value": {
+      "specification_revision": 0
+    }
+  },
+  {
+    "model": "RenderCreate",
+    "valid": false,
+    "value": {
+      "specification_revision": 1.5
+    }
+  },
+  {
+    "model": "RenderCreate",
+    "valid": false,
+    "value": {
+      "specification_revision": 1,
+      "prompt": "bypass"
+    }
+  },
+  {
+    "model": "RenderCancel",
+    "valid": true,
+    "value": {}
+  },
+  {
+    "model": "RenderCancel",
+    "valid": false,
+    "value": {
+      "force": true
+    }
   }
 ]

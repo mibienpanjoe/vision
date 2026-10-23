@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError, message, type LibraryPage, type PrincipalView, type WorkView } from "@/lib/api";
+import { Illustration } from "@/components/illustration";
 import { SignIn } from "./session";
 import { Upload } from "./upload";
 import { JobStatus } from "./job-status";
@@ -69,7 +70,7 @@ function PrivateLibrary({ actor, signedOut }: { actor: PrincipalView; signedOut:
       <section aria-labelledby="books-title" className="book-list">
         <h2 id="books-title">Your books</h2>
         {busy && <p role="status">Loading books…</p>}
-        {!busy && !works.length && !error && <div className="panel"><p className="eyebrow">The first page</p><h3>A place for your next world.</h3><p>Upload your first book to begin.</p></div>}
+        {!busy && !works.length && !error && <div className="panel empty-state"><Illustration name="empty" className="empty-art" /><div><p className="eyebrow">The first page</p><h3>A place for your next world.</h3><p>Upload your first book to begin.</p></div></div>}
         {works.map(work => <article className="panel book" key={work.id} aria-label={work.title}>
           <div className="book-heading"><h3>{work.title}</h3><span className="book-format">{work.format.toUpperCase()} · {new Intl.NumberFormat().format(work.byte_count)} bytes</span></div>
           <JobStatus workId={work.id} onUnauthorized={signedOut} />

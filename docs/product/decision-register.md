@@ -21,7 +21,7 @@
 | DEC-13 | shadcn/ui base with selected specialized agent-interface components; Agents Kit is a named reference | Maintainer instruction, 2026-10-19; [visual identity](../design/visual-identity.md) |
 | DEC-14 | Supplied book-and-doorway logo is the identity direction; use image generation for initial derivatives and inspect outputs | Maintainer instruction, 2026-10-19; [visual identity](../design/visual-identity.md) |
 | DEC-15 | Approve the retained book-and-doorway logo assets; keep the documented 16 px/favicon and transparent-inverse limitations | Maintainer approval, 2026-10-19; [asset manifest](../../assets/brand/asset-manifest.md) |
-| DEC-16 | Inter for UI, Source Serif 4 for literary text/headings, Geist Mono for structured output; warm paper/charcoal/gold light and dark themes | Selected under maintainer delegation, 2026-10-19; [visual identity](../design/visual-identity.md) |
+| DEC-16 | Inter for UI, Source Serif 4 for literary text/headings, Geist Mono for structured output; warm paper/charcoal/gold light and dark themes; dark by default with system, light and dark choices retained (maintainer, 2026-10-23) | Selected under maintainer delegation, 2026-10-19; [visual identity](../design/visual-identity.md) |
 | DEC-17 | Public GitHub repository; uploaded works and runtime data remain private | Maintainer instruction, 2026-10-19; [security](../../SECURITY.md) |
 | DEC-18 | Keep overview in `docs/product/` and detailed retrieval strategy in `docs/architecture/`, with no root duplicates | Selected under maintainer instruction, 2026-10-19; [documentation map](../documentation-map.md) |
 | DEC-19 | D0: Python 3.12.14/uv 0.12.15, Node 24.12.0/pnpm 10.28.0, PostgreSQL 17/pgvector 0.8.7, Redis 8.2.10; generated locks and digest-pinned images | T01 implementation selection; [operations](../operations/development-and-operations.md#selected-toolchain--d0) |
@@ -56,6 +56,7 @@
 | DEC-48 | Stored visualizations: only resolved results are stored (201 + ETag); other outcomes 200 without reservation; key scoped to owner+work with request fingerprint (replay / 409); immutable revisions keep full result, generation, parser revision and consolidation; owner-scoped list/read/history with 404 otherwise | T32a; [API](../api/api-contract.md#stored-visualizations--t32a) |
 | DEC-49 | Adopt PROP-05: resolved results cached per owner under the hash of work, generation, cutoff, subject/participants, moment, context, creative mode, style, locks and every processing version (derivations in use, prompts, models, gates, spec, fusion weights); lookup only after the plan re-checks ownership and current generation | T32b; [architecture](../architecture/system-architecture.md#scoped-result-cache--t32b) |
 | DEC-50 | Presentation refinement uses a conditional, idempotent revision append: style/mode and canonical locks only; profiles/evidence remain unchanged, provenance and prompt gates rerun; changed source or derivation inputs require a new reconstruction; replay returns its captured revision | T38; [API](../api/api-contract.md#presentation-refinements--t38) |
+| DEC-51 | D5 rendering: OpenAI `gpt-image-2` (default) or `gpt-image-1` via `VISION_RENDER_MODEL`, low quality, 1024×1024 PNG with `OPENAI_API_KEY`; FLUX.1-schnell through the Hugging Face router (`nscale` route) with `HF_TOKEN` remains selectable; explicit opt-in by `VISION_RENDER_PROVIDER`; only the specification's gated `generation.prompt` is sent (derived attributes, locks and style; never source quotes, spans, titles or owner identifiers); negative prompt not sent; at most five reservations per owner; live acceptance (T40, T42) is limited to five requests in total; one charged call per reservation, no automatic retry, unanswered sends recorded as `acceptance_unknown` | Maintainer decision, 2026-10-22; [API](../api/api-contract.md#image-rendering--t40) |
 
 ## Workspace implementation
 
@@ -77,6 +78,18 @@ even when the structured plan is identical. Existing revisions remain immutable.
 T38 snapshots each revision's request and the exact entity/appearance/index
 inputs; structured exclusions remain with the specification for subsequent prompt
 gates. Existing creation keys keep replaying revision 1 rather than a later edit.
+
+T40a implements provider-neutral owned render reservations and conditional
+cancellation receipts; T40 consumes DEC-51 with the adapter, dispatch and worker.
+The Hugging Face account had no Inference Provider credit (HTTP 402), so the
+maintainer selected OpenAI the same day; FLUX stays as an alternative selected by
+environment. Two further live requests were approved on 2026-10-22 to compare
+`gpt-image-1` and `gpt-image-2` on the single-scene prompt; other models are refused.
+`gpt-image-2` drew the roofless house and the compass correctly, so the maintainer
+made it the default on 2026-10-23; `gpt-image-1` stays selectable.
+Provider retention follows their terms and has not been verified as
+zero-retention; trait values in the prompt can echo short source
+wording as derived attributes.
 
 ## Proposed elaborations
 
@@ -102,6 +115,7 @@ documents fixed all details.
 | OPEN-07 | Shared revision/idempotency resolved by DEC-23; route payloads, pagination, deletion and retention remain open | Executable API and persistent lifecycle |
 | OPEN-08 | External deployment excluded by DEC-25; local recovery, retention and deletion remain required | External deployment |
 | OPEN-09 | Project license, exact component selections, final wordmark/vector assets, and any future optically simplified favicon | Redistribution or relevant implementation increment |
+| OPEN-10 | Resolved by DEC-51; provider-side retention verification and image deletion remain open | Retention and deletion lifecycle (T46) |
 
 OPEN-04 is resolved conservatively by DEC-22. PROP-01/02/03 were promoted to
 DEC-20/21/23; executable tests and runtime proof still belong to their task owners.

@@ -4,8 +4,8 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/v1/auth/me", route => route.fulfill({ status: 401, json: { error: { code: "AUTHENTICATION_REQUIRED", message: "Sign in required." } } }));
 });
 
-test("library shell has no invented books and persists an explicit theme", async ({ page }) => {
-  await page.emulateMedia({ colorScheme: "dark" });
+test("library shell opens dark by default and persists an explicit theme", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Your library", exact: true })).toBeVisible();
   await expect(page.locator("html")).toHaveClass("dark");

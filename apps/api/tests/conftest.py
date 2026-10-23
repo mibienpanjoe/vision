@@ -138,3 +138,10 @@ def api(story, monkeypatch):
                 body["through_chapter_id"] = str(story.chapters[chapter])
             return clients[client].post(f"/v1/works/{work_id}/visualizations/compose", json=body, headers=ORIGIN)
         yield compose, clients, work_id, story
+
+
+@pytest.fixture
+def renders(monkeypatch, tmp_path):
+    """A private render store per test."""
+    monkeypatch.setenv("VISION_RENDER_ROOT", str(tmp_path / "renders"))
+    return tmp_path / "renders"

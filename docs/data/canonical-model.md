@@ -47,6 +47,7 @@ Physical IDs are opaque; their final storage type is an implementation choice.
 | `visualizations` | Query and resulting specification revision; owner scope, state, versions, uncertainty |
 | `visualization_evidence` | Output-attribute links to claims and exact spans used for the decision |
 | `assets` | Original/derived files or rendered artifacts; storage reference, media type, originating document or visualization |
+| `render_jobs` | Owned reservation of one immutable specification revision/hash and provider/model identity, request replay, revision/cancellation receipt, dispatch, claim and terminal outcome with safe error code, settings (size, quality or route, prompt digest), duration, provider-reported token usage and private output reference/digest/media type/size (DEC-51); T41 keeps the rendered image here instead of in `assets` |
 | `ingestion_jobs` | Durable work attempts; document revision, stage, progress, terminal result, cancellation/retry lineage |
 | `model_runs` | Provider/model role, processing configuration, inputs by safe reference, usage and outcome; T17 stores owner, optional generation, provider/model/version, prompt and schema versions, limits, input refs and SHA-256 digest, outcome/error code, token usage and duration, never source text, responses or credentials |
 

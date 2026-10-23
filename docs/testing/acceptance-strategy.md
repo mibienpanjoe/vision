@@ -289,3 +289,79 @@ outcome or the previously measured recall limits.
 | REQ-21 | Provider-envelope conformance and deterministic/live adapters exercise role boundaries; optional image adapter awaits Phase 6. |
 | REQ-22 | Provider instruction/data separation, hostile-upload limits, wrong-owner grounding rejection and literal source-markup browser rendering. These checks do not prove universal prompt-injection resistance. |
 | REQ-20 | Optional image rendering remains Phase 6 and is excluded from G5. |
+
+## Render checks — T40
+
+`test_image_provider.py` drives both DEC-51 adapters (OpenAI and Hugging Face)
+against a real local HTTP server: exact route, bearer header and body (prompt
+only, no negative prompt); provider-reported token usage; image-type
+verification; HTTP refusals, rate limits and OpenAI quota/moderation codes as
+definite failures without echoing provider text; 200 responses without a
+verifiable image as `PROVIDER_INVALID_OUTPUT`; a sent request without a response
+as acceptance unknown; a refused connection as `PROVIDER_UNAVAILABLE`; explicit
+opt-in requiring the selected provider's own key.
+
+`test_render_contract.py` exercises real HTTP/PostgreSQL reservations and worker
+execution with synthetic image adapters: disabled configuration, raw-prompt
+rejection, retained specification/hash, owner isolation, request/cancellation
+replay, strong preconditions, concurrent owner-limit enforcement, stale
+source/specification/dependencies, the guarded 0021→head downgrade/upgrade, one
+provider call under redelivery, private 0600 output with digest and settings,
+acceptance-unknown/rejected/storage-failure outcomes that still count toward the
+cap, skipped cancelled/unconfigured/changed-model jobs, cancellation during a call
+keeping its image, interrupted claims settled without another call (and a held
+lock left alone), and a real Redis/Dramatiq worker completing a job whose first
+enqueue failed after `dispatch_renders`. The opt-in `test_live_render.py` sends
+one bounded request to the named provider; its evidence is recorded with the
+task.
+
+`test_render_assets.py` (T41) checks over real HTTP, PostgreSQL and private
+storage: exact image bytes with media type, digest ETag, `no-store`, `nosniff`
+and inline/attachment filenames; history ordering with the current revision after
+a refinement; the reserved snapshot equal to the reopened revision; safe 404s for
+another owner, another work and unknown renders; 409 for queued renders, failed
+storage after provider acceptance, and stored files that are missing or altered.
+`render-history.spec.ts` drives the browser against the real API and a real
+Dramatiq worker with a synthetic adapter: render, decoded image, authenticated
+download and anonymous 401, the older-specification note after a refinement and
+reopening revision 1 without render or refinement controls. Pixel review against
+a live provider belongs to T42.
+
+## Real render acceptance — T42
+
+`render-flow.spec.ts` runs the workspace harness (deterministic consolidation of
+the synthetic corpus) with the configured image provider and a real Dramatiq
+worker. `VISION_TEST_LIVE_RENDER=synthetic` rehearses the flow without billing;
+`=1` sends exactly two requests: the canon-first revision 1, then revision 2 with
+style "ink wash", interpretation mode and all four canonical facts locked. It
+checks both images stored, served and decoded at 1024 px, the replayed
+idempotency key returning the first job, two history entries, the older
+specification note and an anonymous 401.
+
+Run on 2026-10-22 with OpenAI `gpt-image-1` (low): both succeeded and their
+lineage matched revisions 1 and 2. Pixel review found the linen shirt, distinct
+people (Élodie and Mira had merged in an earlier single request), no steel armor
+and the ink-wash style. It also found contradictions that are not excused: no
+left-cheek scar in either image, a roofed house although the roof is missing,
+an ambiguous or wrong compass, and a four-panel layout instead of one scene,
+induced by the composer's "each shown separately" wording. Locks keep facts in
+the prompt; they do not make the image model draw them.
+
+Two approved follow-up requests used `test_live_render.py` with the `compose-v3`
+single-scene prompt on revision 1. `gpt-image-1` drew one scene with three distinct
+people, the linen shirt and a partly missing roof, but no scar and a wine glass
+instead of the compass. `gpt-image-2` drew one scene with three distinct people,
+the linen shirt, a roofless ruin beside a large tree and an open brass compass
+with a dial; the left-cheek scar was still not visible. Both stored, decoded and
+matched their snapshots.
+
+The scar was in every prompt but only as a parenthesised `left cheek:` detail of a
+small face in a three-person scene. Two further approved `gpt-image-2` requests
+on 2026-10-23 used `compose-v4`. With the subject in the foreground facing the
+viewer and the mark as its own first sentence, the scar appeared clearly for the
+first time, but on the right cheek: the image's left side. Naming the side as it
+appears in the image ("on the right side of the image as Arthur faces the
+viewer") put the scar on the left cheek, with the roof gone to bare rafters, the
+brass compass in Mira's hands and three distinct people. Both stored, decoded and
+matched their snapshots. One correct image is not a rate; side mapping is stated
+only for the subject, whose facing the prompt sets.

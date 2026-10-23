@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { Illustration } from "@/components/illustration";
 import { api, json, message, type PrincipalView } from "@/lib/api";
 
 export function SignIn({ onSignedIn }: { onSignedIn: (actor: PrincipalView) => void }) {
@@ -15,7 +16,7 @@ export function SignIn({ onSignedIn }: { onSignedIn: (actor: PrincipalView) => v
     } catch (error) { setError(message(error)); }
     finally { setBusy(false); }
   }
-  return <section className="panel sign-in" aria-labelledby="sign-in-title">
+  return <div className="sign-in-layout"><section className="panel sign-in" aria-labelledby="sign-in-title">
     <h2 id="sign-in-title">Sign in to your library</h2>
     <p className="muted-copy">Your books and discoveries stay in your private workspace.</p>
     <form onSubmit={submit} className="form-stack">
@@ -24,5 +25,5 @@ export function SignIn({ onSignedIn }: { onSignedIn: (actor: PrincipalView) => v
       <button type="submit" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
       {error && <p role="alert">{error}</p>}
     </form>
-  </section>;
+  </section><Illustration name="sign-in" className="sign-in-art" /></div>;
 }

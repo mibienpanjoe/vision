@@ -44,6 +44,13 @@ configuration, URLs, screenshots, model prompts, or logs. Telemetry uses IDs,
 versions, safe error codes, durations, and usage totals. Source text and full
 provider responses are excluded by default.
 
+Optional image rendering (DEC-51) sends only a specification's composed prompt to
+the selected provider: OpenAI, whose API may retain it for abuse monitoring
+(about 30 days without zero data retention), or Hugging Face's router and its
+`nscale` provider. Their retention follows their terms and is not verified as
+zero-retention. Rendered images are stored
+privately next to originals and their storage references are never returned.
+
 Reading boundaries apply before provider calls and cache access, as well as at
 response time. A fact whose visible evidence is in scope can still leak a later
 resolution if its derived dependencies are out of scope.
