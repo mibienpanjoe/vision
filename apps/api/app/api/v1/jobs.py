@@ -4,6 +4,7 @@ import uuid
 from typing import Annotated
 
 from app.core.errors import PublicError
+from app.core.http import BoundedJsonRoute
 from app.core.security import ActorScope, current_actor, database_session, owned_object
 from app.models.jobs import Job
 from app.schemas.jobs import JobView, ProbeRequest
@@ -13,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-router = APIRouter(prefix="/v1/jobs", tags=["jobs"])
+router = APIRouter(prefix="/v1/jobs", tags=["jobs"], route_class=BoundedJsonRoute)
 
 
 @router.post("", status_code=202, response_model=JobView)

@@ -8,6 +8,8 @@ from starlette.exceptions import HTTPException
 
 
 class BoundedJsonRoute(APIRoute):
+    seconds: float | None = 10
+
     def get_route_handler(self):
         original = super().get_route_handler()
 
@@ -23,9 +25,14 @@ class BoundedJsonRoute(APIRoute):
                 return message
 
             try:
-                async with asyncio.timeout(10):
+                async with asyncio.timeout(self.seconds):
                     return await original(Request(request.scope, receive))
             except TimeoutError:
                 raise HTTPException(408) from None
 
         return handler
+
+
+class BoundedBodyRoute(BoundedJsonRoute):
+    """Body-capped like BoundedJsonRoute; provider-backed composition bounds its own time."""
+    seconds = None

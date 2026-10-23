@@ -568,3 +568,20 @@ when the current revision has moved, opens the exact revision behind any render,
 offers conditional cancellation and a download, and explains failed and
 acceptance-unknown outcomes. Historical revisions can be viewed with their
 renders but not rendered again.
+
+## Cross-boundary request rules — T43
+
+Every JSON request body is bounded to 32 KiB of actually received bytes and
+answers `413` otherwise, before authentication or schema validation; this
+includes login, the worker probe, composition and stored creation. Composition
+and creation keep that body cap without the 10-second deadline because they wait
+on bounded provider calls. Multipart uploads keep their own source limit.
+
+Every `/v1` operation other than login requires a live session: an absent,
+expired or logged-out cookie answers `401`, and every non-`GET` operation first
+requires an allowed `Origin` (`403 / ORIGIN_REJECTED`). An identifier owned by
+another account, a nested identifier presented under a different work, and an
+unknown identifier produce the same status, code and message. A reading cutoff
+naming another work's chapter is refused rather than reinterpreted. The
+regression suite enumerates the generated OpenAPI operations, so a new route
+fails it until it is placed in this matrix.
