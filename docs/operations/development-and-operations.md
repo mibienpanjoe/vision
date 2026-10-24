@@ -445,3 +445,64 @@ The web rewrite proxy has a bounded 300-second timeout. The framework's default
 (90-second provider budget) and adjudication (60-second budget). Provider calls
 retain those smaller bounds; an uncertain browser mutation retains its replay
 key and payload. This setting is part of the built web configuration.
+
+## Measured budgets — T44
+
+Measured 2026-10-23/24 on the development machine (CPU only, 11.7 GB RAM shared
+with a desktop session) with two public-domain Project Gutenberg texts converted
+to Markdown chapters: *Strange Case of Dr Jekyll and Mr Hyde* (#43, 25.7k words,
+334 passages) and *Pride and Prejudice* (#1342, 122k words, 2,101 passages).
+Local models are pinned (DEC-38, DEC-41); live consolidation used Groq's free
+tier (`openai/gpt-oss-120b`) on public-domain excerpts only.
+
+| Stage | Jekyll | Pride and Prejudice |
+|---|---|---|
+| Parse | 0.1 s | 0.8 s |
+| Local entities (GLiNER2 + fastcoref) | 228 s | 726 s |
+| Appearance cues | 0.2 s | 0.8 s |
+| Passage index (EmbeddingGemma) | 62 s | 215 s |
+| Entities kept | 404 | 958 |
+| Narrative worker peak RSS | 3.5 GB | 4.7 GB (whole measurement process) |
+| Worker RSS after the job | 0.6 GB | — |
+| Retrieval per query (plan, view, four paths, fusion) | 2.6 s median | about 1 s after the single-pass fix (was 32 s) |
+| Lexical / vector SQL (`EXPLAIN ANALYZE`) | 39 ms / 4 ms, sequential scans | 673 ms / 19 ms, sequential scans |
+
+Memory: before T44 a worker kept both stages' model weights for its lifetime
+(2.7 GB after each job) and GLiNER2 batches of eight long passages added 2.3 GB
+of padded attention, so the 130k-word novel was killed for memory twice. Each
+local stage now releases its models and trims the heap; GLiNER2 runs one
+passage per pass with byte-identical output. The remaining peak is fastcoref over
+one chapter-aligned extraction batch, bounded by that batch's character budget,
+not by book length. Run one narrative worker per 5 GB of free memory.
+
+Queue load: one worker processes narrative jobs serially, so a novel's 16
+minutes is the unit of waiting. `VISION_MAX_ACTIVE_WORKS` (default 3) bounds an
+owner's queued and running works; uploads, rebuilds and retries past it answer
+`429` before storing anything.
+
+Context: with the DEC-42 budget (20 passages, 20,000 characters) every measured
+selection filled the character cap. Jekyll selection recall was 27/29 gold
+passages at every cap from 20,000 down to 10,000 characters and 24/29 at 8,000;
+no protected evidence was dropped. One Pride query reached the 63-source
+envelope limit and reported `protected_overflow` (17 sentences). Selection is
+capped at 63 sources, the provider envelope's 64 less the request item.
+
+Live consolidation on the free Groq tier: requests carrying 18,500–20,000
+characters were refused outright (HTTP 413, recorded as `PROVIDER_INPUT_TOO_LARGE`)
+4/4; requests with 8,100–12,700 characters (5.7k–6.6k input tokens) were accepted
+3/3. The tier also allows about one consolidation a minute, so the one
+immediate retry after malformed output was rate-limited both times it ran. PROP-08
+records the resulting proposals; until it is accepted the DEC-42 defaults apply.
+
+Reproduce with the opt-in harness (one book per process bounds memory; omit the
+Groq key for a local-only run):
+
+```sh
+set -a; . ./.env; set +a
+HF_HUB_OFFLINE=1 VISION_MEASURE_BOOKS=$PWD/.local/corpus VISION_MEASURE_ONLY=jekyll \
+  VISION_TEST_ADMIN_URL=$DATABASE_URL uv run --project apps/api --locked \
+  pytest apps/api/tests/test_retrieval_budgets.py -k measure_book -m integration -q
+```
+
+Results land in `.local/measurements/budgets-<book>.json`; `VISION_MEASURE_KEEP_DB`
+keeps a copy of the processed database for profiling.

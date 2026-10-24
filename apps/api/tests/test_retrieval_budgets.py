@@ -21,7 +21,7 @@ from app.models.works import Document
 from app.services.ingestion.parse import execute_ingestion
 from app.services.retrieval import fusion
 from fastapi.testclient import TestClient
-from sqlalchemy import event, func, select
+from sqlalchemy import create_engine, event, func, select, text
 from sqlalchemy.orm import Session
 from tests.conftest import ORIGIN, visualization_request
 
@@ -180,7 +180,17 @@ def test_measure_book_length_budgets(database, monkeypatch, tmp_path):
                                       ensure_ascii=False, default=str))
     for row in results.values():
         assert row["narrative_status"] == "succeeded"
-        assert all(q["protected_omitted"] == 0 for q in row["queries"] if "protected_omitted" in q)
+        # A cap may leave protected evidence out, but never silently.
+        assert all(q["selection"] == "protected_overflow" for q in row["queries"] if q.get("protected_omitted"))
+    if keep := os.environ.get("VISION_MEASURE_KEEP_DB"):  # a processed copy for offline profiling (local only)
+        name = database.url.database
+        database.dispose()
+        admin = create_engine(database.url.set(database="postgres"), isolation_level="AUTOCOMMIT")
+        with admin.connect() as connection:
+            connection.execute(text("SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+                                    "WHERE datname = :name AND pid <> pg_backend_pid()"), {"name": name})
+            connection.execute(text(f'CREATE DATABASE "{keep}" TEMPLATE "{name}"'))
+        admin.dispose()
 
 
 def measure_queries(engine, work_id, queries, embedder, budget, semantic):
