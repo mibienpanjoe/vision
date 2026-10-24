@@ -74,3 +74,31 @@ test("reconstruction outcomes, profile, source and exported JSON use the real st
   await expect(page.getByRole("alert").filter({ hasText: "PROVIDER_RATE_LIMITED" })).toBeVisible();
   await expect(profile).toHaveCount(0);
 });
+
+test("a selection that overflowed the context budget is stated on the profile", async ({ page }) => {
+  test.setTimeout(90000);
+  await page.goto("/");
+  await page.getByLabel("Username").fill("transport_reader");
+  await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByRole("textbox", { name: "Book title", exact: true }).fill("Budget notice");
+  await page.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
+  await page.getByLabel("Source file").setInputFiles({ name: "story.md", mimeType: "text/markdown", buffer: readFileSync("../api/tests/fixtures/narrative/story.md") });
+  await page.getByRole("button", { name: "Upload book", exact: true }).click();
+  const book = page.getByRole("article", { name: "Budget notice" });
+  await expect(book.locator(".readiness > div").nth(2)).toContainText("Ready", { timeout: 30000 });
+  await book.getByRole("link", { name: "Open book" }).click();
+  await page.getByRole("combobox", { name: "Reading boundary", exact: true }).selectOption({ label: "Through chapter 3" });
+  await page.getByRole("button", { name: "Arthur", exact: true }).click();
+  await page.getByLabel("Story moment", { exact: true }).fill("dinner");
+  // UI-only: the real stored result is relabelled; the server-side label is proven in test_fusion/test_retrieval_budgets.
+  await page.route(/\/visualizations$/, async route => {
+    const response = await route.fetch();
+    const body = await response.json();
+    body.visualization.result.data.verification.selection = "protected_overflow";
+    await route.fulfill({ response, json: body });
+  });
+  await page.getByRole("button", { name: "Create visual specification", exact: true }).click();
+  const profile = page.getByRole("region", { name: "Visual specification", exact: true });
+  await expect(profile.getByRole("status").filter({ hasText: "did not fit the context budget" })).toBeVisible();
+});

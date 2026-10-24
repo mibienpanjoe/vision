@@ -568,3 +568,37 @@ when the current revision has moved, opens the exact revision behind any render,
 offers conditional cancellation and a download, and explains failed and
 acceptance-unknown outcomes. Historical revisions can be viewed with their
 renders but not rendered again.
+
+## Cross-boundary request rules — T43
+
+Every JSON request body is bounded to 32 KiB of actually received bytes and
+answers `413` otherwise, before authentication or schema validation; this
+includes login, the worker probe, composition and stored creation. Composition
+and creation keep that body cap without the 10-second deadline because they wait
+on bounded provider calls. Multipart uploads keep their own source limit.
+
+Every `/v1` operation other than login requires a live session: an absent,
+expired or logged-out cookie answers `401`, and every non-`GET` operation first
+requires an allowed `Origin` (`403 / ORIGIN_REJECTED`). An identifier owned by
+another account, a nested identifier presented under a different work, and an
+unknown identifier produce the same status, code and message. A reading cutoff
+naming another work's chapter is refused rather than reinterpreted. The
+regression suite enumerates the generated OpenAPI operations, so a new route
+fails it until it is placed in this matrix.
+
+## Workload and context budgets — T44
+
+An upload, a source rebuild and an ingestion retry each start processing work.
+They answer `429 / RESOURCE_LIMIT` (retryable) when the owner already has
+`VISION_MAX_ACTIVE_WORKS` (default 3) other works with a queued or running
+ingestion or narrative job. The check runs after an idempotent replay is
+recognized and before an original is stored, under a lock on the owner, so
+concurrent requests cannot exceed the cap; another owner's work never counts.
+
+Composition selects context under `VISION_CONTEXT_PASSAGES` (default 20 whole
+passages) and `VISION_CONTEXT_CHARACTERS` (default 20,000), the DEC-42 budget.
+The budget is part of the scoped result-cache key, so recalibrating it never
+serves a result computed under another cap. Protected sentences are reserved
+before ranked passages; any that do not fit are counted and labelled
+`protected_overflow` in `verification.selection`, never dropped silently, and the
+workspace states an overflow or compression on the profile itself.

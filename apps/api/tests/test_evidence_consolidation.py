@@ -13,6 +13,7 @@ from app.models.passages import Passage
 from app.models.visual_facts import FactEvidence, VisualFact
 from app.providers.contracts import (
     ProviderCall,
+    ProviderInputTooLarge,
     ProviderRateLimited,
     ProviderUnavailable,
 )
@@ -240,6 +241,10 @@ def test_groq_adapter_honours_retry_after_once_and_sends_the_schema(groq):
         adapter.complete(call())
     groq.replies = [(500, {}, {})]
     with pytest.raises(ProviderUnavailable):
+        adapter.complete(call())
+    # Groq's free tier refuses one request whose tokens exceed its per-minute limit; waiting cannot help.
+    groq.replies = [(413, {"error": {"message": "Request too large"}}, {})]
+    with pytest.raises(ProviderInputTooLarge):
         adapter.complete(call())
 
 

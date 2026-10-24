@@ -50,7 +50,7 @@ from app.services.retrieval import query_plan
 from app.services.retrieval.consolidation import consolidate
 from app.services.retrieval.entity_lookup import SubjectLookup
 from app.services.retrieval.evidence import collect
-from app.services.retrieval.fusion import WEIGHTS, fuse, select
+from app.services.retrieval.fusion import WEIGHTS, configured_budget, fuse, select
 from app.services.retrieval.lexical import (
     appearance_linked,
     entity_linked,
@@ -114,7 +114,8 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
 
     embedder = pipeline.local_embedder()
     judge = adjudicator(adapter)
-    scope = cache_scope(actor.owner_id, plan, versions(db, plan, adapter, embedder, judge))
+    budget = configured_budget()
+    scope = cache_scope(actor.owner_id, plan, versions(db, plan, adapter, embedder, judge, budget))
     if (hit := lookup_cached(db, actor.owner_id, scope)) is not None:
         return ResolvedSpecification.model_validate_json(json.dumps(hit))
 
@@ -124,7 +125,7 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
     found = collect(entity_linked(db, plan, view), appearance_linked(db, plan, view),
                     lexical(db, plan, lookup.names(plan.subject), terms(plan)), similar or [])
     infos = passage_infos(db, plan)
-    selection = select(fuse(found), infos)
+    selection = select(fuse(found), infos, budget)
     expanded = expand(selection, infos, {c.passage_id: c.anchors for c in found if c.anchors})
     derivation_id = consolidate(db.get_bind(), plan, expanded, adapter)
     db.expire_all()
@@ -193,7 +194,7 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
     return resolved
 
 
-def versions(db, plan, adapter, embedder, judge) -> dict:
+def versions(db, plan, adapter, embedder, judge, budget) -> dict:
     """Every processing version a result depends on; any change is a different cache key."""
     entities = latest(db, plan.generation_id, "entities")
     appearance = latest(db, plan.generation_id, "appearance", entities.id)
@@ -204,4 +205,5 @@ def versions(db, plan, adapter, embedder, judge) -> dict:
             "index": str(indexed) if indexed else None, "query_plan": plan.rules_version,
             "consolidation": f"{CONSOLIDATION_PROMPT}/{Consolidation.schema_version}/{adapter.provider}/{adapter.model}",
             "adjudication": f"{ADJUDICATION_PROMPT}/{judge.provider}/{judge.model}" if judge else None,
-            "gates": GATES_VERSION, "prompt": COMPOSE_VERSION, "spec": SPEC_VERSION, "fusion": json.dumps(WEIGHTS, sort_keys=True)}
+            "gates": GATES_VERSION, "prompt": COMPOSE_VERSION, "spec": SPEC_VERSION, "fusion": json.dumps(WEIGHTS, sort_keys=True),
+            "budget": [budget.passages, budget.characters]}

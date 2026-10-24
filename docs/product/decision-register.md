@@ -101,6 +101,7 @@ documents fixed all details.
 | PROP-04 | First vertical slice uses a small synthetic TXT/Markdown narrative before format expansion | First implementation increment; [roadmap](implementation-roadmap.md) |
 | PROP-06 | Owner-facing narrative retry route with `If-Match` and `Idempotency-Key`, mirroring ingestion retry | Before real-book narrative use |
 | PROP-07 | Reconstruction acceptance targets on the synthetic corpus: zero blocking failures (incorrect canonical, spoiler leak) as a hard gate; canonical recall and outcome agreement measured per live run, starting from the T33 baseline (14/23, 13/17) and reviewed before Phase 7 limits | Maintainer review before Phase 7 (OPEN-05) |
+| PROP-08 | Measured T44 budgets: keep `VISION_MAX_ACTIVE_WORKS` at 3 (one serial worker, about 16 minutes per novel); lower `VISION_CONTEXT_CHARACTERS` to 12,000 for the free Groq tier (no measured recall loss down to 10,000; 18,500+ characters were refused 4/4, 12,700 and below accepted 3/3) or keep 20,000 on a paid tier; skip the immediate malformed-output retry when the provider is per-minute limited | Maintainer review (OPEN-05); [measured budgets](../operations/development-and-operations.md#measured-budgets--t44) |
 
 ## Open decisions
 
@@ -110,7 +111,7 @@ documents fixed all details.
 | OPEN-02 | Private-book source handling resolved by DEC-37 (no book text leaves the machine at ingestion; query-time excerpts to Groq with ZDR). Groq rate-limit handling, per-question token ceilings and the daily question budget remain open | Query-time consolidation |
 | OPEN-03 | First language resolved by DEC-22 (English); broader languages/configurations remain open | Lexical indexing and multilingual claims |
 | OPEN-04 | Resolved for the first slice by DEC-22; revisit only with an explicit changed decision | Temporal reconstruction implementation |
-| OPEN-05 | Concrete upload/expansion/time/token/cost/candidate limits and performance targets (first reconstruction baseline: T33, acceptance strategy) | Accepting untrusted workloads; then calibrate with measurements |
+| OPEN-05 | Concrete upload/expansion/time/token/cost/candidate limits and performance targets (first reconstruction baseline: T33; book-length measurements and PROP-08: T44) | Accepting untrusted workloads; then calibrate with measurements |
 | OPEN-06 | Runtime/package choices resolved by DEC-19, PDF parsing by DEC-28 and the embedding model/dimension by DEC-41; OCR coverage, vector truncation and ANN settings remain open | Reproducible development environment |
 | OPEN-07 | Shared revision/idempotency resolved by DEC-23; route payloads, pagination, deletion and retention remain open | Executable API and persistent lifecycle |
 | OPEN-08 | External deployment excluded by DEC-25; local recovery, retention and deletion remain required | External deployment |

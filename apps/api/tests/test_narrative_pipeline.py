@@ -160,7 +160,10 @@ def test_local_mode_publishes_entities_and_appearance_without_a_provider(clients
     monkeypatch.setattr(pipeline, "local_adapter",
                         lambda: LocalEntities(recognizer(FIXTURE_SPANS), corefer_pronouns("Arthur")))
     monkeypatch.setattr(pipeline, "local_embedder", HashedEmbeddings)
+    released = []
+    monkeypatch.setattr(pipeline, "release_models", lambda: released.append(narrative_job(database, str(job.generation_id)).stage))
     execute_narrative(str(job.id))
+    assert released == ["entities", "appearance", "index"]  # weights never outlive the stage that loaded them
     generation = generation_of(owner, work_id)
     assert (generation["narrative_status"], generation["narrative_ready"]) == ("succeeded", True)
     assert {"Arthur", "Wren", "Captain Mira"} <= {e["label"] for e in owner.get(f"/v1/works/{work_id}/entities").json()["items"]}

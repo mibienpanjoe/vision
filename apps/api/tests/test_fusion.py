@@ -1,7 +1,14 @@
 import uuid
 
 from app.services.retrieval.evidence import Candidate
-from app.services.retrieval.fusion import Budget, PassageInfo, categories, fuse, select
+from app.services.retrieval.fusion import (
+    SOURCES,
+    Budget,
+    PassageInfo,
+    categories,
+    fuse,
+    select,
+)
 
 TEXTS = {
     "scar": "Long after, a thin scar crossed his left cheek.",
@@ -68,3 +75,14 @@ def test_protected_passages_compress_to_their_sentences_then_report_overflow():
     overflow = select(fuse(items), info, Budget(characters=25))
     assert (overflow.outcome, overflow.protected_omitted) == ("protected_overflow", 1)
     assert select(fuse(items), info).outcome == "complete"
+
+
+def test_many_protected_passages_never_exceed_the_provider_source_limit():
+    # Pride and Prejudice: appearance cues in ~75 short passages produced 95 sources and a 500 at the envelope.
+    ids = [uuid.uuid4() for _ in range(100)]
+    info = {pid: PassageInfo(n, "Her eyes were grey.") for n, pid in enumerate(ids)}
+    items = [Candidate(pid, 0, 19, {"semantic": n + 1}, protected=True) for n, pid in enumerate(ids)]
+    selection = select(fuse(items), info)
+    assert len(selection.passages) == SOURCES == 63
+    assert (selection.outcome, selection.protected_omitted) == ("protected_overflow", 37)
+    assert [s.passage_id for s in selection.passages] == ids[:63]  # the best-ranked protected evidence is kept

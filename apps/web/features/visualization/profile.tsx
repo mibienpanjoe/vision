@@ -12,6 +12,8 @@ export function Profile({ view, cutoff, boundaryLabel }: { view: VisualizationVi
       <button className="secondary" onClick={() => exportSpecification(view)}>Export JSON</button></div>
     <p>{boundaryLabel} · revision {view.revision} · {spec.scope.creative_mode === "canon_first" ? "Canon first" : "Interpretation"}</p>
     {spec.scope.context && <p>Context: {spec.scope.context}</p>}
+    {spec.verification.selection === "protected_overflow" && <p role="status">Some descriptive evidence did not fit the context budget, so details the book states may be missing here.</p>}
+    {spec.verification.selection === "compressed" && <p role="status">Some long passages were reduced to their descriptive sentences to fit the context budget.</p>}
     <EvidenceInspector workId={view.work_id} specification={spec} cutoff={cutoff} />
     <div className="unknowns"><h4>Unknown</h4>
       {[spec.subject, ...spec.participants, ...spec.world].map((member, index) => member.unknown.length > 0 && <p key={index}>{member.entity.label}: {member.unknown.join(", ")}</p>)}
