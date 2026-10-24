@@ -8,6 +8,7 @@ more than one identity stays ambiguous instead of picking the likeliest one.
 import re
 import unicodedata
 import uuid
+from collections import Counter
 from dataclasses import dataclass
 
 PRONOUNS = frozenset("""i me my mine myself he him his himself she her hers herself it its itself we us our ours
@@ -50,7 +51,8 @@ class SubjectLookup:
         members: dict[uuid.UUID, list] = {}
         for entity_id in view.entities:
             members.setdefault(root(entity_id), []).append(entity_id)
-        counts = {e: sum(e in view.candidates[m.id] for m in view.mentions) for e in view.entities}
+        # One pass over mentions; counting per entity was 27M steps (32 s a query) on Pride and Prejudice.
+        counts = Counter(e for m in view.mentions for e in view.candidates[m.id])
         self._subject = {}
         for ids in members.values():
             head = min(sorted(ids), key=lambda e: -counts[e])
