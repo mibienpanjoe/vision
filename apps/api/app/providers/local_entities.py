@@ -200,7 +200,9 @@ def models():
 
 
 def gliner_recognize(texts):
-    found = models()[0].batch_extract_entities(texts, LABELS, batch_size=8, threshold=0.5, include_spans=True)
+    # One passage per forward pass: on Jekyll's longest passages batch 8 added 2.3 GB of padded attention at peak
+    # and ran slower, with byte-identical spans (T44).
+    found = models()[0].batch_extract_entities(texts, LABELS, batch_size=1, threshold=0.5, include_spans=True)
     spans = []
     for result in found:
         items = result.get("entities", result)
