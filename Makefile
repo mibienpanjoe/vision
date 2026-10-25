@@ -1,4 +1,4 @@
-.PHONY: setup services migrate api worker dispatch web dev stop browsers lint unit contracts web-check docs check integration browser-session reconcile-sources
+.PHONY: setup services migrate api worker dispatch web dev stop browsers lint unit contracts web-check docs check integration browser-session reconcile-sources images package-check
 setup:
 	python3 scripts/local.py setup
 services:
@@ -43,3 +43,10 @@ browser-session:
 
 reconcile-sources:
 	python3 scripts/local.py reconcile-sources
+
+images:
+	docker build -f infrastructure/docker/api.Dockerfile --build-arg VISION_REVISION=$$(git rev-parse HEAD) -t vision-api:local .
+	docker build -f infrastructure/docker/web.Dockerfile --build-arg VISION_REVISION=$$(git rev-parse HEAD) -t vision-web:local .
+
+package-check:
+	python3 scripts/package_check.py

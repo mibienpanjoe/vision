@@ -210,9 +210,10 @@ uv run --locked uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 `/health/live` reports process liveness independently of the database.
-`/health/ready` requires a real database query and the vector extension; an absent
-configuration, unavailable database or missing extension returns safe `503`
-unready. It does not claim narrative/search readiness. Migration 0001 installs
+`/health/ready` requires a real database query, the vector extension and
+owner-only, writable original and render roots (T45); an absent configuration,
+unavailable database, missing extension or unusable storage returns safe `503`
+unready. Redis is not required: a failed enqueue stays visibly pending in SQL. It does not claim narrative/search readiness. Migration 0001 installs
 vector and the migration-version table; domain tables arrive with consumers.
 The lifespan owns/disposes the engine; connection and statement timeouts bound
 health checks. See [FastAPI lifespan](https://fastapi.tiangolo.com/advanced/events/)
@@ -506,3 +507,47 @@ HF_HUB_OFFLINE=1 VISION_MEASURE_BOOKS=$PWD/.local/corpus VISION_MEASURE_ONLY=jek
 
 Results land in `.local/measurements/budgets-<book>.json`; `VISION_MEASURE_KEEP_DB`
 keeps a copy of the processed database for profiling.
+
+## Packaged local stack — T45
+
+DEC-25 keeps Vision local, so packaging means reproducible images and a private
+filesystem store rather than external hosting or S3. `make images` builds two
+images from the checkout, labelled with the commit (`org.opencontainers.image.revision`):
+
+| Image | Contents | Size (2026-10-25) |
+|---|---|---|
+| `vision-api:local` | Python 3.12.14 and the locked `uv` environment (CPU torch, Docling, local NLP), app and migrations; runs as uid 10001 | 5.8 GB |
+| `vision-web:local` | Node 24.12.0, the frozen pnpm install and a production Next build | 1.2 GB |
+
+Base images are pinned by digest and dependencies by lockfile. Neither image
+holds `.env`, tests, private books, runtime data or model weights (`.dockerignore`).
+
+`docker compose --profile app up -d --wait` starts PostgreSQL, Redis, a one-shot
+`migrate`, the `api`, a `worker` and the `web` server:
+
+- Only the web port is published, on `127.0.0.1:${VISION_WEB_PORT:-3000}`. The API
+  listens on the stack's private network; the Next proxy reaches it as `api`, the
+  one non-loopback proxy host `next.config.ts` accepts, and `VISION_TRUSTED_HOSTS`
+  admits that name.
+- Credentials come from the private `.env` at run time. Originals and renders live
+  in the `originals` and `renders` volumes as `0700` directories with `0600` files
+  owned by the service user; storage references never leave the API.
+- Local models are bind-mounted read-only (`VISION_HF_HOME`, default
+  `~/.cache/huggingface`, and `.local/docling-models`) with `HF_HUB_OFFLINE=1`, so no
+  container downloads weights. Run `make setup` and the opt-in local-model tests once
+  on the host to populate them.
+- The worker first publishes pending dispatch intents, then consumes. `SIGTERM`
+  lets the current message finish within a 120-second grace period; an interrupted
+  narrative job is requeued by recovery within its attempt budget.
+- API and web restart unless stopped; health checks use `/health/ready` and the
+  web root. Logs carry request lines and safe codes only.
+
+`make package-check` runs the built images as an isolated compose project on free
+loopback ports with its own volumes, then removes it. It provisions two accounts,
+uploads the synthetic story through the web proxy, waits for real ingestion and
+local narrative extraction in the worker container, reads the exact original back,
+checks the other account's `404` and an anonymous `401`, the volume modes, that no
+`.env` or tests are baked in, that the API port is unpublished and the web server
+downloads nothing at start, a graceful worker stop and an API restart. Container
+logs land in `.local/package-check.log`.
+

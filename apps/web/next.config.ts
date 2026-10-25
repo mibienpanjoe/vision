@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const api = new URL(process.env.VISION_API_ORIGIN ?? "http://127.0.0.1:8000");
-if (api.protocol !== "http:" || !["127.0.0.1", "localhost"].includes(api.hostname) || api.username || api.password || api.pathname !== "/") {
-  throw new Error("VISION_API_ORIGIN must be a loopback HTTP origin");
+// Loopback, or `api`: the packaged compose service, reachable only on the stack's private network (T45).
+if (api.protocol !== "http:" || !["127.0.0.1", "localhost", "api"].includes(api.hostname) || api.username || api.password || api.pathname !== "/") {
+  throw new Error("VISION_API_ORIGIN must be a loopback or packaged-service HTTP origin");
 }
 
 const config: NextConfig = {

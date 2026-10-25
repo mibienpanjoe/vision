@@ -1,0 +1,14 @@
+# Build contexts never carry secrets, private books, runtime data or local task notes.
+.env
+.env.*
+.git
+.local
+tasks
+storage
+**/node_modules
+**/.venv
+**/__pycache__
+**/.next
+**/test-results
+**/tsconfig.tsbuildinfo
+apps/api/tests
