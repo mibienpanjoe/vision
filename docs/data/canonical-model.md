@@ -83,8 +83,8 @@ must remain within the same work/revision unless an explicit future feature
 defines cross-edition behavior.
 
 Keep passage revisions and cited spans addressable after reprocessing, subject
-to the future retention/deletion policy. Derived records can be superseded or
-invalidated without rewriting old evidence. Cache keys must include processing
+to work deletion (DEC-52), which removes a work's evidence with it. Derived
+records can be superseded or invalidated without rewriting old evidence. Cache keys must include processing
 generation and request scope; cache hits are still subject to authorization.
 
 An appearance state is computed, not a permanent universal portrait. It must

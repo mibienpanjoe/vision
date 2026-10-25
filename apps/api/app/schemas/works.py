@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Literal
 
 from app.schemas.base import ContractModel
@@ -82,3 +83,10 @@ class ChapterPage(ContractModel):
     parser_revision: str
     items: list[ChapterNumber] = Field(max_length=100)
     next_after: int | None
+
+
+class WorkDeletionView(ContractModel):
+    work_id: uuid.UUID
+    status: Literal["pending", "purging", "completed"]
+    requested_at: datetime
+    completed_at: datetime | None

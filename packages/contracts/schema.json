@@ -2722,6 +2722,50 @@
       "title": "WholeBook",
       "type": "object"
     },
+    "WorkDeletionView": {
+      "additionalProperties": false,
+      "properties": {
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Completed At"
+        },
+        "requested_at": {
+          "format": "date-time",
+          "title": "Requested At",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "purging",
+            "completed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "work_id": {
+          "format": "uuid",
+          "title": "Work Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "work_id",
+        "status",
+        "requested_at",
+        "completed_at"
+      ],
+      "title": "WorkDeletionView",
+      "type": "object"
+    },
     "WorkView": {
       "additionalProperties": false,
       "properties": {
@@ -2882,6 +2926,9 @@
     },
     "work": {
       "$ref": "#/$defs/WorkView"
+    },
+    "work_deletion": {
+      "$ref": "#/$defs/WorkDeletionView"
     }
   },
   "required": [
@@ -2892,6 +2939,7 @@
     "upload_metadata",
     "upload_accepted",
     "work",
+    "work_deletion",
     "library_page",
     "ingestion",
     "generations",

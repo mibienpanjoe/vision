@@ -10,6 +10,7 @@ from typing import Annotated
 
 from app.core.errors import PublicError
 from app.models.access import LoginSession, Principal
+from app.models.works import Work
 from fastapi import Depends, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -76,7 +77,13 @@ def current_actor(request: Request, db: Annotated[Session, Depends(database_sess
 
 
 def owned_object(db: Session, model, object_id: uuid.UUID, actor: ActorScope):
-    result = db.scalar(select(model).where(model.id == object_id, model.owner_id == actor.owner_id))
+    query = select(model).where(model.id == object_id, model.owner_id == actor.owner_id)
+    # A work being deleted, and everything filed under it, is absent from the moment deletion is requested.
+    if model is Work:
+        query = query.where(Work.deleted_at.is_(None))
+    elif hasattr(model, "work_id"):
+        query = query.where(model.work_id.in_(select(Work.id).where(Work.deleted_at.is_(None))))
+    result = db.scalar(query)
     if result is None:
         raise PublicError(404, "RESOURCE_NOT_FOUND", "Resource not found.")
     return result

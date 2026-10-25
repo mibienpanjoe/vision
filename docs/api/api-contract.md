@@ -606,3 +606,21 @@ serves a result computed under another cap. Protected sentences are reserved
 before ranked passages; any that do not fit are counted and labelled
 `protected_overflow` in `verification.selection`, never dropped silently, and the
 workspace states an overflow or compression on the profile itself.
+
+## Work deletion — T46
+
+`DELETE /v1/works/{id}` requires `Idempotency-Key` and `If-Match` with the work's
+strong revision, which `GET /v1/works/{id}` returns as its `ETag`; missing or stale
+revisions answer `428`/`412`. Acceptance answers `202` with a `WorkDeletionView`
+(`work_id`, `status` pending, purging or completed, `requested_at`,
+`completed_at`). Only the exact accepted request replays; any other deletion
+request, and every route under the work, then answers the common `404` as for an
+unknown ID, and the library omits it. Replaying the work's original upload key
+answers `409`.
+
+Acceptance cancels the work's queued ingestion, narrative and render jobs and asks
+running ones to stop; an image request already sent to a provider is not
+recalled, and its output is discarded with the work. Deletion is irreversible
+(DEC-52). The tombstone keeps only owner, work ID, the expected revision, the
+idempotency key and lifecycle times, with no title, text, quotes or hashes.
+

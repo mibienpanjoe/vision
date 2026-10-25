@@ -50,7 +50,7 @@ def create_work(db, actor, metadata, data, key, correlation_id):
     digest = hashlib.sha256(json.dumps({**metadata.model_dump(), "sha256": fingerprint}, sort_keys=True).encode()).hexdigest()
     prior = db.scalar(select(Work).where(Work.owner_id == actor.owner_id, Work.idempotency_key == key))
     if prior is not None:
-        if prior.request_hash != digest:
+        if prior.request_hash != digest or prior.deleted_at is not None:
             raise PublicError(409, "IDEMPOTENCY_CONFLICT", "Key already used for a different upload.")
         return accepted_view(db, prior)
     require_capacity(db, actor.owner_id)
@@ -80,7 +80,7 @@ def create_work(db, actor, metadata, data, key, correlation_id):
             prior = db.scalar(select(Work).where(Work.owner_id == actor.owner_id, Work.idempotency_key == key))
             if prior is None:
                 raise
-            if prior.request_hash != digest:
+            if prior.request_hash != digest or prior.deleted_at is not None:
                 raise PublicError(409, "IDEMPOTENCY_CONFLICT", "Key already used for a different upload.") from None
             return accepted_view(db, prior)
         except BaseException:

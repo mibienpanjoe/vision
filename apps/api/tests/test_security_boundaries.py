@@ -174,7 +174,7 @@ def test_reading_boundaries_from_another_work_are_refused(world):
 def test_owner_responses_reach_resources_and_never_expose_storage(world, renders, tmp_path):
     clients, story, ids, other, bodies, extra = world
     leaks = [str(tmp_path), "source_ref", "output_ref", "password", "token_hash"]
-    for method, template in sorted(routes() - PUBLIC - {("POST", "/v1/auth/logout")}):
+    for method, template in sorted(routes() - PUBLIC - {("POST", "/v1/auth/logout"), ("DELETE", "/v1/works/{work_id}")}):
         response = call(clients["reader"], method, template, ids, extra, bodies)
         assert response.status_code not in {401, 403, 404, 500}, (method, template, response.text)
         if response.headers["content-type"].startswith("application/json"):
