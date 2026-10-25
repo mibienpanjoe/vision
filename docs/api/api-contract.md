@@ -178,7 +178,9 @@ The browser calls `/api/v1/*` on the Next.js origin, which forwards to the local
 API. Cookie `vision_session` is host-only, HttpOnly, SameSite Strict, path `/`.
 It deliberately uses HTTP on loopback without Secure under DEC-25; external
 network exposure/HTTPS deployment is outside this supported configuration.
-API trusted hosts are localhost/127.0.0.1. Mutations require an exact allowed
+API trusted hosts are localhost/127.0.0.1 unless `VISION_TRUSTED_HOSTS` names
+others; the packaged compose stack adds only its private `api` service name (T45),
+because the web proxy forwards with that host. Mutations require an exact allowed
 Origin (`http://127.0.0.1:3000` or `http://localhost:3000` by default). Private
 `VISION_WEB_ORIGINS` can select another local test origin. No CORS grant is needed.
 

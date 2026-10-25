@@ -2,7 +2,7 @@ import os
 
 import pytest
 from app.core.errors import PublicError
-from app.core.storage import DEFAULT_ROOT, PrivateSources
+from app.core.storage import PrivateSources, repository_storage
 from app.services.ingestion.inputs import validate_text_source
 
 
@@ -58,4 +58,4 @@ def test_failed_write_can_be_removed_without_following_links(tmp_path):
 def test_default_sources_stay_in_ignored_project_storage():
     from pathlib import Path
 
-    assert DEFAULT_ROOT == Path(__file__).resolve().parents[3] / "storage" / "originals"
+    assert repository_storage() == Path(__file__).resolve().parents[3] / "storage"
