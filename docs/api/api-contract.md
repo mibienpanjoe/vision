@@ -185,7 +185,9 @@ Origin (`http://127.0.0.1:3000` or `http://localhost:3000` by default). Private
 `VISION_WEB_ORIGINS` can select another local test origin. No CORS grant is needed.
 
 A fixed-memory limiter allows ten login attempts per minute per local API process,
-including unknown users; it resets on process restart. Five failed passwords for
+including unknown users; each attempt reserves a slot before any password work and a
+successful sign-in returns it, so only failed or in-flight attempts count (T43). It
+resets on process restart. Five failed passwords for
 an existing account lock it for five minutes in PostgreSQL. These are initial
 local protections, not a distributed rate-limit claim. Errors use the safe common
 envelope and generated correlation IDs; validation does not echo input.

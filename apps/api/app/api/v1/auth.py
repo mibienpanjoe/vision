@@ -26,7 +26,7 @@ router = APIRouter(prefix="/v1/auth", tags=["identity"], route_class=BoundedJson
 def login(body: LoginRequest, request: Request, response: Response,
           db: Annotated[Session, Depends(database_session)]):
     require_origin(request)
-    request.app.state.login_limiter.check()
+    slot = request.app.state.login_limiter.check()
     now = datetime.now(UTC)
     principal = db.scalar(select(Principal).where(Principal.username == body.username).with_for_update())
     if principal is not None and principal.locked_until and principal.locked_until > now:
@@ -42,6 +42,7 @@ def login(body: LoginRequest, request: Request, response: Response,
             db.commit()
         raise PublicError(401, "AUTHENTICATION_REQUIRED", "Invalid credentials.")
     principal.failed_attempts, principal.locked_until = 0, None
+    request.app.state.login_limiter.release(slot)
     previous = request.cookies.get(COOKIE_NAME, "")
     if len(previous) == 43 and previous.isascii():
         db.execute(delete(LoginSession).where(LoginSession.token_hash == token_hash(previous)))

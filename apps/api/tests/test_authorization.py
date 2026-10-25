@@ -120,9 +120,13 @@ def test_credentials_origin_and_validation_fail_safely(setup):
 def test_login_attempts_have_a_process_bound(setup):
     app, _ = setup
     with TestClient(app, base_url="http://127.0.0.1") as client:
+        # A successful sign-in returns its slot; only failures accumulate toward the bound.
+        for _ in range(12):
+            assert login(client).status_code == 200
         for _ in range(10):
             assert login(client, "unknown").status_code == 401
         assert login(client, "unknown").status_code == 429
+        assert login(client).status_code == 429  # the bound holds for a correct passphrase too
 
 
 def test_local_cli_provisions_an_account_without_public_registration(database):

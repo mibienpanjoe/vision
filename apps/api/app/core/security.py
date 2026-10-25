@@ -18,19 +18,25 @@ COOKIE_NAME = "vision_session"
 
 
 class LoginLimiter:
-    """Bound unknown-account attempts too; one local API process, reset on restart."""
+    """Bound unknown-account attempts too; one local API process, reset on restart. Each attempt reserves a slot
+    before any password work, so concurrent bursts stay bounded; a successful sign-in returns its slot."""
     def __init__(self):
-        self.attempts: deque[float] = deque(maxlen=10)
+        self.attempts: deque[tuple[float, object]] = deque(maxlen=10)
         self.lock = threading.Lock()
 
-    def check(self):
-        now = time.monotonic()
+    def check(self) -> object:
+        now, slot = time.monotonic(), object()
         with self.lock:
-            while self.attempts and self.attempts[0] <= now - 60:
+            while self.attempts and self.attempts[0][0] <= now - 60:
                 self.attempts.popleft()
             if len(self.attempts) == 10:
                 raise PublicError(429, "RESOURCE_LIMIT", "Too many login attempts. Try again later.")
-            self.attempts.append(now)
+            self.attempts.append((now, slot))
+        return slot
+
+    def release(self, slot: object) -> None:
+        with self.lock:
+            self.attempts = deque((entry for entry in self.attempts if entry[1] is not slot), maxlen=10)
 
 
 def require_origin(request: Request) -> None:
