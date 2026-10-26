@@ -622,5 +622,14 @@ Acceptance cancels the work's queued ingestion, narrative and render jobs and as
 running ones to stop; an image request already sent to a provider is not
 recalled, and its output is discarded with the work. Deletion is irreversible
 (DEC-52). The tombstone keeps only owner, work ID, the expected revision, the
-idempotency key and lifecycle times, with no title, text, quotes or hashes.
+deletion and original-upload idempotency keys and lifecycle times, with no title,
+text, quotes or hashes. The upload key continues to answer `409` after purge.
+
+Acceptance records SQL intent before publication to the retention queue. A
+worker waits for running ingestion, narrative and render jobs, unlinks originals
+and generated images, then deletes the work's database rows (including model
+runs, indexes, cache and history) atomically. The minimal tombstone survives.
+An interruption is retryable; `make dispatch` recovers unfinished deletions.
+Replaying the exact DELETE reads its current lifecycle status, including
+`completed`; the work itself remains `404` throughout.
 

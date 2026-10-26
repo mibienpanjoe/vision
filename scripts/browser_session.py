@@ -63,7 +63,7 @@ try:
         )
         worker_log = (root / ".local/library-worker.log").open("w")
         worker = subprocess.Popen(
-            [str(root / "apps/api/.venv/bin/dramatiq"), "app.workers.bootstrap" if live else "tests.browser_worker", "--processes", "1", "--threads", "1", "--queues", "ingestion", *( ["narrative", "render"] if workspace else [] )],
+            [str(root / "apps/api/.venv/bin/dramatiq"), "app.workers.bootstrap" if live else "tests.browser_worker", "--processes", "1", "--threads", "1", "--queues", "ingestion", "retention", *( ["narrative", "render"] if workspace else [] )],
             cwd=root / "apps/api", env=env, stdout=worker_log, stderr=worker_log, start_new_session=True,
         )
         env["VISION_TEST_WORKER_PID"] = str(worker.pid)

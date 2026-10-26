@@ -88,6 +88,16 @@ containers, PDF limits and upload size live with their format tests.
 
 ## Before external deployment
 
+Work deletion (DEC-52) immediately removes access and queues irreversible cleanup.
+The retention worker waits for in-flight jobs and removes originals, generated
+images and all work-derived rows, retaining only a minimal replay/lifecycle
+tombstone. Interrupted cleanup is recovered by `make dispatch`. This removes
+application references and files; it is not secure erasure of disk blocks or a
+promise to recall provider-side data, exported downloads or existing backups.
+Provider-side image deletion/retention remains unverified. There is no automatic
+time-based retention. Account deletion is a separate local-administration
+follow-up; it is not implemented by deleting a book.
+
 Resolve authentication, resource limits, provider data handling, retention and
 deletion, backup restoration, and network exposure. Exercise unauthorized access,
 prompt injection, malicious documents, and spoiler leakage tests. These are

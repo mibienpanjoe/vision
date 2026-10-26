@@ -26,9 +26,11 @@ class Work(Base):
 class WorkDeletion(Base):
     """A minimal tombstone: owner, work ID and lifecycle times only, kept after the purge."""
     __tablename__ = "work_deletions"
+    __table_args__ = (UniqueConstraint("owner_id", "upload_key", name="uq_deleted_upload"),)
     work_id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("principals.id"), index=True)
     idempotency_key: Mapped[str] = mapped_column(String(128))
+    upload_key: Mapped[str | None] = mapped_column(String(128))
     expected_revision: Mapped[int]
     status: Mapped[str] = mapped_column(String(16), default="pending")
     attempts: Mapped[int] = mapped_column(default=0)

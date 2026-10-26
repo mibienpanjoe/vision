@@ -92,6 +92,10 @@ Provider retention follows their terms and has not been verified as
 zero-retention; trait values in the prompt can echo short source
 wording as derived attributes.
 
+T46 implements DEC-52 with recoverable retention-queue cleanup. The minimal
+tombstone also retains the original upload key so a delayed upload retry cannot
+recreate a physically deleted book. It retains no source hash or content.
+
 ## Proposed elaborations
 
 These make implementation discussions concrete without pretending the source

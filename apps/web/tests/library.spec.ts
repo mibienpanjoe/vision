@@ -84,7 +84,14 @@ test.describe("real library", () => {
     await page.getByRole("button", { name: "Upload book", exact: true }).click();
     const failed = page.getByRole("article", { name: "Malformed PDF" });
     await expect(failed.locator(".readiness > div").nth(0)).toContainText("Failed", { timeout: 30000 });
+    const retried = page.waitForResponse(r => r.url().endsWith("/retry") && r.request().method() === "POST");
     await failed.getByRole("button", { name: "Retry parsing" }).click();
+    const retryResponse = await retried;
+    expect(retryResponse.status()).toBe(200);
+    await expect.poll(async () => {
+      const job = await (await page.request.get(retryResponse.url().replace(/\/retry$/, ""))).json();
+      return { status: job.status, attempts: job.attempts };
+    }, { timeout: 30000 }).toEqual({ status: "failed", attempts: 2 });
     await expect(failed.locator(".readiness > div").nth(0)).toContainText("Failed", { timeout: 30000 });
     expect((await page.request.get(`/api/v1/works/${workId}/ingestions/${jobId}`)).status()).toBe(200);
   });
@@ -105,6 +112,27 @@ test.describe("real library", () => {
     } finally { rmSync(gate, { force: true }); }
     await expect(book.locator(".readiness > div").nth(0)).toContainText("Cancelled", { timeout: 10000 });
     await expect(book.getByRole("button", { name: "Retry parsing" })).toBeEnabled();
+  });
+
+  test("accepted deletion disappears after reload and the worker completes physical cleanup", async ({ page }) => {
+    await page.getByRole("textbox", { name: "Book title", exact: true }).fill("Deletion sample");
+    await page.getByLabel("Source file").setInputFiles({ name: "delete.txt", mimeType: "text/plain", buffer: Buffer.from("Chapter 1\n\nA temporary synthetic book.") });
+    const accepted = page.waitForResponse(r => r.url().endsWith("/api/v1/works") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Upload book", exact: true }).click();
+    const response = await accepted;
+    expect(response.status()).toBe(202);
+    const result = await response.json();
+    const book = page.getByRole("article", { name: "Deletion sample" });
+    await expect(book).toBeVisible();
+    const endpoint = `/api/v1/works/${result.work.id}`;
+    const current = await page.request.get(endpoint);
+    const headers = { Origin: "http://127.0.0.1:13000", "Idempotency-Key": "browser-deletion", "If-Match": current.headers()["etag"] };
+    expect((await page.request.delete(endpoint, { headers })).status()).toBe(202);
+    await page.reload();
+    await expect(book).toHaveCount(0);
+    expect((await page.request.get(endpoint + "/original")).status()).toBe(404);
+    await expect.poll(async () => (await (await page.request.delete(endpoint, { headers })).json()).status).toBe("completed");
+    await expect(page.getByRole("article", { name: "Cancel and retry" })).toBeVisible();
   });
 });
 

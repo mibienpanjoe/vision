@@ -365,3 +365,15 @@ viewer") put the scar on the left cheek, with the roof gone to bare rafters, the
 brass compass in Mira's hands and three distinct people. Both stored, decoded and
 matched their snapshots. One correct image is not a rate; side mapping is stated
 only for the subject, whose facing the prompt sets.
+
+## Deletion lifecycle — T46
+
+`test_deletion_lifecycle.py` exercises owner/revision/idempotency guards,
+immediate absence from every work route, queued cancellation and running-job
+coordination, migration downgrade/upgrade, physical original/image removal and
+derived-row purge, another book's continued access, interrupted file cleanup,
+safe redelivery, and upload replay refusal after physical deletion. Its worker
+case uses PostgreSQL, Redis and an actual Dramatiq retention actor.
+The library browser suite requests deletion through the real API, reloads the
+library, observes absence and polls the exact request until cleanup completes.
+This proves the API/library lifecycle; no library delete button is implemented.

@@ -4,6 +4,7 @@ from app.services.ingestion.parse import execute_ingestion
 from app.services.narrative.pipeline import execute_narrative
 from app.services.probe import execute_probe
 from app.services.visualization.render import execute_render
+from app.services.works.deletion import execute_purge
 
 broker = configured_broker()
 if broker is None:
@@ -35,3 +36,8 @@ def narrate(job_id: str) -> None:
 @dramatiq.actor(queue_name="render", max_retries=0, time_limit=300_000)
 def render(job_id: str) -> None:
     execute_render(job_id)
+
+
+@dramatiq.actor(queue_name="retention", max_retries=10, min_backoff=1000, max_backoff=60_000, time_limit=300_000)
+def purge_work(work_id: str) -> None:
+    execute_purge(work_id)

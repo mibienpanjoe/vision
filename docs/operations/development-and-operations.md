@@ -297,7 +297,7 @@ binds loopback 8000, PostgreSQL 55432 and Redis 56379. The command is local-only
 |---|---|
 | `make services migrate` | Start/check PostgreSQL/Redis and apply migrations |
 | `make api`, `make worker`, `make web` | Run one service separately in its own terminal |
-| `make dispatch` | Reconcile pending probe, ingestion, narrative and render queue publication after a broker outage; requeue interrupted narrative jobs; settle unheld running render jobs as `acceptance_unknown` |
+| `make dispatch` | Reconcile pending probe, ingestion, narrative, render and deletion queue publication after a broker outage; recover interrupted processing and cleanup; settle unheld running render jobs as `acceptance_unknown` |
 | `make reconcile-sources` | Remove old, unreferenced interrupted originals; preserve active/linked sources |
 | `make browsers` | Install the isolated Chromium browser; OS browser prerequisites may be required |
 | `make check` | Repository lint, non-infrastructure tests, deterministic contract regeneration, Node/type checks, web build and shell browser checks, documentation checks |
@@ -550,4 +550,20 @@ checks the other account's `404` and an anonymous `401`, the volume modes, that 
 `.env` or tests are baked in, that the API port is unpublished and the web server
 downloads nothing at start, a graceful worker stop and an API restart. Container
 logs land in `.local/package-check.log`.
+
+## Work retention and deletion — T46
+
+Books are retained until their owner requests deletion through the conditional
+`DELETE /v1/works/{id}` API. There is no undo or automatic expiry. Acceptance
+hides the book immediately; physical cleanup runs on the `retention` queue after
+in-flight jobs finish. The worker removes original/image files before committing
+the deletion of every work-derived database row. A minimal `work_deletions`
+tombstone preserves status, ownership and replay protection without content.
+
+The exact accepted DELETE can be replayed to inspect `pending`, `purging` or
+`completed`. A stopped worker or storage error leaves cleanup unfinished; restore
+storage access, then run `make dispatch` and start the worker. Repeated publication
+and partially removed files are safe. This cannot recall provider-side data or
+reader exports, erase disk blocks, or remove a book from an older backup.
+See [security](../../SECURITY.md) for the remaining retention boundaries.
 
