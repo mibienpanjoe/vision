@@ -88,6 +88,24 @@ def test_interpretation_adds_labelled_creative_choices_without_changing_canon(ap
     assert '"sepia ink wash"' not in styled["generation"]["prompt"] and "sepia ink wash" in styled["generation"]["prompt"]
 
 
+def test_direct_provider_inference_keeps_its_stored_assumption_in_the_response(api, monkeypatch):
+    assumption = "The shirt is inferred to remain worn at dinner after the described change."
+
+    def inferred(sources):
+        result = annotated_consolidation(sources)
+        for fact in result["facts"]:
+            if fact["subject"] == "Arthur" and fact["attribute"] == "attire" and fact["value"] == "plain linen shirt":
+                fact.update(support="inferred", assumption=assumption)
+        return result
+
+    monkeypatch.setattr(specification, "consolidation_adapter", lambda: RuleAdapter(inferred))
+    created = store(api, "direct-inference", query="Arthur at home after the war")
+    assert created.status_code == 201, created.text
+    trait = next(t for t in created.json()["result"]["data"]["subject"]["traits"] if t["attribute"] == "attire")
+    assert (trait["status"], trait["reason"]) == ("inferred", assumption)
+    assert trait["evidence"] and trait["adjudication"] == "unchecked"
+
+
 def test_scene_requests_keep_members_and_place_evidence(api):
     compose, *_ = api
     scene = outcome(compose(chapter=3, query="Arthur at dinner with Mira and Brann"))["data"]

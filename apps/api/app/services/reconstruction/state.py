@@ -59,6 +59,7 @@ class Fact:
     modality: str
     polarity: str
     events: frozenset
+    assumption: str | None = None
 
     @property
     def canonical(self) -> bool:
@@ -120,6 +121,9 @@ def reconstruct(facts: list[Fact], subject_ids, kind: str, event, chronology: Ch
         if fact.polarity == "negated":
             state.excluded[fact.id] = "negated"
             continue
+        if fact.support == "inferred" and not (fact.assumption and fact.assumption.strip()):
+            state.excluded[fact.id] = "missing_assumption"
+            continue
         key, item = fact.attribute.casefold(), part(fact.attribute)
         where = ("direct" if event is None else "untimed") if not fact.events else \
             "unordered" if event is None else position(fact, event, chronology)
@@ -148,7 +152,12 @@ def reconstruct(facts: list[Fact], subject_ids, kind: str, event, chronology: Ch
         status = "canonical" if canonical else "inferred"
         if canonical and len({v.casefold() for v in values}) > 1:
             status = "disputed"
-        state.traits[key] = Trait(key, status, values, [f.id for f in chosen])
+        assumptions = {f.assumption.strip() for f in chosen if f.assumption and f.assumption.strip()}
+        reason = None
+        if status == "inferred":
+            reason = next(iter(assumptions)) if len(assumptions) == 1 else \
+                "Multiple provider assumptions; these values are inferred rather than explicitly stated."
+        state.traits[key] = Trait(key, status, values, [f.id for f in chosen], reason)
         for fact in items:
             if fact not in chosen:
                 state.excluded[fact.id] = "weaker than explicit evidence here"

@@ -450,7 +450,11 @@ requested and resolved moment, context, creative mode), the `subject`,
 `generation` (style, prompt, negative prompt) and `verification` (adjudication
 state, facts removed, selection outcome). Canonical and disputed traits always
 carry `SourceSpan` evidence, which resolves through the evidence route under the
-same boundary; inferred traits carry their reason. The negative prompt lists
+same boundary; inferred traits carry their reason. Direct provider inferences
+retain their stored assumption as that reason and remain non-canonical. A group
+with several assumptions uses a bounded explanation that multiple provider
+assumptions underlie its values; full assumptions remain in the stored facts.
+Unexplained inferences are excluded. The negative prompt lists
 only values the text rules out at this moment (removed, negated or superseded),
 never a value that is merely unknown here, such as childhood hair for an adult
 portrait. In `interpretation` mode,

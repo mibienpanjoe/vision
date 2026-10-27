@@ -112,6 +112,12 @@ The final review also makes backward attribution expansion consume the configure
 DEC-42 budget and gives DEC-52's row-purge transaction a bounded 60-second
 statement timeout; request connections keep their two-second bound.
 
+Q03's larger-output synthetic evaluation exposed a dropped inference reason:
+the assumption was stored with the fact but omitted from reconstruction's
+in-memory claim. The fix preserves that assumption through the response, keeps
+direct inferences non-canonical, and excludes unexplained inferences, consuming
+DEC-44 and the existing specification contract without changing either policy.
+
 ## Proposed elaborations
 
 These make implementation discussions concrete without pretending the source

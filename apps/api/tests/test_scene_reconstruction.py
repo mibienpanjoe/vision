@@ -48,7 +48,7 @@ def test_world_context_comes_only_from_places_with_evidence_at_the_event():
     journey = scene_at("journey", 3)
     assert journey.world == [] and journey.unknown == ["setting"]
     invented = Fact("invented-fog", "house", "weather", "thick fog", "scene", "inferred", "fact", "affirmed",
-                    frozenset({"dinner"}))
+                    frozenset({"dinner"}), "Fog is a model assumption, not an explicitly stated condition.")
     fog = scene_at("dinner", 3, extra=[invented]).world[0].state.traits["weather"]
     assert (fog.status, fog.values) == ("inferred", ["thick fog"])
 

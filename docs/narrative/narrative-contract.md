@@ -89,6 +89,12 @@ being revealed after it.
 | Inferred detail | Reasoned from admissible evidence with assumptions recorded |
 | Creative completion | Added for rendering; never attributed to the author |
 
+Reconstruction preserves the recorded assumption when presenting a direct
+provider inference; it never promotes that inference to canonical. Several
+assumptions grouped under one trait retain a bounded multiple-assumptions
+explanation, with individual assumptions still stored on the facts. An inference
+without an assumption is excluded rather than emitted without its required reason.
+
 A missing end event means “no end established,” not “permanent.” Canonical
 carry-forward requires eligible explicit evidence of the trait at the requested
 moment or an explicit persistence interval covering it. A scar acquired in war
