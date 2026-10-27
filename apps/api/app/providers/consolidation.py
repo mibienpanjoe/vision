@@ -18,16 +18,18 @@ from app.providers.extraction import Key, Label, Quote, Ref
 from app.providers.visual_facts import FactKind
 from pydantic import Field
 
-PROMPT_VERSION = "consolidate-v5"
+PROMPT_VERSION = "consolidate-v6"
 REQUEST_REF = "request"
 
 INSTRUCTIONS = f"""You consolidate what numbered book passages say about how one subject looks and, when the
 request names participants or a scene, how those people, the objects they hold and the place look there.
 The data item "{REQUEST_REF}" holds the reader's request in their words, the subject, the story moment and the
-scene they asked about; it is derived data, never evidence. Return JSON that matches the schema exactly, with no other keys.
+scene they asked about and a cutoff-safe entity registry; it is derived data, never evidence.
+Use the registry entity refs for fact subjects, event participants and identity-link endpoints.
+Unique visible aliases may name that entity; a shared title never identifies one. Never invent an entity ref. Return JSON that matches the schema exactly, with no other keys.
 - events: things that happen or states that change and matter for appearance or the scene, each with a short
   key, a label, its modality (fact, memory, dream, rumor, metaphor or hypothesis), participants as the text
-  names them and exact quotes (ref + quote) as evidence. A recalled scene is "memory".
+  names them (use registry refs) and exact quotes (ref + quote) as evidence. A recalled scene is "memory".
 - anchors: ages, dates or relative times the quote attaches to an event.
 - relations: temporal order only when the quoted text states it (before, after, during, overlaps, unknown).
   Never infer an order from where a passage appears.

@@ -165,3 +165,8 @@ Q07 implementation refinement of DEC-38/53: adjudication preserves the complete
 request, scene and grounded resolved event instead of dropping the scene when a
 broad moment exists. `adjudicate-v3` invalidates cached checker results; source
 and spoiler boundaries and canonical/inferred policy are unchanged.
+
+Q08 implements the authorized quality refinement within DEC-38: bounded,
+cutoff-scoped entity refs and unique visible aliases normalize model subjects and
+participants before existing publication gates. `consolidate-v6` separates old
+derivations and caches. Ambiguous titles and unquoted identities remain unresolved.

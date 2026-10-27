@@ -393,3 +393,18 @@ linguistic support. Other language configurations and quality claims remain open
 A chapter-five childhood flashback is story-early but unavailable at a chapter-two
 reading boundary. An alias resolved in chapter five cannot label an earlier
 entity using that later dependency; retain admissible ambiguity instead.
+
+
+### Query-scoped entity references — Q08
+
+Consolidation receives a bounded registry of entities mentioned in the selected,
+cutoff-eligible passages, plus the requested subject and participants. Registry
+refs identify those entities for fact subjects, event participants and identity
+links. Visible unique name surfaces may resolve to the same stored identity;
+shared titles never resolve by likelihood. Display labels are cutoff-safe, even
+when a stored label was learned later. The registry is prioritized for requested
+entities and fits the remaining input allowance; omitted refs are not resolved.
+Normalization preserves the raw captured output and does not create identities
+or widen the selected reading boundary. Publication still requires exact source
+quotes, attribution and temporal evidence. Component entities (roof, room,
+compass) remain distinct; membership of a place cannot be invented from proximity.

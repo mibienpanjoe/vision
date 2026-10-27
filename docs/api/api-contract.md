@@ -672,3 +672,7 @@ An interruption is retryable; `make dispatch` recovers unfinished deletions.
 Replaying the exact DELETE reads its current lifecycle status, including
 `completed`; the work itself remains `404` throughout.
 
+
+Internal consolidation uses query-scoped entity refs and visible aliases (Q08);
+public entity IDs and request/response schemas are unchanged. Ref normalization
+never bypasses the quoted evidence, owner or reading-boundary checks.

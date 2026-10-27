@@ -288,3 +288,25 @@ def test_live_groq_consolidation_on_the_synthetic_fixture(story):
                                         f"{f.polarity}, canonical={f.canonical})" for f in facts)}
     print(json.dumps(report, indent=1, ensure_ascii=False))
     assert all(r["status"] in {"succeeded", "failed"} for r in report.values())
+
+
+@pytest.mark.integration
+def test_registry_refs_publish_to_real_entities_without_widening_identity(story):
+    plan, expanded, _ = gathered(story, 3, "Mira at dinner after the war")
+    received = []
+    def rule(sources):
+        request = json.loads(next(s["text"] for s in sources if s["ref"] == "request"))
+        received.append(request)
+        mira = next(e["ref"] for e in request["entities"] if "mira" in e["aliases"])
+        quote = "Mira sat opposite, holding her brass compass."
+        ref = next(s["ref"] for s in sources if quote in s["text"])
+        return {"events": [{"key": "dinner", "label": "dinner", "modality": "fact", "participants": [mira],
+                            "evidence": [{"ref": ref, "quote": quote}]}],
+                "facts": [{"subject": mira, "attribute": "held_object", "value": "brass compass", "kind": "scene",
+                           "support": "explicit", "modality": "fact", "events": ["dinner"],
+                           "evidence": [{"ref": ref, "quote": quote}]}], "requested_event": "dinner"}
+    derivation = consolidate(story.engine, plan, expanded, RuleAdapter(rule))
+    story.db.expire_all()
+    facts = story.db.scalars(query(VisualFact).where(VisualFact.derivation_id == derivation)).all()
+    assert len(facts) == 1 and facts[0].subject_id in plan.subject.entity_ids
+    assert received and "entity:" in json.dumps(received)
