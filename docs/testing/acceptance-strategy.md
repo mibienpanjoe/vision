@@ -482,7 +482,7 @@ effort comparisons kept the existing 4,096-token consolidation and 2,048-token
 adjudication bounds; Q03 separately lifts those bounds in an isolated evaluation.
 Every cited span still passed local grounding and reading-boundary checks.
 
-| Variant | Outcomes matching annotations | Canonical found | Incorrect / leaks | Median API-backed query | Reported-token USD estimate |
+| Variant | Outcomes matching annotations | Canonical found (heuristic) | Flagged incorrect / leaks | Median API-backed query | Reported-token USD estimate |
 |---|---|---|---|---|---|
 | Historical Groq T33, 2026-10-21 | 13/17 | 14/23 | 0 / 0 | 5.1 s | Not repriced here |
 | Luna, low reasoning | 6/17 | 6/23 | 0 / 0 | 39.2 s | $0.02730 |
@@ -532,11 +532,12 @@ separately in the ignored measurement directory.
 
 Q04 repeats medium effort with the same evaluation-only 128,000-output-token,
 200,000-total-token and 300-second limits as Q03. All 17 cases completed, but the
-quality assertion failed: 13/23 expected canonical traits were found and one
-incorrect canonical claim was scored in `house-war`. The returned `roof_material`
+quality assertion failed: the heuristic scored 13/23 expected canonical traits
+and flagged one claim in `house-war`. The returned `roof_material`
 was `slate`, matching the intact/restored roof annotations rather than the
-wartime destroyed-roof state. No spoiler leak was scored; two unannotated extras
-remain unscored. Outcome agreement was 12/17 and does not override that failure.
+wartime destroyed-roof state. Q05 below identifies a scoring ambiguity in this
+flag; it does not prove an intact-roof claim. No spoiler leak was scored; two
+unannotated extras remain unscored. Outcome agreement was 12/17 and does not override that failure.
 
 All 22 provider calls succeeded. Five exceeded 4,096 output tokens and the largest
 used 9,006. Reported usage was 29,566 input plus 58,957 output tokens (88,523 total),
@@ -547,13 +548,33 @@ passing acceptance gate. The capped medium report was preserved byte-for-byte;
 separate native-output and per-call metadata reports remain ignored. No prompts,
 source selection, production limits, saved settings or private-book policy were
 changed. The larger allowance improved medium's capped trait count from 4/23 to
-13/23, but medium found fewer traits than low/none and introduced a scored error
+13/23, but medium scored fewer traits than low/none and triggered an error flag
 in this single synthetic run.
+
+Q05 audits these measurements before further model tuning. The evaluator matches
+any content word without checking the attribute: a fabricated blue-hair trait
+satisfies the expected blue coat. It also flags `roof_material=slate` as an
+intact/restored roof, although the wartime destruction sentence itself names
+slate. Historical counts above remain unchanged as heuristic scores; they are
+not semantic recall or proof of an intact-roof error. Full corrected scores
+cannot be recovered from summaries that omit the original specifications.
+
+A diagnostic replay with real local ingestion/embeddings and a stub replacing
+all OpenAI calls completed in 34.79 s. All 14 consolidation invocations had
+complete selections, no omitted passages and no unexpanded contexts; the missing
+Mira, compass and roof evidence was available. This establishes synthetic input
+availability, not real-book retrieval quality or live-model reconstruction. Code
+inspection also finds that adjudication receives the broad moment instead of
+both moment and scene, fact subjects resolve only by exact entity label, and
+adjudication lacks change passages beyond the claim's own evidence passages.
+These warrant targeted evaluation/request-contract improvements before more
+reasoning-level comparisons. No production behavior or accepted decision was
+changed by this investigation.
 
 The OpenAI opt-in continues to default to `none`; `low` and `medium` remain
 selectable for evaluation. The comparison does not establish that Luna is
-uniformly better: the `none` run improved canonical recall against the historical
-Groq run, while outcome agreement
+uniformly better: the `none` run improved the heuristic canonical score against
+the historical Groq run, while outcome agreement
 was lower, and response time was slower. Runs occurred on a shared development
 host at different times. Six annotated canonical traits remain missing under
 `none`, including unresolved house/Mira/childhood-compass cases and the incomplete
