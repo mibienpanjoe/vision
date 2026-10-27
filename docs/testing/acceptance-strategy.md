@@ -477,8 +477,9 @@ proves cache reuse and separates a changed effort. These tests simulate OpenAI;
 the following opt-in measurements use the real provider.
 
 The 2026-10-27 synthetic evaluation used the production local narrative worker,
-pinned local embeddings and GPT-6 Luna through the Responses API. Both variants
-kept the existing 4,096-token consolidation and 2,048-token adjudication bounds.
+pinned local embeddings and GPT-6 Luna through the Responses API. The initial
+effort comparisons kept the existing 4,096-token consolidation and 2,048-token
+adjudication bounds; Q03 separately lifts those bounds in an isolated evaluation.
 Every cited span still passed local grounding and reading-boundary checks.
 
 | Variant | Outcomes matching annotations | Canonical found | Incorrect / leaks | Median API-backed query | Reported-token USD estimate |
@@ -487,6 +488,7 @@ Every cited span still passed local grounding and reading-boundary checks.
 | Luna, low reasoning | 6/17 | 6/23 | 0 / 0 | 39.2 s | $0.02730 |
 | Luna, no extra reasoning | 12/17 | 17/23 | 0 / 0 | 20.9 s | $0.01605 |
 | Luna, medium reasoning | 6/17 | 4/23 | 0 / 0 | 38.1 s | $0.02909 |
+| Luna, low reasoning, native output allowance | 11/17 | 17/23 | 0 / 0 | 31.6 s | $0.02598 |
 
 Low effort exhausted the consolidation output budget nine times; another call
 was unavailable. No extra reasoning completed all 22 provider calls without a
@@ -505,6 +507,27 @@ many requests failed before returning a complete answer. No annotated incorrect
 canonical claim or spoiler leak was scored; three unannotated extras remain
 unscored. A larger-budget medium experiment is separate from this run and has
 not been performed. The saved default and limits were not changed.
+
+Q03 retries low effort with Luna's model-native 128,000-output-token ceiling,
+a 200,000-total-token guard and a 300-second per-call timeout for consolidation
+and adjudication. These are evaluation-only fixture overrides; production limits,
+input selection, prompts and saved provider settings are unchanged. A first
+attempt exposed an application error: a stored model assumption was dropped
+before an inferred trait reached response validation. That interrupted run is
+not a completed comparison. A deterministic API regression reproduced the error;
+Q03's reason-propagation fix preserves the assumption without making it canonical.
+
+The completed fresh run after that fix had 21 successful provider calls, no token
+budget failures and no timeouts. Five calls exceeded 4,096 output tokens; the
+maximum was 6,625. It reported 29,121 input and 46,130 output tokens, with 448.1 s
+query time plus 28.1 s ingestion. The $0.02598 estimate covers this completed run
+only, excluding the interrupted attempt. No annotated incorrect canonical claim
+or spoiler leak was scored; three unannotated extras remain unscored. The larger
+allowance recovered low effort's capped recall from 6/23 to 17/23, matching the
+`none` run's trait count while remaining slower and more expensive. It did not
+recover all expected traits or establish real-book reliability. Reports preserve
+the capped baseline byte-for-byte and save native limits plus per-call metadata
+separately in the ignored measurement directory.
 
 The OpenAI opt-in therefore defaults to `none`; `low` remains selectable for
 evaluation. The comparison does not establish that Luna is uniformly better:
