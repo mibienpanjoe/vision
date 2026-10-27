@@ -589,3 +589,25 @@ output tokens (about $0.00206 at the same uncached rates). No image was requeste
 This proves the synthetic browser path, not private-book suitability or faster
 responses. The browser proxy was built and checked against the isolated API
 before the successful run.
+
+
+### Q06 — versioned annotation matching and synthetic replay
+
+New runs use `annotation-match-v2`: subject labels (including title variants),
+curated attribute/component patterns and complete value alternatives must match.
+Material alone does not assert roof condition; a shared color cannot satisfy a
+different attribute or a whole garment description. Inferred and disputed
+claims are scored separately; a missing evidence passage mapping fails the
+boundary check. Unrecognized paraphrases remain unscored extras. This is a
+curated synthetic matcher, not a general semantic entailment judge or a complete
+precision measurement. Historical word-overlap reports stay unchanged and must
+not be compared as if they used this scorer.
+
+The opt-in live synthetic test validates the pinned story digest, captures the
+full request/response without serializing adapter credentials, and saves each
+case's full result, consolidation rejections/scope and verification removals.
+A teardown capture retains attempted calls if a case raises. These artifacts
+live only in ignored `.local/measurements`; application/private-book logging is
+unchanged. A replay adapter checks exact request digests before returning a
+captured result and refuses changed or exhausted requests without network calls.
+Reports and trace filenames include the scorer version to preserve baselines.

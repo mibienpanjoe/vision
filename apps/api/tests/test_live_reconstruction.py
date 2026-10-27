@@ -6,6 +6,7 @@ requested through the stored-visualization route. Groq is paced once a minute by
 to no deliberate delay. Reports stay local and separate from the historical Groq baseline.
 """
 
+import hashlib
 import json
 import os
 import subprocess
@@ -16,14 +17,15 @@ import pytest
 from app.core.passwords import hash_password
 from app.main import create_app
 from app.models.access import Principal
-from app.models.model_runs import ModelRun
+from app.models.model_runs import Derivation, ModelRun
 from app.models.passages import Chapter, Passage
 from app.services.dispatch import dispatch_ingestions
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from tests.conftest import ORIGIN, STORY
-from tests.reconstruction_eval import DATA, evaluate, query, summary
+from tests.reconstruction_eval import DATA, SCORER_VERSION, evaluate, query, summary
+from tests.reconstruction_trace import CaptureAdapter
 
 pytestmark = [pytest.mark.integration, pytest.mark.skipif(
     os.environ.get("VISION_LIVE_RECONSTRUCTION") != "1", reason="Set VISION_LIVE_RECONSTRUCTION=1 for the live run")]
@@ -31,12 +33,32 @@ PROVIDER = os.environ.get("VISION_QUERY_PROVIDER", "groq")
 PACE = float(os.environ.get("VISION_LIVE_PACE", "0" if PROVIDER == "openai" else "65"))
 
 
-def test_live_reconstruction_of_every_annotated_case(database, monkeypatch, tmp_path):
+def test_live_reconstruction_of_every_annotated_case(database, monkeypatch, tmp_path, request):
     from app.providers.contracts import ProviderUnavailable
     from app.services.visualization.specification import consolidation_adapter
 
     adapter = consolidation_adapter()
     assert adapter is not None
+    assert hashlib.sha256(STORY.read_bytes()).hexdigest() == DATA["source_sha256"]
+    # Capture only this pinned synthetic corpus, never application/private-book traffic.
+    from app.services.visualization import specification
+    capture = CaptureAdapter(adapter)
+    monkeypatch.setattr(specification, "consolidation_adapter", lambda: capture)
+    stage_trace, results = [], []
+    trace = Path(__file__).parents[3] / ".local/measurements" / (
+        f"reconstruction-{adapter.provider}-{adapter.model}-{getattr(adapter, 'effort', 'default')}-{SCORER_VERSION}-trace.json")
+    def save_trace():
+        trace.parent.mkdir(parents=True, exist_ok=True)
+        trace.write_text(json.dumps({"scorer_version": SCORER_VERSION, "source_sha256": DATA["source_sha256"],
+                                     "cases": results, "all_calls": capture.calls}, indent=1, ensure_ascii=False))
+    request.addfinalizer(save_trace)  # Retain charged attempts even if a case raises before its result is scored.
+    verify = specification.verify_state
+    def traced_verify(*args, **kwargs):
+        result = verify(*args, **kwargs)
+        stage_trace.append({"stage": "verification", "removed": {str(k): v for k, v in result.removed.items()},
+                            "adjudication": result.adjudication})
+        return result
+    monkeypatch.setattr(specification, "verify_state", traced_verify)
     calls = []
     if PROVIDER == "openai":
         # This opt-in evaluation is finite, not a loop that can spend indefinitely on bad responses.
@@ -96,6 +118,7 @@ def test_live_reconstruction_of_every_annotated_case(database, monkeypatch, tmp_
                 body["through_chapter_id"] = chapters[case["through_chapter"]]
             with Session(database) as db:
                 seen = {r for r in db.scalars(select(ModelRun.id))}
+            call_start, stage_start = len(capture.calls), len(stage_trace)
             clock = time.monotonic()
             response = client.post(f"/v1/works/{work_id}/visualizations", json=body,
                                    headers={**ORIGIN, "Idempotency-Key": f"live-{case['id']}"})
@@ -104,6 +127,12 @@ def test_live_reconstruction_of_every_annotated_case(database, monkeypatch, tmp_
             result = response.json()["result"]
             with Session(database) as db:
                 runs = [r for r in db.scalars(select(ModelRun)) if r.id not in seen]
+                publication = [{"id": str(d.id), "rejections": d.rejections, "scope": d.scope} for d in
+                               db.scalars(select(Derivation).where(Derivation.id.in_(
+                                   {r.derivation_id for r in runs if r.derivation_id})))]
+            results.append({"case": case["id"], "result": result, "publication": publication,
+                            "verification": stage_trace[stage_start:], "calls": capture.calls[call_start:]})
+            save_trace()
             costs.append({"case": case["id"], "seconds": elapsed, "outcome": result["outcome"],
                           "error": result.get("error", {}).get("code"),
                           "calls": [(r.purpose, r.outcome, r.input_tokens, r.output_tokens, r.duration_ms) for r in runs]})
@@ -114,7 +143,7 @@ def test_live_reconstruction_of_every_annotated_case(database, monkeypatch, tmp_
     tokens = sum((c[2] or 0) + (c[3] or 0) for cost in costs for c in cost["calls"])
     input_tokens = sum(c[2] or 0 for cost in costs for c in cost["calls"])
     output_tokens = sum(c[3] or 0 for cost in costs for c in cost["calls"])
-    report = {"provider": adapter.provider, "model": adapter.model,
+    report = {"scorer_version": SCORER_VERSION, "provider": adapter.provider, "model": adapter.model,
               "configuration": getattr(adapter, "configuration", {}),
               "ingestion_s": ingestion_s, "summary": totals, "tokens": tokens,
               "input_tokens": input_tokens, "output_tokens": output_tokens,
@@ -122,7 +151,7 @@ def test_live_reconstruction_of_every_annotated_case(database, monkeypatch, tmp_
     if adapter.provider == "openai" and adapter.model == "gpt-6-luna":
         report["estimated_standard_usd"] = (input_tokens * 0.10 + output_tokens * 0.50) / 1_000_000
     suffix = f"-{adapter.provider}-{adapter.model}-{adapter.effort}" if adapter.provider == "openai" else "-live"
-    out = Path(__file__).parents[3] / f".local/measurements/reconstruction{suffix}.json"
+    out = Path(__file__).parents[3] / f".local/measurements/reconstruction{suffix}-{SCORER_VERSION}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=1, ensure_ascii=False))
     print(json.dumps({k: report[k] for k in ("ingestion_s", "summary", "tokens", "seconds")}, indent=1))
