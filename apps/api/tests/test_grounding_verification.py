@@ -162,3 +162,20 @@ def test_live_groq_adjudication_sample(home):
                       "traits": {k: [t.status, t.values, t.adjudication] for k, t in verified.traits.items()},
                       "tokens": [run.input_tokens, run.output_tokens], "ms": run.duration_ms}, indent=1))
     assert verified.adjudication in {"applied", "unavailable"}
+
+
+@pytest.mark.integration
+def test_adjudicator_keeps_scene_query_and_grounded_resolved_event(home):
+    story, plan, derivation_id, state, _ = home
+    seen = []
+    def rule(sources):
+        seen.extend(json.loads(s["text"]) for s in sources)
+        return {"verdicts": []}
+    verify_state(story.db, plan, derivation_id, state, set(plan.subject.entity_ids), ["arthur"], RuleAdapter(rule))
+    assert seen
+    for claim in seen:
+        assert claim["request"] == "Arthur at home after the war"
+        assert claim["scene"] == "at home" and claim["moment"] == "after the war"
+        assert claim["resolved_event"]["label"] == "dinner"
+        assert claim["resolved_event"]["quotes"]
+        assert all("ref" in q and "quote" in q for q in claim["resolved_event"]["quotes"])

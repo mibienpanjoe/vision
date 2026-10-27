@@ -18,7 +18,7 @@ import uuid
 from dataclasses import dataclass, field
 
 from app.models.entities import EntityMention
-from app.models.events import EventEvidence
+from app.models.events import Event, EventEvidence
 from app.models.passages import Passage
 from app.models.visual_facts import FactEvent, FactEvidence, VisualFact
 from app.models.works import Document, Work
@@ -157,7 +157,17 @@ def verify_state(db, plan, derivation_id: uuid.UUID, state: State, subject_ids, 
 def adjudicate(db, plan, derivation_id, result: Verification, adapter: ProviderAdapter, limits: Limits) -> None:
     """Remove canonical claims a quoted verdict rejects; mark traits a quoted verdict entails."""
     refs, items, values = {}, [], {}
-    moment = describe(plan.moment) if plan.moment else plan.context
+    moment = describe(plan.moment) if plan.moment else None
+    event = db.get(Event, result.event) if result.event else None
+    event_quotes = []
+    if event is not None and event.derivation_id == derivation_id:
+        for evidence, passage in db.execute(select(EventEvidence, Passage).join(
+                Passage, Passage.id == EventEvidence.passage_id).where(EventEvidence.event_id == event.id)):
+            if passage.document_id == plan.document_id and passage.parser_revision == plan.parser_revision and (
+                    plan.cutoff is None or (passage.chapter_ordinal or 0) <= plan.cutoff):
+                event_quotes.append({"ref": f"p{passage.ordinal}",
+                                     "quote": passage.text[evidence.start:evidence.end]})
+    resolved_event = {"label": event.label if event_quotes else None, "quotes": event_quotes}
     for trait in result.traits.values():
         if trait.status == "inferred":
             continue
@@ -169,7 +179,8 @@ def adjudicate(db, plan, derivation_id, result: Verification, adapter: ProviderA
             context = [db.get(Passage, uuid.UUID(pid)).text for pid in
                        dict.fromkeys(s.passage_id for s in trait.evidence[fact_id])]
             items.append(SourceItem(ref=f"c{len(items)}", text=json.dumps(
-                {"subject": plan.subject.label, "moment": moment, "attribute": fact.attribute, "value": fact.value,
+                {"subject": plan.subject.label, "request": plan.query, "moment": moment, "scene": plan.context,
+                 "resolved_event": resolved_event, "attribute": fact.attribute, "value": fact.value,
                  "quotes": quotes, "context": context}, ensure_ascii=False)))
     if not items:
         return

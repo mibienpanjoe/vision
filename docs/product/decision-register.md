@@ -160,3 +160,8 @@ Record a changed decision with its reason and affected requirements, contracts,
 tests, and data migration. Expensive architecture changes receive a new ADR;
 superseded ADRs remain available. Do not reopen the selected retrieval stack as
 an A/B comparison without an explicit decision to revisit it.
+
+Q07 implementation refinement of DEC-38/53: adjudication preserves the complete
+request, scene and grounded resolved event instead of dropping the scene when a
+broad moment exists. `adjudicate-v3` invalidates cached checker results; source
+and spoiler boundaries and canonical/inferred policy are unchanged.

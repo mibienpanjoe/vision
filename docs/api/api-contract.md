@@ -427,7 +427,9 @@ path synchronously (plan, local retrieval, selected-provider consolidation reuse
 reconstruction, verification with optional adjudication, prompt gate). It stores
 only the consolidation and run records; stored results are created through
 the route in the next section.
-`VISION_ADJUDICATE=0` turns adjudication off.
+`VISION_ADJUDICATE=0` turns adjudication off. The internal checker preserves the
+full request, scene, moment and grounded resolved event; its prompt version is
+part of the cache identity. No new public request fields are required.
 
 Groq remains the default text provider. The opt-in OpenAI synthetic evaluation
 (DEC-53) selects `VISION_QUERY_PROVIDER=openai`, `OPENAI_API_KEY`,

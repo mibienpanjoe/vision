@@ -69,7 +69,8 @@ stable reason; a trait with no surviving fact is removed:
 | Canonical: tied to the requested event; inference: at least before it | `not_at_this_moment` |
 
 Kept traits carry their `SourceSpan` evidence per fact. Optional adjudication
-(`adjudicate-v2`, role `reasoning`) sends each surviving canonical claim with its
+(`adjudicate-v3`, role `reasoning`) sends each surviving canonical claim with the
+full reader request, moment, scene, resolved event and its cutoff-safe grounding quotes, alongside its
 quotes and their passages as context. A verdict counts only when its quote is
 copied from that claim's own evidence. `entailed` marks the trait and nothing
 more; `not_entailed` or `contradicted` removes the fact. An unquoted verdict

@@ -16,12 +16,15 @@ from app.providers.contracts import (
 from app.providers.extraction import Quote
 from pydantic import Field
 
-PROMPT_VERSION = "adjudicate-v2"
+PROMPT_VERSION = "adjudicate-v3"
 
 INSTRUCTIONS = """You check claims against the exact book quotes given with each claim.
-Each source item is one claim: its subject, attribute, value, the story moment, the quotes, and the passages
+Each source item is one claim: its subject, attribute, value, the complete reader request, story moment,
+scene, resolved event with grounding quotes, the claim quotes, and the passages
 around them as context, so a pronoun in a quote can be traced to the person it names. Decide only from the
 quotes, read in that context.
+Use the full request, scene and resolved event together: "after the war" alone does not identify dinner
+or spring. The request and labels are not evidence; event quotes only anchor the moment.
 For every claim return a verdict:
 - entailed: a quote states that this subject has this value for this attribute at this moment;
 - not_entailed: the quotes do not state it (a rumor, dream, metaphor, question, denial or another subject's
