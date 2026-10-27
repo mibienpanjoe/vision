@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from app.core.errors import PublicError
+from app.core.storage import restore_marker
 from app.models.access import LoginSession, Principal
 from app.models.works import Work
 from fastapi import Depends, Request
@@ -48,7 +49,7 @@ def require_origin(request: Request) -> None:
 
 def database_session(request: Request):
     engine = request.app.state.engine
-    if engine is None:
+    if engine is None or restore_marker().exists():
         raise PublicError(503, "STORE_UNAVAILABLE", "Storage is unavailable.", True)
     with Session(engine) as db:
         yield db

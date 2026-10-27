@@ -105,6 +105,8 @@ def main():
         )
     elif command == "reconcile-sources":
         run(["uv", "run", "--locked", "python", "-m", "app.services.ingestion.reconcile"], cwd=API)
+    elif command in {"backup", "restore", "deletions"}:
+        run(["uv", "run", "--locked", "python", "-m", "app.operations", command, *sys.argv[2:]], cwd=API)
     elif command in {"worker", "dispatch"}:
         run(["uv", "run", "--locked", "python", "-m", "app.workers.dispatch"], cwd=API)
         if command == "worker":

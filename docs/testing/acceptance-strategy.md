@@ -377,3 +377,28 @@ case uses PostgreSQL, Redis and an actual Dramatiq retention actor.
 The library browser suite requests deletion through the real API, reloads the
 library, observes absence and polls the exact request until cleanup completes.
 This proves the API/library lifecycle; no library delete button is implemented.
+
+## Backup and recovery drill — T47
+
+`test_recovery_drill.py` creates actual PostgreSQL dumps with the selected server
+image's clients and restores into empty isolated databases/private roots. It
+compares exact original, stored specification and image bytes over the API,
+checks the other owner's safe `404` and revoked old sessions, replays a deletion
+made after the snapshot, refuses occupied/corrupt targets and older deletion
+ledgers, refuses a held worker lease, and proves an interrupted restore remains
+unavailable. Queued and running image attempts settle as acceptance unknown
+without another adapter call. Interrupted ingestion resumes in a real
+Redis/Dramatiq worker with one passage set under redelivery. Probe publication is
+recovered into a fresh broker namespace, and a restarted narrative worker reuses
+the saved derivation with unchanged entity IDs. These recovery tests use
+deterministic model adapters; the packaged drill separately runs pinned local
+extraction and embedding models.
+
+`make package-check` also backs up actual stopped Compose volumes, makes a later
+deletion on the source, restores into a new project/database/volumes, and checks
+exact original bytes, owner isolation, revoked sessions and deletion replay
+through the restored web proxy. Its printed elapsed time covers this synthetic
+drill; it is not a book-length restoration or disaster-recovery target.
+`packaged-restore.spec.ts` then signs in through the restored production web
+server, checks the surviving library entry and deleted book's absence, opens the
+restored entity explorer, and checks a narrow layout and browser errors.

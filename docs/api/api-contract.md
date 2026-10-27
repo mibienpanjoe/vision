@@ -14,6 +14,12 @@ as works. Model prompts, source text, secrets, and local paths never appear in
 public errors. The executable Pydantic/OpenAPI contract will own serialization
 and generate TypeScript types; avoid a manually duplicated frontend model.
 
+During an incomplete local restore, a private restore marker keeps readiness
+unavailable and database-backed operations answer `503 / STORE_UNAVAILABLE`.
+Old sessions are revoked on restore. Access resumes only after deletion replay,
+job reconciliation and source/image integrity checks; see the
+[operator procedure](../operations/development-and-operations.md#backup-and-restoration--t47).
+
 ## Resource surface
 
 | Method and path | Intended behavior | Draft success outcome |

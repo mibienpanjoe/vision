@@ -10,7 +10,7 @@ from app.api.v1.visualizations import router as visualizations_router
 from app.api.v1.works import router as works_router
 from app.core.errors import install_errors
 from app.core.security import LoginLimiter
-from app.core.storage import PrivateSources, private_renders
+from app.core.storage import PrivateSources, private_renders, restore_marker
 from app.db.session import configured_engine
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -34,6 +34,8 @@ async def lifespan(app: FastAPI):
 def storage_ready() -> bool:
     """Private original and render roots exist, are owner-only and writable. Redis is not required: a failed
     enqueue stays visibly pending in SQL until dispatch."""
+    if restore_marker().exists():
+        return False
     try:
         roots = [PrivateSources().root, private_renders().root]
     except (OSError, ValueError):

@@ -567,3 +567,96 @@ and partially removed files are safe. This cannot recall provider-side data or
 reader exports, erase disk blocks, or remove a book from an older backup.
 See [security](../../SECURITY.md) for the remaining retention boundaries.
 
+## Backup and restoration — T47
+
+The host commands `python3 scripts/local.py backup PATH`, `deletions PATH`, and
+`restore PATH --deletions LEDGER` use the selected Compose `db` service's
+PostgreSQL 17 clients. `DATABASE_URL` must point into that same cluster; the
+cluster identity is checked. These are offline operator commands, with the API
+and worker stopped and the database left running. The tool never overwrites an
+existing archive, database with user objects, or nonempty storage roots.
+
+A snapshot is a private `0700` directory with `0600` files: a custom-format
+database dump, exact original/image objects, SHA-256 manifest, schema/index
+versions and the deletion ledger at that point. SQL publication is held with
+table locks while copying immutable objects. The dump imports the same
+[exported snapshot](https://www.postgresql.org/docs/17/app-pgdump.html) as the
+reference inventory. The manifest is written and synced last. Account hashes
+and private source content are included; `.env`, provider keys and model weights
+are not. Encryption, off-device copies, backup frequency and expiry are
+operator-managed, with no automatic schedule.
+
+For the host filesystem runtime:
+
+```sh
+mkdir -p -m 700 .local/backups
+python3 scripts/local.py backup "$PWD/.local/backups/before-maintenance"
+# Export again after later deletions, before shutting down the source permanently.
+python3 scripts/local.py deletions "$PWD/.local/backups/latest-deletions.json"
+```
+
+Create a separate empty database with `docker compose exec -T db createdb -U
+vision vision_restored`. Load the private `.env` into the shell, then point
+`DATABASE_URL` at that new database and `VISION_SOURCE_ROOT`/`VISION_RENDER_ROOT`
+at new, empty private directories. Run:
+
+```sh
+python3 scripts/local.py restore "$PWD/.local/backups/before-maintenance" \
+  --deletions "$PWD/.local/backups/latest-deletions.json"
+```
+
+For the packaged stack, stop only its application services:
+
+```sh
+docker compose --profile app stop web api worker
+python3 scripts/local.py backup "$PWD/.local/backups/packaged" --packaged
+python3 scripts/local.py deletions "$PWD/.local/backups/latest-packaged-deletions.json"
+```
+
+`--packaged` stages the stopped API's named volumes privately on the host. For
+restoration, select a **new** `COMPOSE_PROJECT_NAME` and unused `POSTGRES_PORT`,
+`REDIS_PORT` and `VISION_WEB_PORT`; point `DATABASE_URL` at the new cluster's
+empty `vision` database. Start `db redis`, then create the API container without
+starting migrations or application processes:
+
+```sh
+docker compose --profile app up -d --wait db redis
+docker compose --profile app create --no-build api
+python3 scripts/local.py restore "$PWD/.local/backups/packaged" \
+  --deletions "$PWD/.local/backups/latest-packaged-deletions.json" --packaged
+```
+
+The packaged restore refuses running API/worker containers and nonempty target
+volumes. It repairs the restored files to uid 10001 and `0700`/`0600`, checks
+their bytes inside the actual volumes, and clears the volume's restore marker
+last. The source project and its volumes remain available for rollback.
+
+Restore uses [one database transaction](https://www.postgresql.org/docs/17/app-pgrestore.html),
+revokes old sessions, applies the **latest** deletion tombstones before access
+can resume, reconciles interrupted ingestion/narrative jobs, and verifies every
+surviving source/image hash. Both queued and running image attempts from a
+snapshot become `acceptance_unknown`: the old instance could have charged a
+call after the snapshot. Neither is automatically rendered again. Replaying a
+deleted work also purges its restored indexes, cache, history and model runs.
+
+Before serving the target, choose a fresh `VISION_QUEUE_NAMESPACE`, start its
+API/worker/web, run dispatch, and check readiness, two-owner original/evidence/
+history reads, exports and deletion absence. The Compose app environment forwards
+the namespace. Do not keep the old and restored instances processing together.
+
+A `.restore-in-progress` marker keeps readiness, authenticated operations and
+worker engine creation unavailable after an interrupted restore. Keep a failed
+target offline and retry into another empty database/storage pair; do not remove
+the marker to bypass failed checks. Schema or index-version mismatches are
+refused before restoration: use the matching release to restore/rebuild before
+upgrading, rather than silently mixing vectors or changing cited text.
+
+The recovery point for content/accounts is the completed snapshot. Deletions
+after it require the separately saved latest ledger; export and preserve that
+ledger after deletions. If it is lost with the source database, an older archive
+does not prove current deletion state and must not be released without
+reconciliation. Accounts created after the snapshot are outside its recovery
+point. Only trusted Vision archives may be restored: a database dump contains
+executable SQL. These commands do not establish an off-machine disaster-recovery
+target or a production RTO/RPO.
+

@@ -98,6 +98,17 @@ Provider-side image deletion/retention remains unverified. There is no automatic
 time-based retention. Account deletion is a separate local-administration
 follow-up; it is not implemented by deleting a book.
 
+Restoration requires an empty target and the latest separately saved deletion
+ledger. It revokes old sessions, purges deleted content before serving, and
+refuses incompatible schema/index state. An interrupted restore leaves a marker
+that blocks API access/readiness and worker engine creation. Queued or running
+image attempts in a backup are treated as acceptance unknown, avoiding an
+automatic repeat of a call charged after that backup. Snapshots contain private
+content and account hashes; they are owner-only, but encryption and expiry are
+operator-managed. A lost latest ledger prevents claiming that an older backup
+preserves subsequent deletion choices. See the
+[restoration procedure](docs/operations/development-and-operations.md#backup-and-restoration--t47).
+
 Resolve authentication, resource limits, provider data handling, retention and
 deletion, backup restoration, and network exposure. Exercise unauthorized access,
 prompt injection, malicious documents, and spoiler leakage tests. These are

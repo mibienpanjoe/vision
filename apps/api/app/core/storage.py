@@ -15,6 +15,10 @@ def repository_storage() -> Path:
     return Path(__file__).resolve().parents[4] / "storage"
 
 
+def restore_marker() -> Path:
+    return Path(os.environ.get("VISION_SOURCE_ROOT") or repository_storage() / "originals") / ".restore-in-progress"
+
+
 class SourceLease:
     def __init__(self, root, reference, stream):
         self.root, self.reference, self.stream = root, reference, stream

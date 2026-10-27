@@ -96,6 +96,12 @@ T46 implements DEC-52 with recoverable retention-queue cleanup. The minimal
 tombstone also retains the original upload key so a delayed upload retry cannot
 recreate a physically deleted book. It retains no source hash or content.
 
+T47 consumes DEC-25/52 with offline local snapshots, separate deletion-ledger
+export and restoration into a new target. Restore revokes sessions, reapplies
+later deletions before access, and conservatively settles both queued and
+running image attempts as acceptance unknown. Snapshot/copy frequency, encryption
+and expiry remain operator-managed; no external backup service is selected.
+
 ## Proposed elaborations
 
 These make implementation discussions concrete without pretending the source
