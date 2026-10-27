@@ -377,6 +377,8 @@ coordination, migration downgrade/upgrade, physical original/image removal and
 derived-row purge, another book's continued access, interrupted file cleanup,
 safe redelivery, and upload replay refusal after physical deletion. Its worker
 case uses PostgreSQL, Redis and an actual Dramatiq retention actor.
+A delayed database deletion also proves retention can exceed the API's
+two-second statement budget without changing the timeout of API connections.
 The library browser suite requests deletion through the real API, reloads the
 library, observes absence and polls the exact request until cleanup completes.
 This proves the API/library lifecycle; no library delete button is implemented.

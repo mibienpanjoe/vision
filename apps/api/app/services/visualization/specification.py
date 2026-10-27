@@ -126,7 +126,7 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
                     lexical(db, plan, lookup.names(plan.subject), terms(plan)), similar or [])
     infos = passage_infos(db, plan)
     selection = select(fuse(found), infos, budget)
-    expanded = expand(selection, infos, {c.passage_id: c.anchors for c in found if c.anchors})
+    expanded = expand(selection, infos, {c.passage_id: c.anchors for c in found if c.anchors}, budget)
     derivation_id = consolidate(db.get_bind(), plan, expanded, adapter)
     db.expire_all()
     derivation = db.get(Derivation, derivation_id)

@@ -15,7 +15,7 @@ from app.models.works import Document, IngestionJob, Work, WorkDeletion
 from app.schemas.works import WorkDeletionView
 from app.services.dispatch import dispatch_deletions
 from app.services.ingestion.jobs import job_lock
-from sqlalchemy import delete, false, func, or_, select, tuple_, update
+from sqlalchemy import delete, false, func, or_, select, text, tuple_, update
 from sqlalchemy.orm import Session
 
 ACTIVE = ("queued", "running")
@@ -172,6 +172,9 @@ def purge(engine, work_id: uuid.UUID) -> None:
     except (OSError, ValueError):
         raise CleanupUnavailable("Private cleanup storage unavailable.") from None
     with Session(engine) as db, db.begin():
+        # Retention deletes a whole work, unlike a request-sized API operation. Keep it bounded while
+        # allowing foreign-key checks on book-sized tables; SET LOCAL cannot leak into API sessions.
+        db.execute(text("SET LOCAL statement_timeout = '60s'"))
         deletion = db.scalar(select(WorkDeletion).where(WorkDeletion.work_id == work_id).with_for_update())
         purge_rows(db, work_id)
         deletion.status, deletion.completed_at = "completed", datetime.now(UTC)

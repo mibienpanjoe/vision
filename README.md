@@ -29,8 +29,9 @@ at that moment, and produce a structured specification for image generation.
 Upload TXT, Markdown, text-layer PDF or EPUB, explore entities within a reading
 boundary, inspect exact source spans, and create, refine and export grounded
 visual specifications. Optional image rendering retains private assets and
-specification history. Local packaging, book deletion and backup/restoration
-are implemented. See the [acceptance scope and measured limits](docs/testing/acceptance-strategy.md)
+specification history. Local packaging, book deletion through the API (no library
+delete button yet) and backup/restoration are implemented. See the
+[acceptance scope and measured limits](docs/testing/acceptance-strategy.md)
 before treating model output as complete or images as faithful to every detail.
 No hosted service or production release is claimed.
 

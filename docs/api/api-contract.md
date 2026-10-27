@@ -619,6 +619,8 @@ concurrent requests cannot exceed the cap; another owner's work never counts.
 
 Composition selects context under `VISION_CONTEXT_PASSAGES` (default 20 whole
 passages) and `VISION_CONTEXT_CHARACTERS` (default 20,000), the DEC-42 budget.
+Backward attribution context uses the same configured caps; it cannot expand
+provider input up to larger default limits after selection.
 The budget is part of the scoped result-cache key, so recalibrating it never
 serves a result computed under another cap. Protected sentences are reserved
 before ranked passages; any that do not fit are counted and labelled

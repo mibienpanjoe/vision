@@ -11,7 +11,7 @@ from app.models.generations import SourceGeneration
 from app.models.narrative_jobs import NarrativeJob
 from app.models.renders import RenderJob
 from app.models.works import Document, IngestionJob, WorkDeletion
-from sqlalchemy import inspect, select
+from sqlalchemy import inspect, select, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 from tests.conftest import STORY
@@ -151,6 +151,30 @@ def test_purge_removes_original_image_and_all_derived_rows_but_preserves_other_w
                                    files={"file": ("story.md", STORY.read_bytes())},
                                    headers={**ORIGIN, "Idempotency-Key": "plan-source"})
     assert replay.status_code == 409
+
+
+def test_retention_can_finish_beyond_the_api_statement_timeout(world, renders):  # noqa: F811
+    from app.db.session import configured_engine
+    from app.services.works.deletion import execute_purge
+
+    clients, story, ids, *_ = world
+    # Deterministically simulate a work-sized DELETE taking longer than the API's two-second budget.
+    # The trigger belongs only to this disposable test database.
+    with story.engine.begin() as connection:
+        connection.execute(text("CREATE FUNCTION slow_purge() RETURNS trigger LANGUAGE plpgsql AS $$ "
+                                "BEGIN PERFORM pg_sleep(2.1); RETURN NULL; END $$"))
+        connection.execute(text("CREATE TRIGGER slow_purge BEFORE DELETE ON works "
+                                "FOR EACH STATEMENT EXECUTE FUNCTION slow_purge()"))
+    assert delete(clients["reader"], ids["work_id"]).status_code == 202
+    execute_purge(ids["work_id"])
+    with Session(story.engine) as db:
+        assert db.get(WorkDeletion, uuid.UUID(ids["work_id"])).status == "completed"
+    engine = configured_engine()
+    try:
+        with engine.connect() as connection:
+            assert connection.scalar(text("SHOW statement_timeout")) == "2s"
+    finally:
+        engine.dispose()
 
 
 def test_purge_waits_for_running_jobs_and_recovers_after_storage_interruption(world, renders, monkeypatch):  # noqa: F811

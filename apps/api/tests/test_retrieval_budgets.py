@@ -65,6 +65,36 @@ def test_a_changed_budget_is_a_different_cache_key(api, monkeypatch):
     assert compose_with(api, monkeypatch, fusion.Budget(passages=3, characters=400))["outcome"] == "insufficient_evidence"
 
 
+@pytest.mark.parametrize("limit", ["passages", "characters"])
+def test_backward_context_cannot_exceed_the_configured_provider_budget(api, monkeypatch, limit):
+    from app.providers.deterministic import RuleAdapter
+    from app.services.retrieval.evidence import Candidate
+    from app.services.visualization import specification
+
+    _, _, _, story = api
+    document = story.db.get(SourceGeneration, story.generation).document_id
+    passage = story.db.scalar(select(Passage).where(Passage.document_id == document,
+                                                   Passage.chapter_ordinal <= 3).order_by(Passage.ordinal.desc()))
+    assert passage.ordinal > 1
+    # A single unanchored hit needs its previous passage for attribution. Both configured caps must
+    # constrain the actual provider input, including that backward context.
+    monkeypatch.setattr(specification, "collect", lambda *paths: [
+        Candidate(passage.id, 0, len(passage.text), {"semantic": 1})])
+    sent = []
+
+    def response(sources):
+        sent.extend(s for s in sources if s["ref"] != "request")
+        return {"events": [], "facts": [], "identity_links": []}
+
+    monkeypatch.setattr(specification, "consolidation_adapter", lambda: RuleAdapter(response))
+    budget = fusion.Budget(passages=1 if limit == "passages" else 20,
+                           characters=len(passage.text) if limit == "characters" else 20_000)
+    compose_with(api, monkeypatch, budget)
+    assert sent
+    assert len(sent) <= budget.passages
+    assert sum(len(s["text"]) for s in sent) <= budget.characters
+
+
 # Opt-in book-length measurement (T44). VISION_MEASURE_BOOKS names a directory holding the Project Gutenberg
 # texts jekyll.txt (#43) and pride.txt (#1342). Local models run on CPU (about an hour); with GROQ_API_KEY set,
 # five public-domain composes per book also call the live consolidation/adjudication model.

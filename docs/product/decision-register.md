@@ -57,7 +57,7 @@
 | DEC-49 | Adopt PROP-05: resolved results cached per owner under the hash of work, generation, cutoff, subject/participants, moment, context, creative mode, style, locks and every processing version (derivations in use, prompts, models, gates, spec, fusion weights); lookup only after the plan re-checks ownership and current generation | T32b; [architecture](../architecture/system-architecture.md#scoped-result-cache--t32b) |
 | DEC-50 | Presentation refinement uses a conditional, idempotent revision append: style/mode and canonical locks only; profiles/evidence remain unchanged, provenance and prompt gates rerun; changed source or derivation inputs require a new reconstruction; replay returns its captured revision | T38; [API](../api/api-contract.md#presentation-refinements--t38) |
 | DEC-51 | D5 rendering: OpenAI `gpt-image-2` (default) or `gpt-image-1` via `VISION_RENDER_MODEL`, low quality, 1024×1024 PNG with `OPENAI_API_KEY`; FLUX.1-schnell through the Hugging Face router (`nscale` route) with `HF_TOKEN` remains selectable; explicit opt-in by `VISION_RENDER_PROVIDER`; only the specification's gated `generation.prompt` is sent (derived attributes, locks and style; never source quotes, spans, titles or owner identifiers); negative prompt not sent; at most five reservations per owner; live acceptance (T40, T42) is limited to five requests in total; one charged call per reservation, no automatic retry, unanswered sends recorded as `acceptance_unknown` | Maintainer decision, 2026-10-22; [API](../api/api-contract.md#image-rendering--t40) |
-| DEC-52 | Work deletion: owner-requested, immediate and irreversible; the work and everything derived from it (original, passages, indexes, narrative, specifications, cache, images, model-run records) are absent at once and purged after in-flight jobs stop; only a minimal tombstone (owner, work ID, lifecycle times and status) remains; account deletion is a later CLI follow-up | Maintainer decision, 2026-10-25; [API](../api/api-contract.md#work-deletion--t46) |
+| DEC-52 | Work deletion: owner-requested, immediate and irreversible; the work and everything derived from it (original, passages, indexes, narrative, specifications, cache, images, model-run records) are absent at once and purged after in-flight jobs stop; only a minimal tombstone (owner, work ID, expected revision, deletion/original-upload idempotency keys, lifecycle times, dispatch/attempt metadata and status; no content or hashes) remains; account deletion is a later CLI follow-up | Maintainer decision, 2026-10-25; [API](../api/api-contract.md#work-deletion--t46) |
 
 ## Workspace implementation
 
@@ -107,6 +107,9 @@ The closing cost audit preserves DEC-51's cap in an account-level consumed
 reservation counter, independent of deletable history. The latest ledger also
 checkpoints that aggregate, so neither book purge nor restore refunds usage.
 No book content, work reference or per-book model-run history is retained there.
+The final review also makes backward attribution expansion consume the configured
+DEC-42 budget and gives DEC-52's row-purge transaction a bounded 60-second
+statement timeout; request connections keep their two-second bound.
 
 ## Proposed elaborations
 

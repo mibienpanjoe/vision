@@ -568,6 +568,10 @@ The exact accepted DELETE can be replayed to inspect `pending`, `purging` or
 storage access, then run `make dispatch` and start the worker. Repeated publication
 and partially removed files are safe. This cannot recall provider-side data or
 reader exports, erase disk blocks, or remove a book from an older backup.
+The row-purge transaction uses a bounded 60-second statement timeout for
+work-sized deletes; API connections retain their two-second timeout. A work
+that still exceeds the retention bound remains unfinished and requires operator
+investigation before backup; it is never reported as purged.
 See [security](../../SECURITY.md) for the remaining retention boundaries.
 
 ## Backup and restoration — T47
