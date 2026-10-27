@@ -676,3 +676,9 @@ Replaying the exact DELETE reads its current lifecycle status, including
 Internal consolidation uses query-scoped entity refs and visible aliases (Q08);
 public entity IDs and request/response schemas are unchanged. Ref normalization
 never bypasses the quoted evidence, owner or reading-boundary checks.
+
+Q10 checker status uses the existing values: `applied` requires complete valid
+verdict coverage and context; missing/duplicate/misquoted verdicts or truncated
+context produce `unavailable`. Trait `entailed` requires all surviving fact
+verdicts. Rejections can cite selected in-scope change passages, never future or
+other-document text. Public schemas are unchanged.

@@ -69,13 +69,18 @@ stable reason; a trait with no surviving fact is removed:
 | Canonical: tied to the requested event; inference: at least before it | `not_at_this_moment` |
 
 Kept traits carry their `SourceSpan` evidence per fact. Optional adjudication
-(`adjudicate-v3`, role `reasoning`) sends each surviving canonical claim with the
+(`adjudicate-v4`, role `reasoning`) sends each surviving canonical claim with the
 full reader request, moment, scene, resolved event and its cutoff-safe grounding quotes, alongside its
 quotes and their passages as context. A verdict counts only when its quote is
-copied from that claim's own evidence. `entailed` marks the trait and nothing
-more; `not_entailed` or `contradicted` removes the fact. An unquoted verdict
+copied from that claim's own evidence for entailment. Rejections may also quote
+selected, cutoff-safe change/contradiction evidence shared once in the checker
+input. Context that exceeds the input allowance is explicitly incomplete.
+`entailed` marks a trait only when all its surviving facts have valid entailed
+verdicts and the shared context is complete; `not_entailed` or `contradicted` removes the fact. An unquoted verdict
 counts for nothing, and a provider failure leaves the deterministic result
-with adjudication `unavailable`. Adjudication runs on survivors only, so it can
+with adjudication `unavailable`. Missing, duplicate or misquoted verdicts and
+incomplete context also yield `unavailable`, rather than claiming full coverage.
+A single accepted verdict cannot mark other facts as checked. Adjudication runs on survivors only, so it can
 never approve or promote a claim. A live Groq sample on the synthetic dinner
 (985 input and 211 output tokens, 0.9 s) entailed both the linen shirt and the
 visible scar. Without passage context it had rejected the scar because the

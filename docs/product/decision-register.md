@@ -174,3 +174,10 @@ derivations and caches. Ambiguous titles and unquoted identities remain unresolv
 Q09 clarifies DEC-38 extraction instructions and schema descriptions without
 changing canonical/inferred policy or splitting the combined provider call.
 Prompt/schema versions invalidate prior consolidation reuse.
+
+Q10 refines source-bound checking: selected cutoff-safe change passages may
+justify rejection, while entailment still needs the claim's own citation.
+`adjudicate-v4` requires complete valid verdict coverage/context for `applied`
+and complete per-trait coverage for `entailed`; otherwise existing deterministic
+results remain explicitly unchecked/unavailable. No checker verdict admits or
+promotes a claim. Shared context obeys the existing input bounds.
