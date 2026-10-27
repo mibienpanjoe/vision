@@ -228,3 +228,16 @@ def test_truncated_checker_context_stays_unchecked_and_inside_input_limit(home):
     assert calls and calls[0]["related_complete"] is False
     assert verified.adjudication == "unavailable"
     assert all(t.adjudication == "unchecked" for t in verified.traits.values())
+
+
+@pytest.mark.integration
+def test_adjudication_does_not_settle_or_erase_documented_disputes(story):
+    plan, expanded, _ = gathered(story, 4, "Arthur at dinner after the war")
+    derivation_id = consolidate(story.engine, plan, expanded, RuleAdapter(annotated_consolidation))
+    story.db.expire_all()
+    state, _ = appearance(story.db, plan, derivation_id)
+    assert state.traits["eyes"].status == "disputed"
+    verified = verify_state(story.db, plan, derivation_id, state, set(plan.subject.entity_ids), ["arthur"],
+                            RuleAdapter(verdict_rule({"green": ("not_entailed", None), "blue": ("not_entailed", None)})))
+    assert verified.traits["eyes"].status == "disputed"
+    assert set(verified.traits["eyes"].values) == {"green", "blue"}

@@ -45,3 +45,17 @@ def test_full_value_and_attribute_match_counts():
 
 def test_negated_value_does_not_satisfy_affirmed_trait():
     assert "child-coat" in score("child-before-war", "attire", ["not blue wool coat"])["missing"]
+
+
+def test_explicit_compass_phrase_and_scene_attribute_are_a_complete_match():
+    assert "home-compass" not in score("mira-dinner", "held_object_at_dinner", ["holding her brass compass"],
+                                        label="Captain Mira")["missing"]
+
+
+def test_left_cheek_in_the_complete_value_can_qualify_a_component_attribute():
+    assert "home-scar" not in score("home-eye-conflict", "cheek_scar", ["left-cheek scar visible"])["missing"]
+    assert "home-scar" in score("home-eye-conflict", "cheek_scar", ["right-cheek scar visible"])["missing"]
+
+
+def test_worn_coat_attribute_keeps_complete_garment_matching():
+    assert "child-coat" not in score("child-before-war", "coat_worn", ["blue wool coat"])["missing"]

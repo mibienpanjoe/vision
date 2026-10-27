@@ -181,3 +181,8 @@ justify rejection, while entailment still needs the claim's own citation.
 and complete per-trait coverage for `entailed`; otherwise existing deterministic
 results remain explicitly unchecked/unavailable. No checker verdict admits or
 promotes a claim. Shared context obeys the existing input bounds.
+
+Q11 preserves existing uncertainty/scene policy: the optional checker does not
+settle documented disputes, and a negated holder is not an absent scene member.
+Verified entity labels are retained in composition/refinement. Registry aliases
+exclude pronouns and negated phrases; display-name ordering stabilizes refs.

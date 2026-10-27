@@ -50,7 +50,7 @@ def test_live_reconstruction_of_every_annotated_case(database, monkeypatch, tmp_
     def save_trace():
         trace.parent.mkdir(parents=True, exist_ok=True)
         trace.write_text(json.dumps({"scorer_version": SCORER_VERSION, "source_sha256": DATA["source_sha256"],
-                                     "cases": results, "all_calls": capture.calls}, indent=1, ensure_ascii=False))
+                                     "cases": results, "all_calls": capture.calls, "all_stages": stage_trace}, indent=1, ensure_ascii=False))
     request.addfinalizer(save_trace)  # Retain charged attempts even if a case raises before its result is scored.
     verify = specification.verify_state
     def traced_verify(*args, **kwargs):
@@ -59,6 +59,23 @@ def test_live_reconstruction_of_every_annotated_case(database, monkeypatch, tmp_
                             "adjudication": result.adjudication})
         return result
     monkeypatch.setattr(specification, "verify_state", traced_verify)
+    prompt_gate = specification.prompt_problems
+    def traced_gate(*args, **kwargs):
+        problems = prompt_gate(*args, **kwargs)
+        stage_trace.append({"stage": "prompt_gate", "prompt": args[0], "excluded": args[2], "problems": problems})
+        return problems
+    monkeypatch.setattr(specification, "prompt_problems", traced_gate)
+    scene = specification.scene
+    def traced_scene(*args, **kwargs):
+        composed, labels = scene(*args, **kwargs)
+        members = [*composed.members, *composed.world] if hasattr(composed, "members") else []
+        stage_trace.append({"stage": "reconstruction", "outcome": composed.outcome, "members": [
+            {"label": m.entity.label, "event": str(m.state.event),
+             "traits": {k: {"status": t.status, "values": t.values, "facts": list(map(str, t.facts))}
+                        for k, t in m.state.traits.items()},
+             "excluded": {str(k): v for k, v in m.state.excluded.items()}} for m in members]})
+        return composed, labels
+    monkeypatch.setattr(specification, "scene", traced_scene)
     calls = []
     if PROVIDER == "openai":
         # This opt-in evaluation is finite, not a loop that can spend indefinitely on bad responses.

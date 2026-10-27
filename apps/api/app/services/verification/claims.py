@@ -170,8 +170,8 @@ def adjudicate(db, plan, derivation_id, result: Verification, adapter: ProviderA
                                      "quote": passage.text[evidence.start:evidence.end]})
     resolved_event = {"label": event.label if event_quotes else None, "quotes": event_quotes}
     for trait in result.traits.values():
-        if trait.status == "inferred":
-            continue
+        if trait.status != "canonical":
+            continue  # A source dispute is not a settled claim for the checker to arbitrate.
         for fact_id in trait.facts:
             fact = db.get(VisualFact, fact_id)
             quotes = [s.quote for s in trait.evidence[fact_id]]
@@ -248,14 +248,14 @@ def adjudicate(db, plan, derivation_id, result: Verification, adapter: ProviderA
     for attribute, trait in list(result.traits.items()):
         if not trait.facts:
             del result.traits[attribute]
-        elif trait.status != "inferred":
+        elif trait.status == "canonical":
             trait.adjudication = "entailed" if complete and set(trait.facts) <= entailed else "unchecked"
             trait.values = sorted({values[f] for f in trait.facts}, key=str.casefold)
             trait.status = "disputed" if len({v.casefold() for v in trait.values}) > 1 else "canonical"
 
 
 def prompt_problems(prompt: str, verification: Verification, excluded: list[str], locks: dict[str, str],
-                    creative: list[str]) -> list[str]:
+                    creative: list[str], *, entities=()) -> list[str]:
     """Checks on the final composed prompt; an empty list passes.
 
     Excluded or removed values may not appear unless a kept value contains them; disputed values may not
@@ -264,6 +264,7 @@ def prompt_problems(prompt: str, verification: Verification, excluded: list[str]
     """
     text = prompt.casefold()
     kept = [v.casefold() for t in verification.traits.values() if t.status != "disputed" for v in t.values]
+    kept += [label.casefold() for label in entities]
     problems = [f"excluded_value:{value}" for value in dict.fromkeys(excluded)
                 if value.casefold() in text and not any(value.casefold() in k for k in kept)]
     problems += [f"disputed_as_settled:{t.attribute}" for t in verification.traits.values()

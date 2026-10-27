@@ -17,7 +17,7 @@ LABELS = {"arthur": "Arthur", "house": "house by the ash tree", "mira": "Mira", 
           "sword": "silver sword", "wren": "Wren", "elodie": "Élodie", "brann": "Brann"}
 MOMENT_TEXT = {"child": "at ten", "war": "during the war", "journey": "travelling home after the war",
                "dinner": "at dinner after the war", "spring": "in the spring after the war"}
-SCORER_VERSION = "annotation-match-v2"
+SCORER_VERSION = "annotation-match-v3"
 STOP = {"the", "and", "with", "still", "his", "her", "its", "possibly", "persists", "established", "ending"}
 
 
@@ -39,9 +39,9 @@ MATCHES = {
     "child-hair": (r"hair(?:_color|_colour)?", ["chestnut", "chestnut hair"]),
     "child-cheek": (r"left_cheek(?:_state|_condition|_mark(?:ed)?)?", ["unmarked", "unmarked left cheek"]),
     "late-child-cheek": (r"left_cheek(?:_state|_condition|_mark(?:ed)?)?", ["unmarked", "unmarked left cheek"]),
-    "child-coat": (r"(?:attire|clothing|coat|worn_items)", ["blue wool coat"]),
+    "child-coat": (r"(?:attire|clothing|coat|coat_worn|worn_items)", ["blue wool coat"]),
     "war-scar": (r"left_cheek(?:_scar|_mark|_state|_condition)?", ["scar", "scarred", "left cheek scar"]),
-    "home-scar": (r"left_cheek(?:_scar|_mark|_state|_condition)?", ["scar", "scarred", "scar still visible", "left cheek scar"]),
+    "home-scar": (r"left_cheek(?:_scar|_mark|_state|_condition)?", ["scar", "scarred", "scar still visible", "left cheek scar", "left cheek scar visible"]),
     "road-scar-inference": (r"left_cheek(?:_scar|_mark|_state|_condition)?", ["scar", "scar possibly persists; no ending established"]),
     "war-armor": (r"(?:attire|clothing|armor|armour|worn_items)", ["steel armor", "steel armour"]),
     "home-no-armor": (r"(?:attire|clothing|armor|armour|worn_items)", ["steel armor", "steel armour"]),
@@ -58,7 +58,8 @@ MATCHES = {
     "compass-brass": (r"(?:material|compass_material)", ["brass"]),
     "sword-silver": (r"(?:material|sword_material|blade_material)", ["silver"]),
     "mira-compass": (r"(?:held_object|holding|carried_object|carries)", ["compass", "brass compass"]),
-    "home-compass": (r"(?:held_object|holding|carried_object|carries)", ["brass compass"]),
+    "home-compass": (r"(?:held_object(?:_at_dinner)?|holding|carried_object|carries)",
+                     ["brass compass", "holding her brass compass", "holding a brass compass"]),
     "brann-sword": (r"(?:held_object|holding|carried_object|carries)", ["silver sword", "sword"]),
     "home-light": (r"(?:lighting|light)", ["warm candlelight"]),
 }
@@ -70,7 +71,10 @@ def normalized(value):
 
 def matches(fid, trait, value):
     attribute, alternatives = MATCHES[fid]
-    return bool(re.fullmatch(attribute, trait["attribute"])) and normalized(value) in {
+    component = bool(re.fullmatch(attribute, trait["attribute"]))
+    if fid in {"war-scar", "home-scar"} and trait["attribute"] == "cheek_scar":
+        component = normalized(value).startswith("left cheek ")
+    return component and normalized(value) in {
         normalized(v) for v in alternatives}
 
 

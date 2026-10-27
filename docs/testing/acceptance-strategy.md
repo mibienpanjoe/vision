@@ -611,3 +611,17 @@ live only in ignored `.local/measurements`; application/private-book logging is
 unchanged. A replay adapter checks exact request digests before returning a
 captured result and refuses changed or exhausted requests without network calls.
 Reports and trace filenames include the scorer version to preserve baselines.
+
+
+Q11's first fully traced run revealed and reproduced two application defects:
+the checker erased both sides of an explicit record dispute, and a negated
+holder's name triggered a global excluded-value prompt failure while that person
+was a verified scene member. Regression coverage now preserves disputes and
+member labels through composition/refinement. Synthetic traces also retain
+reconstruction traits/exclusions and prompt-gate failures.
+
+The matcher is refined as `annotation-match-v3` with source-supported complete
+phrases (`holding her brass compass`, `left-cheek scar visible`, `coat_worn`)
+while retaining wrong-attribute, incomplete-garment and wrong-side regressions.
+V2 reports remain separate. These curated alternatives do not establish general
+semantic entailment; unrecognized paraphrases remain unscored.

@@ -128,3 +128,11 @@ Examples using Arthur are fictional and illustrative. IDs such as `p-241` in
 the source brief are not citations to a stored book. Executable examples will
 be generated from synthetic fixture passages with resolvable spans when the
 schema is implemented.
+
+Q11 traced evaluation exposed two guarded cases. Adjudication checks settled
+canonical traits only; source-supported disputed values stay disputed and cannot
+be arbitrated or erased by that checker. A negated relation value matching a
+verified scene member's name is not a global prohibition on that person.
+Composition/refinement and the final prompt gate preserve verified member labels
+while continuing to reject excluded visual details. `compose-v5`/`verify-v5`
+invalidate prior results.

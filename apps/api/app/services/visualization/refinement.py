@@ -106,7 +106,8 @@ def refine(db, actor, work_id, visualization_id, body, match, key):
                                            reason="Not established by the eligible text.") for unknown in spec.subject.unknown]
     prompt, negative = compose_prompt(spec.subject, spec.participants, spec.world, spec.creative, body.style,
                                       body.creative_mode == "interpretation", spec.generation.excluded_values)
-    if prompt_problems(prompt, gate, spec.generation.excluded_values, locks, [addition.value for addition in spec.creative]):
+    if prompt_problems(prompt, gate, spec.generation.excluded_values, locks, [addition.value for addition in spec.creative],
+                       entities=[m.entity.label for m in [spec.subject, *spec.participants, *spec.world]]):
         raise conflict("PROMPT_GATE_FAILED", "The refinement conflicts with the verified profile.")
     spec.scope.creative_mode = body.creative_mode
     spec.generation.style, spec.generation.prompt, spec.generation.negative_prompt = body.style, prompt, negative

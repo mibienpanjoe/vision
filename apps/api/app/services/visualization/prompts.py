@@ -7,7 +7,7 @@ go to the negative prompt. Provider-specific payloads are later adapters.
 
 from app.schemas.visualization import CreativeAddition, MemberView
 
-COMPOSE_VERSION = "compose-v4"
+COMPOSE_VERSION = "compose-v5"
 # Skin regions where a scar or mark is easily lost in a full scene unless the prompt asks to see it.
 FACE = {"face", "cheek", "forehead", "brow", "temple", "chin", "jaw", "nose", "neck"}
 # Facing the viewer, a person's left is the image's right; image models mirror sides unless told.
@@ -65,5 +65,6 @@ def compose_prompt(subject: MemberView, participants: list[MemberView], world: l
     if style:
         parts.append(f"Style: {style}")
     kept = " ".join(v.casefold() for m in members for t in m.traits for v in t.values)
+    kept += " " + " ".join(m.entity.label.casefold() for m in members)
     negative = [value for value in dict.fromkeys(excluded) if value.casefold() not in kept]
     return ". ".join(parts)[:4_000], ", ".join(negative)[:2_000]

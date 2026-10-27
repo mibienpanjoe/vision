@@ -172,11 +172,13 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
     excluded_ids = [f for m in [*composed.members, *composed.world] for f, reason in m.state.excluded.items()
                     if reason in RULED_OUT]
     excluded_values = list(db.scalars(select_rows(VisualFact.value).where(VisualFact.id.in_(excluded_ids))))
+    present_labels = [m.entity.label for m in verified]
+    excluded_values = [v for v in excluded_values if v.casefold() not in {n.casefold() for n in present_labels}]
     prompt, negative = compose_prompt(subject_view, participants, world, creative, plan.style,
                                       plan.creative_mode == "interpretation", excluded_values)
     gate = Verification(composed.event, {f"{m.entity.label}:{t.attribute}": VerifiedTrait(
         t.attribute, t.status, t.values, [], {}) for m in verified for t in m.traits})
-    if prompt_problems(prompt, gate, excluded_values, {}, [c.value for c in creative]):
+    if prompt_problems(prompt, gate, excluded_values, {}, [c.value for c in creative], entities=present_labels):
         return failed("PROMPT_GATE_FAILED", "The composed prompt did not pass verification.", correlation_id)
 
     spec = VisualSpecification(

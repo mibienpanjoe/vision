@@ -1,9 +1,10 @@
 """Query-scoped references and unique visible surfaces; shared titles never resolve."""
 
 import json
+import re
 from collections import defaultdict
 
-from app.services.retrieval.entity_lookup import fold
+from app.services.retrieval.entity_lookup import PRONOUNS, fold
 
 
 def registry(view, passage_ids, required, max_characters=4_000):
@@ -15,11 +16,13 @@ def registry(view, passage_ids, required, max_characters=4_000):
         ids = view.candidates.get(mention.id, set())
         selected.update(ids)
         text = view.passages[mention.passage_id][1][mention.start:mention.end]
-        surfaces[fold(text)].update(ids)
+        name = fold(text).strip()
+        if name not in PRONOUNS and not re.search(r"[,;.!?]|\bnot\b", name):
+            surfaces[name].update(ids)
     for entity_id in selected:
         surfaces[fold(view.labels[entity_id])].add(entity_id)
     entries, names, used = [], {}, 2
-    ordered = sorted(selected, key=lambda e: (e not in required, str(e)))
+    ordered = sorted(selected, key=lambda e: (e not in required, fold(view.labels[e]), str(e)))
     for i, entity_id in enumerate(ordered):
         aliases = sorted(name for name, ids in surfaces.items() if ids == {entity_id} and len(name) <= 256)[:8]
         ref = f"entity:{i}"

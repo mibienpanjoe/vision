@@ -33,3 +33,16 @@ def test_registry_never_exceeds_its_reserved_input_budget():
     view = Narrative({}, entities={entity_id: SimpleNamespace(label="Mira", kind="character")},
                      labels={entity_id: "Mira"})
     assert registry(view, set(), {entity_id}, max_characters=0) == ([], {})
+
+
+def test_pronouns_and_negated_phrases_are_not_name_aliases():
+    entity_id = UUID(int=1)
+    view = Narrative({"p": (1, "he Brann, not Arthur")},
+                     entities={entity_id: SimpleNamespace(label="Brann", kind="character")},
+                     labels={entity_id: "Brann"},
+                     mentions=[SimpleNamespace(id="pronoun", passage_id="p", start=0, end=2),
+                               SimpleNamespace(id="phrase", passage_id="p", start=3, end=20)],
+                     candidates={"pronoun": {entity_id}, "phrase": {entity_id}})
+    entries, names = registry(view, {"p"}, {entity_id})
+    assert entries[0]["aliases"] == ["brann"]
+    assert "he" not in names and "brann, not arthur" not in names
