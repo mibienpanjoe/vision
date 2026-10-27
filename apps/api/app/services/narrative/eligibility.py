@@ -85,8 +85,12 @@ def visible_narrative(db, generation, cutoff: int | None) -> Narrative | None:
                 view.entities[entity_id] = all_entities[entity_id]
     for mention in view.mentions:
         view.candidates[mention.id] = sorted(by_mention.get(mention.id, set()) & view.entities.keys())
+    surfaces: dict[uuid.UUID, list[str]] = {}  # one pass in mention order; per entity it was quadratic on a novel
+    for mention in view.mentions:
+        for entity_id in by_mention.get(mention.id, ()):
+            surfaces.setdefault(entity_id, []).append(passages[mention.passage_id][1][mention.start:mention.end])
     for entity_id, entity in view.entities.items():
-        texts = [passages[m.passage_id][1][m.start:m.end] for m in view.mentions if entity_id in by_mention.get(m.id, ())]
+        texts = surfaces[entity_id]
         # The stored label may come from a later batch; show it only if an eligible mention uses it.
         view.labels[entity_id] = entity.label if any(t.casefold() == entity.label.casefold() for t in texts) else texts[0]
     view.aliases = [a for a in db.scalars(select(EntityAlias).where(EntityAlias.entity_id.in_(view.entities)))

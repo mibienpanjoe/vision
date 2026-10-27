@@ -3,7 +3,7 @@
 import uuid
 from typing import Annotated
 
-from app.core.http import BoundedJsonRoute
+from app.core.http import BoundedBodyRoute, BoundedJsonRoute
 from app.core.security import ActorScope, current_actor, database_session
 from app.schemas.retrieval import VisualizationRequest
 from app.schemas.visualization import (
@@ -20,7 +20,7 @@ from app.services.visualization.specification import compose
 from fastapi import APIRouter, Depends, Header, Request, Response
 from sqlalchemy.orm import Session
 
-router = APIRouter(prefix="/v1/works", tags=["visualization"])
+router = APIRouter(prefix="/v1/works", tags=["visualization"], route_class=BoundedBodyRoute)
 mutations = APIRouter(route_class=BoundedJsonRoute)
 Actor = Annotated[ActorScope, Depends(current_actor)]
 Database = Annotated[Session, Depends(database_session)]

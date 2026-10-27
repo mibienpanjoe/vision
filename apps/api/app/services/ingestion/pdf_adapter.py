@@ -43,8 +43,9 @@ class ParsedPdf:
 
 
 def artifacts_path():
-    default = Path(__file__).parents[5] / ".local/docling-models"
-    return Path(os.environ.get("VISION_DOCLING_ARTIFACTS", default))
+    # The checkout default is resolved only without the setting; packaged images have no repository above /app.
+    configured = os.environ.get("VISION_DOCLING_ARTIFACTS")
+    return Path(configured) if configured else Path(__file__).parents[5] / ".local/docling-models"
 
 
 @cache

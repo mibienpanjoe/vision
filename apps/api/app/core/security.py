@@ -9,7 +9,9 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from app.core.errors import PublicError
+from app.core.storage import restore_marker
 from app.models.access import LoginSession, Principal
+from app.models.works import Work
 from fastapi import Depends, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -18,19 +20,25 @@ COOKIE_NAME = "vision_session"
 
 
 class LoginLimiter:
-    """Bound unknown-account attempts too; one local API process, reset on restart."""
+    """Bound unknown-account attempts too; one local API process, reset on restart. Each attempt reserves a slot
+    before any password work, so concurrent bursts stay bounded; a successful sign-in returns its slot."""
     def __init__(self):
-        self.attempts: deque[float] = deque(maxlen=10)
+        self.attempts: deque[tuple[float, object]] = deque(maxlen=10)
         self.lock = threading.Lock()
 
-    def check(self):
-        now = time.monotonic()
+    def check(self) -> object:
+        now, slot = time.monotonic(), object()
         with self.lock:
-            while self.attempts and self.attempts[0] <= now - 60:
+            while self.attempts and self.attempts[0][0] <= now - 60:
                 self.attempts.popleft()
             if len(self.attempts) == 10:
                 raise PublicError(429, "RESOURCE_LIMIT", "Too many login attempts. Try again later.")
-            self.attempts.append(now)
+            self.attempts.append((now, slot))
+        return slot
+
+    def release(self, slot: object) -> None:
+        with self.lock:
+            self.attempts = deque((entry for entry in self.attempts if entry[1] is not slot), maxlen=10)
 
 
 def require_origin(request: Request) -> None:
@@ -41,7 +49,7 @@ def require_origin(request: Request) -> None:
 
 def database_session(request: Request):
     engine = request.app.state.engine
-    if engine is None:
+    if engine is None or restore_marker().exists():
         raise PublicError(503, "STORE_UNAVAILABLE", "Storage is unavailable.", True)
     with Session(engine) as db:
         yield db
@@ -70,7 +78,13 @@ def current_actor(request: Request, db: Annotated[Session, Depends(database_sess
 
 
 def owned_object(db: Session, model, object_id: uuid.UUID, actor: ActorScope):
-    result = db.scalar(select(model).where(model.id == object_id, model.owner_id == actor.owner_id))
+    query = select(model).where(model.id == object_id, model.owner_id == actor.owner_id)
+    # A work being deleted, and everything filed under it, is absent from the moment deletion is requested.
+    if model is Work:
+        query = query.where(Work.deleted_at.is_(None))
+    elif hasattr(model, "work_id"):
+        query = query.where(model.work_id.in_(select(Work.id).where(Work.deleted_at.is_(None))))
+    result = db.scalar(query)
     if result is None:
         raise PublicError(404, "RESOURCE_NOT_FOUND", "Resource not found.")
     return result

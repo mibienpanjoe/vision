@@ -1,13 +1,14 @@
 """Database connection boundary; no global connection on import."""
 import os
 
+from app.core.storage import restore_marker
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
 
 def configured_engine() -> Engine | None:
     url = os.environ.get("DATABASE_URL")
-    if not url:
+    if not url or restore_marker().exists():
         return None
     return create_engine(
         url,

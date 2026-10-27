@@ -1,12 +1,14 @@
 # Documentation map
 
-**Status:** local product workspace implemented through Phase 5, 2026-10-22.
+**Status:** local product and operational recovery implemented, 2026-10-27.
 TXT, Markdown, PDF (no OCR) and EPUB ingestion, local entity extraction and
 embeddings, scoped query-time reconstruction, stored visual specifications and
-browser library/exploration/evidence/export/refinement are implemented.
+browser library/exploration/evidence/export/refinement, optional image rendering,
+local packaging, deletion and backup/restoration are implemented.
 The [acceptance strategy](testing/acceptance-strategy.md) distinguishes fixture,
 live-model and browser evidence and retains the measured model-quality limits.
-Optional image rendering and release/operations acceptance remain later phases.
+Final local release acceptance and exact-head CI are tracked there; local proof
+does not establish an external deployment or production readiness.
 
 The structure follows FIRA's separation of product scope, domain contracts,
 canonical data, operations, and architecture decisions. FIRA's financial domain,

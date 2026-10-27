@@ -16,6 +16,7 @@ from app.schemas.works import (
     LibraryPage,
     UploadAccepted,
     UploadMetadata,
+    WorkDeletionView,
     WorkView,
 )
 from app.services.ingestion.chapters import list_chapters
@@ -28,6 +29,7 @@ from app.services.ingestion.upload import (
     ingestion_view,
     work_view,
 )
+from app.services.works.deletion import request_deletion
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.responses import Response
 from pydantic import ValidationError
@@ -94,7 +96,7 @@ async def upload(request: Request, key: Key, actor: Actor, db: Database):
 @router.get("", response_model=LibraryPage)
 def library(actor: Actor, db: Database, limit: Annotated[int, Query(ge=1, le=100)] = 20,
             after: uuid.UUID | None = None):
-    query = select(Work).where(Work.owner_id == actor.owner_id)
+    query = select(Work).where(Work.owner_id == actor.owner_id, Work.deleted_at.is_(None))
     if after is not None:
         query = query.where(Work.id > after)
     works = list(db.scalars(query.order_by(Work.id).limit(limit + 1)))
@@ -103,8 +105,16 @@ def library(actor: Actor, db: Database, limit: Annotated[int, Query(ge=1, le=100
 
 
 @router.get("/{work_id}", response_model=WorkView)
-def read_work(work_id: uuid.UUID, actor: Actor, db: Database):
-    return work_view(db, owned_object(db, Work, work_id, actor))
+def read_work(work_id: uuid.UUID, actor: Actor, db: Database, response: Response):
+    found = work_view(db, owned_object(db, Work, work_id, actor))
+    response.headers["ETag"] = f'"{found.revision}"'
+    return found
+
+
+@router.delete("/{work_id}", status_code=202, response_model=WorkDeletionView)
+def delete_work(work_id: uuid.UUID, actor: Actor, db: Database, key: Key,
+                match: Annotated[str | None, Header(alias="If-Match", max_length=32)] = None):
+    return request_deletion(db, actor, work_id, match, key)
 
 
 @router.get("/{work_id}/original")

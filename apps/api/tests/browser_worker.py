@@ -35,5 +35,5 @@ def gated_parse(*args):
 
 parse.parse_source = gated_parse
 
-from app.workers.bootstrap import broker, ingest, narrate, probe  # noqa: E402, F401
+from app.workers.bootstrap import broker, ingest, narrate, probe, purge_work  # noqa: E402, F401
 from app.workers.bootstrap import render as render_actor  # noqa: E402, F401

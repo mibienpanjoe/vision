@@ -1,8 +1,8 @@
 # Security and source privacy
 
-**Status:** local authentication, owned text, PDF and EPUB uploads/library and private
-source storage are implemented. Broader pipeline controls remain requirements; no
-external deployment is in scope.
+**Status:** local authentication, owned uploads in four formats, private source and
+image storage, scoped narrative, reconstruction and rendering are implemented and
+covered by the cross-boundary regression below. No external deployment is in scope.
 
 ## Trust boundaries
 
@@ -55,7 +55,65 @@ Reading boundaries apply before provider calls and cache access, as well as at
 response time. A fact whose visible evidence is in scope can still leak a later
 resolution if its derived dependencies are out of scope.
 
+## Cross-boundary regression
+
+These suites run against real PostgreSQL, Redis, workers and a browser; they
+prove the local system, not a deployment:
+
+- `apps/api/tests/test_security_boundaries.py` enumerates every generated API
+  operation. Absent and logged-out sessions get `401`; a foreign or missing
+  `Origin` gets `403` on every mutation; another owner's identifiers, and nested
+  identifiers under another work, answer exactly like unknown ones; a cutoff
+  naming another work's chapter is refused; refused calls change no stored row;
+  owner responses never carry storage references, paths or secrets; every JSON
+  body is capped at 32 KiB before it is read.
+- `apps/api/tests/test_hostile_documents.py` uploads markup, prompt injection,
+  invisible controls and a traversal filename: the bytes and passages stay exact
+  and inert under an opaque name, the download name is fixed, and a NUL byte is
+  refused before any source exists. A reader's own words reach a model only in
+  the data block, and asking for text past the cutoff fails before any call. A
+  model that obeys an injection cannot place invented, later-chapter or unquoted
+  claims in a specification, and extra fields such as grants or tools fail the
+  output schema. Logs and error bodies carry no source text, quotes or passwords.
+- `apps/web/tests/security.spec.ts` renders hostile titles and markup without
+  running them, shows another reader a not-found page and `404`s, makes stale
+  controls in a second tab fail once the first signs out, and checks framing and
+  proxy origin headers. The browser harness then scans the API and worker logs
+  for source text and passwords.
+
+Book-borne injection is held at the provider envelope: system instructions are
+fixed, source text is quoted data, and outputs are schema-validated and grounded
+against the passages (`test_provider_contracts.py`). Parser bounds for EPUB
+containers, PDF limits and upload size live with their format tests.
+
 ## Before external deployment
+
+Work deletion (DEC-52) immediately removes access and queues irreversible cleanup.
+The retention worker waits for in-flight jobs and removes originals, generated
+images and all work-derived rows, retaining only a minimal replay/lifecycle
+tombstone. Interrupted cleanup is recovered by `make dispatch`. This removes
+application references and files; it is not secure erasure of disk blocks or a
+promise to recall provider-side data, exported downloads or existing backups.
+Provider-side image deletion/retention remains unverified. There is no automatic
+time-based retention. Account deletion is a separate local-administration
+follow-up; it is not implemented by deleting a book.
+
+The consumed image-reservation count belongs to the account and survives book
+purge without retaining book references or content. A latest ledger also carries
+that aggregate into restoration, so deleting a book or loading an older snapshot
+cannot reset its owner's image budget.
+
+Restoration requires an empty target and the latest separately saved deletion
+ledger. Its checksum is checked before any restore writes, detecting corruption
+that could otherwise silently skip a deletion. Restore revokes old sessions, purges deleted content before serving, and
+refuses incompatible schema/index state. An interrupted restore leaves a marker
+that blocks API access/readiness and worker engine creation. Queued or running
+image attempts in a backup are treated as acceptance unknown, avoiding an
+automatic repeat of a call charged after that backup. Snapshots contain private
+content and account hashes; they are owner-only, but encryption and expiry are
+operator-managed. A lost latest ledger prevents claiming that an older backup
+preserves subsequent deletion choices. See the
+[restoration procedure](docs/operations/development-and-operations.md#backup-and-restoration--t47).
 
 Resolve authentication, resource limits, provider data handling, retention and
 deletion, backup restoration, and network exposure. Exercise unauthorized access,

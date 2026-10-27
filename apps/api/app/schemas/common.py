@@ -32,6 +32,7 @@ from app.schemas.works import (
     LibraryPage,
     UploadAccepted,
     UploadMetadata,
+    WorkDeletionView,
     WorkView,
 )
 from pydantic import ConfigDict, Field, RootModel
@@ -56,6 +57,7 @@ class SchemaCatalog(ContractModel):
     upload_metadata: UploadMetadata
     upload_accepted: UploadAccepted
     work: WorkView
+    work_deletion: WorkDeletionView
     library_page: LibraryPage
     ingestion: IngestionView
     generations: GenerationPage

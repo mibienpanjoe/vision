@@ -8,8 +8,15 @@ from contextlib import contextmanager
 from pathlib import Path
 
 REFERENCE = re.compile(r"[a-f0-9]{32}")
-DEFAULT_ROOT = Path(__file__).resolve().parents[4] / "storage" / "originals"
-RENDER_ROOT = DEFAULT_ROOT.parent / "renders"
+
+
+def repository_storage() -> Path:
+    """The development default beside the checkout; packaged images set both roots, so no layout is assumed."""
+    return Path(__file__).resolve().parents[4] / "storage"
+
+
+def restore_marker() -> Path:
+    return Path(os.environ.get("VISION_SOURCE_ROOT") or repository_storage() / "originals") / ".restore-in-progress"
 
 
 class SourceLease:
@@ -34,7 +41,7 @@ class SourceLease:
 
 class PrivateSources:
     def __init__(self, root: Path | None = None):
-        self.root = root or Path(os.environ.get("VISION_SOURCE_ROOT", str(DEFAULT_ROOT)))
+        self.root = root or Path(os.environ.get("VISION_SOURCE_ROOT") or repository_storage() / "originals")
         if self.root.is_symlink():
             raise ValueError("Source root must not be a symlink")
         self.root.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -64,4 +71,4 @@ class PrivateSources:
 
 
 def private_renders() -> PrivateSources:
-    return PrivateSources(Path(os.environ.get("VISION_RENDER_ROOT", str(RENDER_ROOT))))
+    return PrivateSources(Path(os.environ.get("VISION_RENDER_ROOT") or repository_storage() / "renders"))

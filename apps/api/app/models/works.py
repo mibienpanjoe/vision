@@ -19,6 +19,24 @@ class Work(Base):
     idempotency_key: Mapped[str] = mapped_column(String(128))
     request_hash: Mapped[str] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    # Set when the owner deletes the work: every route treats it as absent until the purge removes the row.
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class WorkDeletion(Base):
+    """A minimal tombstone: owner, work ID and lifecycle times only, kept after the purge."""
+    __tablename__ = "work_deletions"
+    __table_args__ = (UniqueConstraint("owner_id", "upload_key", name="uq_deleted_upload"),)
+    work_id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("principals.id"), index=True)
+    idempotency_key: Mapped[str] = mapped_column(String(128))
+    upload_key: Mapped[str | None] = mapped_column(String(128))
+    expected_revision: Mapped[int]
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    attempts: Mapped[int] = mapped_column(default=0)
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Document(Base):

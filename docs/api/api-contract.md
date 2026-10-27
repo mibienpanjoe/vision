@@ -1,10 +1,11 @@
-# HTTP API contract draft
+# HTTP API contract
 
 **Status:** shared outcomes and mutation conventions selected in DEC-23.
-Health, authentication, probe jobs, private text-upload/library and bounded
-evidence routes exist as detailed below; reconstruction resources remain illustrative. T06 implements
-strict shared Pydantic models and generated JSON Schema/TypeScript, independently
-of the illustrative resource payloads below.
+Health, authentication, four-format ingestion/library, narrative browsing,
+bounded evidence, stored reconstruction/refinement, rendering and work deletion
+are implemented in the task-specific sections below. Pydantic/OpenAPI and the
+generated JSON Schema/TypeScript own executable serialization. Early conceptual
+payloads and the resource sketch remain explicitly illustrative.
 
 ## Shared requirements
 
@@ -14,7 +15,17 @@ as works. Model prompts, source text, secrets, and local paths never appear in
 public errors. The executable Pydantic/OpenAPI contract will own serialization
 and generate TypeScript types; avoid a manually duplicated frontend model.
 
-## Resource surface
+During an incomplete local restore, a private restore marker keeps readiness
+unavailable and database-backed operations answer `503 / STORE_UNAVAILABLE`.
+Old sessions are revoked on restore. Access resumes only after deletion replay,
+job reconciliation and source/image integrity checks; see the
+[operator procedure](../operations/development-and-operations.md#backup-and-restoration--t47).
+
+## Initial conceptual resource sketch
+
+This early sketch is not the implemented route inventory. The task-specific
+sections and generated OpenAPI describe the actual nested resource paths and
+outcomes; the fictional payload examples below explain domain concepts.
 
 | Method and path | Intended behavior | Draft success outcome |
 |---|---|---|
@@ -178,12 +189,16 @@ The browser calls `/api/v1/*` on the Next.js origin, which forwards to the local
 API. Cookie `vision_session` is host-only, HttpOnly, SameSite Strict, path `/`.
 It deliberately uses HTTP on loopback without Secure under DEC-25; external
 network exposure/HTTPS deployment is outside this supported configuration.
-API trusted hosts are localhost/127.0.0.1. Mutations require an exact allowed
+API trusted hosts are localhost/127.0.0.1 unless `VISION_TRUSTED_HOSTS` names
+others; the packaged compose stack adds only its private `api` service name (T45),
+because the web proxy forwards with that host. Mutations require an exact allowed
 Origin (`http://127.0.0.1:3000` or `http://localhost:3000` by default). Private
 `VISION_WEB_ORIGINS` can select another local test origin. No CORS grant is needed.
 
 A fixed-memory limiter allows ten login attempts per minute per local API process,
-including unknown users; it resets on process restart. Five failed passwords for
+including unknown users; each attempt reserves a slot before any password work and a
+successful sign-in returns it, so only failed or in-flight attempts count (T43). It
+resets on process restart. Five failed passwords for
 an existing account lock it for five minutes in PostgreSQL. These are initial
 local protections, not a distributed rate-limit claim. Errors use the safe common
 envelope and generated correlation IDs; validation does not echo input.
@@ -525,6 +540,13 @@ is a new, explicit, counted reservation; there is no automatic retry and no
 reconciliation route, because the provider exposes neither request lookup nor
 idempotency keys.
 
+Consumption is an account-level counter, incremented under the owner lock in the
+same transaction as a new reservation; replay does not increment it. Purging a
+book removes its render history without refunding the counter. The latest
+offline ledger carries aggregate usage as well as deletions, and restoration
+takes the greater of snapshot and checkpoint usage. It cannot reopen a budget
+consumed after an older snapshot.
+
 After commit the reservation is published to the `render` queue; `dispatched:
 false` means publication has not occurred and `make dispatch` retries it. The
 worker claims a queued job (`running`, revision +1), sends only the snapshot's
@@ -568,3 +590,66 @@ when the current revision has moved, opens the exact revision behind any render,
 offers conditional cancellation and a download, and explains failed and
 acceptance-unknown outcomes. Historical revisions can be viewed with their
 renders but not rendered again.
+
+## Cross-boundary request rules — T43
+
+Every JSON request body is bounded to 32 KiB of actually received bytes and
+answers `413` otherwise, before authentication or schema validation; this
+includes login, the worker probe, composition and stored creation. Composition
+and creation keep that body cap without the 10-second deadline because they wait
+on bounded provider calls. Multipart uploads keep their own source limit.
+
+Every `/v1` operation other than login requires a live session: an absent,
+expired or logged-out cookie answers `401`, and every non-`GET` operation first
+requires an allowed `Origin` (`403 / ORIGIN_REJECTED`). An identifier owned by
+another account, a nested identifier presented under a different work, and an
+unknown identifier produce the same status, code and message. A reading cutoff
+naming another work's chapter is refused rather than reinterpreted. The
+regression suite enumerates the generated OpenAPI operations, so a new route
+fails it until it is placed in this matrix.
+
+## Workload and context budgets — T44
+
+An upload, a source rebuild and an ingestion retry each start processing work.
+They answer `429 / RESOURCE_LIMIT` (retryable) when the owner already has
+`VISION_MAX_ACTIVE_WORKS` (default 3) other works with a queued or running
+ingestion or narrative job. The check runs after an idempotent replay is
+recognized and before an original is stored, under a lock on the owner, so
+concurrent requests cannot exceed the cap; another owner's work never counts.
+
+Composition selects context under `VISION_CONTEXT_PASSAGES` (default 20 whole
+passages) and `VISION_CONTEXT_CHARACTERS` (default 20,000), the DEC-42 budget.
+Backward attribution context uses the same configured caps; it cannot expand
+provider input up to larger default limits after selection.
+The budget is part of the scoped result-cache key, so recalibrating it never
+serves a result computed under another cap. Protected sentences are reserved
+before ranked passages; any that do not fit are counted and labelled
+`protected_overflow` in `verification.selection`, never dropped silently, and the
+workspace states an overflow or compression on the profile itself.
+
+## Work deletion — T46
+
+`DELETE /v1/works/{id}` requires `Idempotency-Key` and `If-Match` with the work's
+strong revision, which `GET /v1/works/{id}` returns as its `ETag`; missing or stale
+revisions answer `428`/`412`. Acceptance answers `202` with a `WorkDeletionView`
+(`work_id`, `status` pending, purging or completed, `requested_at`,
+`completed_at`). Only the exact accepted request replays; any other deletion
+request, and every route under the work, then answers the common `404` as for an
+unknown ID, and the library omits it. Replaying the work's original upload key
+answers `409`.
+
+Acceptance cancels the work's queued ingestion, narrative and render jobs and asks
+running ones to stop; an image request already sent to a provider is not
+recalled, and its output is discarded with the work. Deletion is irreversible
+(DEC-52). The tombstone keeps only owner, work ID, the expected revision, the
+deletion and original-upload idempotency keys and lifecycle times, with no title,
+text, quotes or hashes. The upload key continues to answer `409` after purge.
+
+Acceptance records SQL intent before publication to the retention queue. A
+worker waits for running ingestion, narrative and render jobs, unlinks originals
+and generated images, then deletes the work's database rows (including model
+runs, indexes, cache and history) atomically. The minimal tombstone survives.
+An interruption is retryable; `make dispatch` recovers unfinished deletions.
+Replaying the exact DELETE reads its current lifecycle status, including
+`completed`; the work itself remains `404` throughout.
+

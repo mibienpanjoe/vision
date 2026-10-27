@@ -336,6 +336,10 @@ export type Id12 = string;
 export type Revision4 = number;
 export type Subject = string;
 export type Items6 = VisualizationSummary[];
+export type CompletedAt1 = string | null;
+export type RequestedAt = string;
+export type Status7 = "pending" | "purging" | "completed";
+export type WorkId3 = string;
 
 /**
  * Build-time export root only; this is not an HTTP request/response.
@@ -371,6 +375,7 @@ export interface SchemaCatalog {
   visualization_request: VisualizationRequest;
   visualization_result: VisualizationResult;
   work: WorkView;
+  work_deletion: WorkDeletionView;
 }
 export interface ChapterPage {
   document_revision_id: DocumentRevisionId;
@@ -795,4 +800,10 @@ export interface VisualizationSummary {
   id: Id12;
   revision: Revision4;
   subject: Subject;
+}
+export interface WorkDeletionView {
+  completed_at: CompletedAt1;
+  requested_at: RequestedAt;
+  status: Status7;
+  work_id: WorkId3;
 }

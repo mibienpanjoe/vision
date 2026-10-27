@@ -57,6 +57,7 @@
 | DEC-49 | Adopt PROP-05: resolved results cached per owner under the hash of work, generation, cutoff, subject/participants, moment, context, creative mode, style, locks and every processing version (derivations in use, prompts, models, gates, spec, fusion weights); lookup only after the plan re-checks ownership and current generation | T32b; [architecture](../architecture/system-architecture.md#scoped-result-cache--t32b) |
 | DEC-50 | Presentation refinement uses a conditional, idempotent revision append: style/mode and canonical locks only; profiles/evidence remain unchanged, provenance and prompt gates rerun; changed source or derivation inputs require a new reconstruction; replay returns its captured revision | T38; [API](../api/api-contract.md#presentation-refinements--t38) |
 | DEC-51 | D5 rendering: OpenAI `gpt-image-2` (default) or `gpt-image-1` via `VISION_RENDER_MODEL`, low quality, 1024×1024 PNG with `OPENAI_API_KEY`; FLUX.1-schnell through the Hugging Face router (`nscale` route) with `HF_TOKEN` remains selectable; explicit opt-in by `VISION_RENDER_PROVIDER`; only the specification's gated `generation.prompt` is sent (derived attributes, locks and style; never source quotes, spans, titles or owner identifiers); negative prompt not sent; at most five reservations per owner; live acceptance (T40, T42) is limited to five requests in total; one charged call per reservation, no automatic retry, unanswered sends recorded as `acceptance_unknown` | Maintainer decision, 2026-10-22; [API](../api/api-contract.md#image-rendering--t40) |
+| DEC-52 | Work deletion: owner-requested, immediate and irreversible; the work and everything derived from it (original, passages, indexes, narrative, specifications, cache, images, model-run records) are absent at once and purged after in-flight jobs stop; only a minimal tombstone (owner, work ID, expected revision, deletion/original-upload idempotency keys, lifecycle times, dispatch/attempt metadata and status; no content or hashes) remains; account deletion is a later CLI follow-up | Maintainer decision, 2026-10-25; [API](../api/api-contract.md#work-deletion--t46) |
 
 ## Workspace implementation
 
@@ -91,6 +92,25 @@ Provider retention follows their terms and has not been verified as
 zero-retention; trait values in the prompt can echo short source
 wording as derived attributes.
 
+T46 implements DEC-52 with recoverable retention-queue cleanup. The minimal
+tombstone also retains the original upload key so a delayed upload retry cannot
+recreate a physically deleted book. It retains no source hash or content.
+
+T47 consumes DEC-25/52 with offline local snapshots, separate deletion-ledger
+export and restoration into a new target. Restore revokes sessions, reapplies
+later deletions before access, and conservatively settles both queued and
+running image attempts as acceptance unknown. Snapshot/copy frequency, encryption
+and expiry remain operator-managed; no external backup service is selected.
+T48's closing recovery audit adds an independent checksum to deletion-ledger
+exports: corrupted ledgers are refused before restoration can write data.
+The closing cost audit preserves DEC-51's cap in an account-level consumed
+reservation counter, independent of deletable history. The latest ledger also
+checkpoints that aggregate, so neither book purge nor restore refunds usage.
+No book content, work reference or per-book model-run history is retained there.
+The final review also makes backward attribution expansion consume the configured
+DEC-42 budget and gives DEC-52's row-purge transaction a bounded 60-second
+statement timeout; request connections keep their two-second bound.
+
 ## Proposed elaborations
 
 These make implementation discussions concrete without pretending the source
@@ -101,6 +121,7 @@ documents fixed all details.
 | PROP-04 | First vertical slice uses a small synthetic TXT/Markdown narrative before format expansion | First implementation increment; [roadmap](implementation-roadmap.md) |
 | PROP-06 | Owner-facing narrative retry route with `If-Match` and `Idempotency-Key`, mirroring ingestion retry | Before real-book narrative use |
 | PROP-07 | Reconstruction acceptance targets on the synthetic corpus: zero blocking failures (incorrect canonical, spoiler leak) as a hard gate; canonical recall and outcome agreement measured per live run, starting from the T33 baseline (14/23, 13/17) and reviewed before Phase 7 limits | Maintainer review before Phase 7 (OPEN-05) |
+| PROP-08 | Measured T44 budgets: keep `VISION_MAX_ACTIVE_WORKS` at 3 (one serial worker, about 16 minutes per novel); lower `VISION_CONTEXT_CHARACTERS` to 12,000 for the free Groq tier (no measured recall loss down to 10,000; 18,500+ characters were refused 4/4, 12,700 and below accepted 3/3) or keep 20,000 on a paid tier; skip the immediate malformed-output retry when the provider is per-minute limited | Maintainer review (OPEN-05); [measured budgets](../operations/development-and-operations.md#measured-budgets--t44) |
 
 ## Open decisions
 
@@ -110,9 +131,9 @@ documents fixed all details.
 | OPEN-02 | Private-book source handling resolved by DEC-37 (no book text leaves the machine at ingestion; query-time excerpts to Groq with ZDR). Groq rate-limit handling, per-question token ceilings and the daily question budget remain open | Query-time consolidation |
 | OPEN-03 | First language resolved by DEC-22 (English); broader languages/configurations remain open | Lexical indexing and multilingual claims |
 | OPEN-04 | Resolved for the first slice by DEC-22; revisit only with an explicit changed decision | Temporal reconstruction implementation |
-| OPEN-05 | Concrete upload/expansion/time/token/cost/candidate limits and performance targets (first reconstruction baseline: T33, acceptance strategy) | Accepting untrusted workloads; then calibrate with measurements |
+| OPEN-05 | Concrete upload/expansion/time/token/cost/candidate limits and performance targets (first reconstruction baseline: T33; book-length measurements and PROP-08: T44) | Accepting untrusted workloads; then calibrate with measurements |
 | OPEN-06 | Runtime/package choices resolved by DEC-19, PDF parsing by DEC-28 and the embedding model/dimension by DEC-41; OCR coverage, vector truncation and ANN settings remain open | Reproducible development environment |
-| OPEN-07 | Shared revision/idempotency resolved by DEC-23; route payloads, pagination, deletion and retention remain open | Executable API and persistent lifecycle |
+| OPEN-07 | Shared revision/idempotency resolved by DEC-23 and work deletion by DEC-52; account deletion and time-based retention remain open | Executable API and persistent lifecycle |
 | OPEN-08 | External deployment excluded by DEC-25; local recovery, retention and deletion remain required | External deployment |
 | OPEN-09 | Project license, exact component selections, final wordmark/vector assets, and any future optically simplified favicon | Redistribution or relevant implementation increment |
 | OPEN-10 | Resolved by DEC-51; provider-side retention verification and image deletion remain open | Retention and deletion lifecycle (T46) |

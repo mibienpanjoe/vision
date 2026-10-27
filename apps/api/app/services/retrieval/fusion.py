@@ -8,6 +8,7 @@ protected sentences alone exceed the budget the selection says so instead of
 dropping them silently.
 """
 
+import os
 import re
 import uuid
 from dataclasses import dataclass, field
@@ -20,6 +21,8 @@ K = 60
 # supply anchors and protection; giving them rank weight lowered recall@5 without raising selection recall.
 WEIGHTS = {"semantic": 1.0, "lexical": 0.5, "entity": 0.0, "appearance": 0.0}
 DIVERSITY_WINDOW = 40
+# Every selected or context passage is one source item; the provider envelope holds 64 including the request.
+SOURCES = 63
 CATEGORIES = {
     "body": "hair eyes eye face cheek cheeks skin scar scars beard moustache brow lips mouth hand hands figure stature "
             "height tall short pale dark fair stooped lean thin stout ugly handsome beautiful deformed dwarfish",
@@ -51,6 +54,13 @@ class Ranked:
 class Budget:
     passages: int = 20
     characters: int = 20_000  # about 5,000 tokens (ADR-0003 target)
+
+
+def configured_budget() -> Budget:
+    """DEC-42 defaults unless an operator recalibrates them; the budget is part of the result-cache key."""
+    default = Budget()
+    return Budget(int(os.environ.get("VISION_CONTEXT_PASSAGES", default.passages)),
+                  int(os.environ.get("VISION_CONTEXT_CHARACTERS", default.characters)))
 
 
 @dataclass
@@ -107,7 +117,7 @@ def select(ranked: list[Ranked], passages: dict[uuid.UUID, PassageInfo], budget:
     protected_omitted = 0
     for item in (r for r in ranked if r.protected):
         size = sum(end - start for start, end in item.protected)
-        if used + size > budget.characters:
+        if used + size > budget.characters or len(chosen) >= SOURCES:
             protected_omitted += len(item.protected)
             continue
         chosen[item.passage_id] = Selected(item.passage_id, list(item.protected), item.paths, item.protected, True)
@@ -122,7 +132,7 @@ def select(ranked: list[Ranked], passages: dict[uuid.UUID, PassageInfo], budget:
         if fingerprint(text) in seen or (current and not current.compressed):
             return
         extra = len(text) - (sum(end - start for start, end in current.spans) if current else 0)
-        if whole >= budget.passages or used + extra > budget.characters:
+        if whole >= budget.passages or used + extra > budget.characters or (not current and len(chosen) >= SOURCES):
             return
         chosen[item.passage_id] = Selected(item.passage_id, [(0, len(text))], item.paths, item.protected, False)
         used, whole = used + extra, whole + 1

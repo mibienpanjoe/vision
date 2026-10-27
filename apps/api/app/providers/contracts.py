@@ -86,6 +86,10 @@ class ProviderUnavailable(Exception):
     pass
 
 
+class ProviderInputTooLarge(Exception):
+    """The provider refused the request's size outright (HTTP 413); a retry of the same request cannot succeed."""
+
+
 class ProviderRateLimited(Exception):
     """The provider refused for its own quota and the advised wait did not fit the call's bounds."""
 

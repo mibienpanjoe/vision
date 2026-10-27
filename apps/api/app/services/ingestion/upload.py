@@ -4,9 +4,10 @@ import hashlib
 import json
 
 from app.core.errors import PublicError
+from app.core.limits import require_capacity
 from app.core.storage import PrivateSources
 from app.models.generations import SourceGeneration
-from app.models.works import Document, IngestionJob, Work
+from app.models.works import Document, IngestionJob, Work, WorkDeletion
 from app.schemas.works import IngestionView, UploadAccepted, WorkView
 from app.services.dispatch import dispatch_ingestions
 from app.services.ingestion.adapters import REVISIONS
@@ -49,9 +50,13 @@ def create_work(db, actor, metadata, data, key, correlation_id):
     digest = hashlib.sha256(json.dumps({**metadata.model_dump(), "sha256": fingerprint}, sort_keys=True).encode()).hexdigest()
     prior = db.scalar(select(Work).where(Work.owner_id == actor.owner_id, Work.idempotency_key == key))
     if prior is not None:
-        if prior.request_hash != digest:
+        if prior.request_hash != digest or prior.deleted_at is not None:
             raise PublicError(409, "IDEMPOTENCY_CONFLICT", "Key already used for a different upload.")
         return accepted_view(db, prior)
+    require_capacity(db, actor.owner_id)
+    if db.scalar(select(WorkDeletion.work_id).where(WorkDeletion.owner_id == actor.owner_id,
+                                                   WorkDeletion.upload_key == key)) is not None:
+        raise PublicError(409, "IDEMPOTENCY_CONFLICT", "Key already used for a different upload.")
     store = PrivateSources()
     with store.create() as source:
         try:
@@ -78,7 +83,7 @@ def create_work(db, actor, metadata, data, key, correlation_id):
             prior = db.scalar(select(Work).where(Work.owner_id == actor.owner_id, Work.idempotency_key == key))
             if prior is None:
                 raise
-            if prior.request_hash != digest:
+            if prior.request_hash != digest or prior.deleted_at is not None:
                 raise PublicError(409, "IDEMPOTENCY_CONFLICT", "Key already used for a different upload.") from None
             return accepted_view(db, prior)
         except BaseException:

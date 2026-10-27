@@ -63,7 +63,7 @@ try:
         )
         worker_log = (root / ".local/library-worker.log").open("w")
         worker = subprocess.Popen(
-            [str(root / "apps/api/.venv/bin/dramatiq"), "app.workers.bootstrap" if live else "tests.browser_worker", "--processes", "1", "--threads", "1", "--queues", "ingestion", *( ["narrative", "render"] if workspace else [] )],
+            [str(root / "apps/api/.venv/bin/dramatiq"), "app.workers.bootstrap" if live else "tests.browser_worker", "--processes", "1", "--threads", "1", "--queues", "ingestion", "retention", *( ["narrative", "render"] if workspace else [] )],
             cwd=root / "apps/api", env=env, stdout=worker_log, stderr=worker_log, start_new_session=True,
         )
         env["VISION_TEST_WORKER_PID"] = str(worker.pid)
@@ -119,7 +119,7 @@ try:
         specs = os.environ.get(
             "VISION_TEST_WORKSPACE_SPECS",
             "tests/accessibility.spec.ts tests/explorer.spec.ts tests/evidence.spec.ts "
-            "tests/visualization.spec.ts tests/refinement.spec.ts tests/render-history.spec.ts",
+            "tests/visualization.spec.ts tests/refinement.spec.ts tests/render-history.spec.ts tests/security.spec.ts",
         ).split()
     else:
         specs = ["tests/library.spec.ts" if library else "tests/session.spec.ts"]
@@ -182,3 +182,10 @@ finally:
         broker.delete(*keys)
     broker.close()
     source_directory.cleanup()
+# Telemetry names IDs, codes and durations, never private text or credentials (SECURITY.md).
+for path in (root / ".local/session-api.log", root / ".local/library-worker.log"):
+    if path.exists():
+        logged = path.read_text(errors="replace")
+        for private in ("synthetic session transport passphrase", "Before dinner, Arthur removed", "SYSTEM OVERRIDE"):
+            assert private not in logged, f"{path.name} contains private text"
+print("API and worker logs carry no source text or passwords.")

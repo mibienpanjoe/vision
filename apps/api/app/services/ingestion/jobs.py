@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 
 from app.core.errors import PublicError
+from app.core.limits import require_capacity
 from app.core.security import owned_object
 from app.models.works import (
     Document,
@@ -73,6 +74,7 @@ def mutate_job(db, actor, work_id, job_id, action, match, key):
             raise PublicError(409, "STATE_CONFLICT", "Job cannot be retried in its current state.")
         if job.attempts >= MAX_ATTEMPTS:
             raise PublicError(429, "ATTEMPTS_EXHAUSTED", "Job attempt budget is exhausted.")
+        require_capacity(db, actor.owner_id, work_id)
         job.status, job.stage = "queued", "awaiting_parser"
         job.cancel_requested, job.dispatched_at, job.completed_at, job.error_code = False, None, None, None
     else:

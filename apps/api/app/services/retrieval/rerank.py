@@ -10,7 +10,13 @@ import re
 import uuid
 from dataclasses import dataclass
 
-from app.services.retrieval.fusion import Budget, PassageInfo, Selected, Selection
+from app.services.retrieval.fusion import (
+    SOURCES,
+    Budget,
+    PassageInfo,
+    Selected,
+    Selection,
+)
 
 PRONOUN_START = re.compile(r"\s*[\"“‘']?(he|she|they|it|his|her|their|its|him|them)\b", re.I)
 
@@ -41,7 +47,7 @@ def expand(selection: Selection, infos: dict[uuid.UUID, PassageInfo], anchors: d
         if previous is None or previous in chosen:
             continue
         size = len(infos[previous].text)
-        if len(chosen) >= budget.passages or used + size > budget.characters:
+        if len(chosen) >= min(budget.passages, SOURCES) or used + size > budget.characters:
             unexpanded += 1
             continue
         chosen.add(previous)
