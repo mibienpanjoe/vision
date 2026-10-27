@@ -464,3 +464,51 @@ Returning to that untouched source is a rollback only before accepting new user
 writes on the target. Afterwards, recover from the current state and latest
 deletion ledger into another empty target; do not run an older image against a
 newer schema or replace a live database in place.
+
+## OpenAI text evaluation — Q01
+
+DEC-53 adds an opt-in text adapter, not a replacement for the accepted private-book
+provider. `test_openai_responses.py` covers the real HTTP wire using a local
+synthetic endpoint: strict copied schemas, defaulted fields, bounded tool-free
+requests, missing usage, HTTP failures, incomplete/refused responses, retained
+charged usage, cancellation, explicit provider selection and effort-dependent
+cache/derivation identity. Its PostgreSQL/API case grounds and stores output,
+proves cache reuse and separates a changed effort. These tests simulate OpenAI;
+the following opt-in measurements use the real provider.
+
+The 2026-10-27 synthetic evaluation used the production local narrative worker,
+pinned local embeddings and GPT-6 Luna through the Responses API. Both variants
+kept the existing 4,096-token consolidation and 2,048-token adjudication bounds.
+Every cited span still passed local grounding and reading-boundary checks.
+
+| Variant | Outcomes matching annotations | Canonical found | Incorrect / leaks | Median API-backed query | Reported-token USD estimate |
+|---|---|---|---|---|---|
+| Historical Groq T33, 2026-10-21 | 13/17 | 14/23 | 0 / 0 | 5.1 s | Not repriced here |
+| Luna, low reasoning | 6/17 | 6/23 | 0 / 0 | 39.2 s | $0.02730 |
+| Luna, no extra reasoning | 12/17 | 17/23 | 0 / 0 | 20.9 s | $0.01605 |
+
+Low effort exhausted the consolidation output budget nine times; another call
+was unavailable. No extra reasoning completed all 22 provider calls without a
+budget/refusal failure. It used 29,159 input and 26,268 output tokens across the
+17 questions; total query time was 342.2 s, plus 33 s local ingestion. Low used
+30,126 input and 48,568 output tokens, with 609.8 s query time. These are
+reported-token estimates at standard uncached Luna rates, not invoices; unknown
+usage, caching, taxes and future price changes can change billed totals.
+
+The OpenAI opt-in therefore defaults to `none`; `low` remains selectable for
+evaluation. The comparison does not establish that Luna is uniformly better:
+canonical recall improved against the historical Groq run, outcome agreement
+was lower, and response time was slower. Runs occurred on a shared development
+host at different times. Six annotated canonical traits remain missing under
+`none`, including unresolved house/Mira/childhood-compass cases and the incomplete
+eye-conflict result. No private books or image-generation calls were involved.
+The separate ignored reports preserve both variants and the earlier baseline.
+
+The live Chromium product gate also passed with the production API/worker and
+Luna `none`: a stored canonical profile, an exact selected source highlight and
+JSON export equal to the persisted revision. Database checks found local/OpenAI
+run records, 14 vectors and one revision; query usage was 2,504 input and 3,626
+output tokens (about $0.00206 at the same uncached rates). No image was requested.
+This proves the synthetic browser path, not private-book suitability or faster
+responses. The browser proxy was built and checked against the isolated API
+before the successful run.

@@ -148,9 +148,14 @@ try:
                 providers = set(db.scalars(text("SELECT DISTINCT provider FROM model_runs WHERE outcome = 'succeeded'")))
                 vectors = db.scalar(text("SELECT count(*) FROM passage_embeddings"))
                 revisions = db.scalar(text("SELECT count(*) FROM visualization_revisions"))
-                assert {"local", "groq"} <= providers, providers
+                query_provider = env.get("VISION_QUERY_PROVIDER", "groq")
+                assert {"local", query_provider} <= providers, providers
                 assert vectors > 0 and revisions > 0
                 print(f"Live gate persisted: providers={sorted(providers)}, vectors={vectors}, revisions={revisions}.")
+                usage = db.execute(text("SELECT coalesce(sum(input_tokens), 0), coalesce(sum(output_tokens), 0) "
+                                        "FROM model_runs WHERE provider = :provider"),
+                                   {"provider": query_provider}).one()
+                print(f"Live query usage: provider={query_provider}, input_tokens={usage[0]}, output_tokens={usage[1]}.")
         finally:
             fixture_db.dispose()
 finally:

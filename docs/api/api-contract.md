@@ -413,7 +413,7 @@ and returns a `VisualizationResult` with status 200 for every domain outcome:
 - `insufficient_evidence` with `missing` reasons (no eligible subject, a chapter
   beyond the boundary, a moment the eligible text does not establish, no
   verified trait);
-- `failed` with a safe error: `PROVIDER_NOT_ENABLED` (no `GROQ_API_KEY`),
+- `failed` with a safe error: `PROVIDER_NOT_ENABLED` (selected provider unconfigured),
   `PROVIDER_RATE_LIMITED`, `PROVIDER_TIMEOUT`, `PROVIDER_UNAVAILABLE` or
   `PROVIDER_INVALID_OUTPUT` (retryable: the failed consolidation is reclaimed
   on the next request), or `PROMPT_GATE_FAILED`. Consolidation itself makes one
@@ -423,11 +423,24 @@ and returns a `VisualizationResult` with status 200 for every domain outcome:
 Another owner's work or an unknown entity or chapter returns the common `404`,
 an unauthenticated call `401`, an invalid body `422`, and a work without a
 succeeded entity derivation `409 NARRATIVE_NOT_READY`. The call runs the whole
-path synchronously (plan, local retrieval, Groq consolidation reused by scope,
+path synchronously (plan, local retrieval, selected-provider consolidation reused by scope,
 reconstruction, verification with optional adjudication, prompt gate). It stores
 only the consolidation and run records; stored results are created through
 the route in the next section.
 `VISION_ADJUDICATE=0` turns adjudication off.
+
+Groq remains the default text provider. The opt-in OpenAI synthetic evaluation
+(DEC-53) selects `VISION_QUERY_PROVIDER=openai`, `OPENAI_API_KEY`,
+`VISION_OPENAI_MODEL=gpt-6-luna` and `VISION_OPENAI_REASONING=none`. It uses the
+Responses API with strict JSON, `store=false`, no tools or prior response IDs.
+Unknown provider names or missing credentials fail closed without provider
+fallback. Reasoning effort and adapter/schema version separate both result-cache
+and consolidation reuse and are recorded with run metadata. Provider-reported
+output usage includes reasoning tokens. An incomplete response at the token cap
+returns `PROVIDER_BUDGET_EXHAUSTED`; refusals return `PROVIDER_UNAVAILABLE`,
+retaining reported token usage and publishing no facts. OpenAI transport failures
+are not retried automatically; the existing one-retry malformed-JSON rule remains.
+This opt-in has no daily spending cap and is not approval for private-book use.
 
 The specification carries `lineage` (consolidation id; query-plan, consolidation,
 index and parser versions), `scope` (generation, parser revision, cutoff,

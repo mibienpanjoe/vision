@@ -68,7 +68,8 @@ def execute(adapter: ProviderAdapter, request: ProviderRequest, output: type[Str
     def finish(outcome: Outcome) -> RunResult:
         record = RunRecord(role=request.role, purpose=request.purpose, provider=adapter.provider,
                            model=adapter.model, model_version=version, prompt_version=request.prompt_version,
-                           schema_version=output.schema_version, config=request.limits.model_dump(),
+                           schema_version=output.schema_version, config={**request.limits.model_dump(),
+                               **({"adapter": adapter.configuration} if hasattr(adapter, "configuration") else {})},
                            input_refs=[item.ref for item in request.sources], input_sha256=call_digest(call),
                            outcome=outcome, error_code=ERROR_CODES[outcome], usage=usage, started_at=started,
                            duration_ms=round((time.monotonic() - clock) * 1000))
@@ -96,6 +97,8 @@ def execute(adapter: ProviderAdapter, request: ProviderRequest, output: type[Str
     if (usage.output_tokens > request.limits.max_output_tokens
             or usage.input_tokens + usage.output_tokens > request.limits.max_total_tokens):
         return finish("budget_exhausted")
+    if result.outcome != "succeeded":
+        return finish(result.outcome)
     try:
         value = output.model_validate_json(result.output)
     except ValidationError:

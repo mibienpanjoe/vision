@@ -76,6 +76,7 @@ class ProviderResult(Frozen):
     output: str
     usage: Usage
     model_version: str | None = Field(default=None, max_length=64)
+    outcome: Literal["succeeded", "budget_exhausted", "provider_unavailable"] = "succeeded"
 
 
 class ProviderTimeout(Exception):
@@ -99,6 +100,15 @@ class ProviderAdapter(Protocol):
     model: str
 
     def complete(self, call: ProviderCall) -> ProviderResult: ...
+
+
+def adapter_version(adapter: ProviderAdapter) -> str:
+    """Settings that change inference must separate cache and derivation reuse; never include credentials."""
+    version = f"{adapter.provider}/{adapter.model}"
+    configuration = getattr(adapter, "configuration", {})
+    if configuration:
+        version += "/" + hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()[:12]
+    return version
 
 
 def compose(request: ProviderRequest, output: type[StructuredOutput]) -> ProviderCall:

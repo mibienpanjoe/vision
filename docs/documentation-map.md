@@ -43,6 +43,8 @@ Supporting owners:
 - [ADR-0002](adr/0002-temporal-hybrid-retrieval.md): retrieval rationale and exclusions.
 - [ADR-0003](adr/0003-local-ingestion-minimal-disclosure.md): local ingestion and
   minimal-disclosure query-time consolidation (accepted, DEC-37).
+- [ADR-0004](adr/0004-openai-text-evaluation.md): opt-in OpenAI synthetic evaluation,
+  inference identity and retained private-book disclosure policy.
 - [Local-first processing research](research/local-first-processing.md): evidence
   behind ADR-0003: on-device extraction, minimal-disclosure retrieval and quantization.
 - [Contributing](../CONTRIBUTING.md): workflow and documentation maintenance.

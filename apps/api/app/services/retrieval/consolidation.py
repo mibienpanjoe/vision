@@ -23,7 +23,7 @@ from app.providers.consolidation import (
     Consolidation,
     consolidation_request,
 )
-from app.providers.contracts import Limits, ProviderAdapter, SourceItem
+from app.providers.contracts import Limits, ProviderAdapter, SourceItem, adapter_version
 from app.providers.execution import execute, persist_run
 from app.services.narrative.derivations import claim, ground
 from app.services.narrative.eligibility import latest
@@ -71,7 +71,7 @@ def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limi
         raise ValueError("consolidation input must lie inside the plan's reading boundary")
     scope = scope_of(plan, expanded)
     digest = hashlib.sha256(json.dumps(scope, sort_keys=True).encode()).hexdigest()
-    version = f"{PROMPT_VERSION}/{Consolidation.schema_version}/{adapter.provider}/{adapter.model}"[:140] + f"/{digest[:16]}"
+    version = f"{PROMPT_VERSION}/{Consolidation.schema_version}/{adapter_version(adapter)}"[:140] + f"/{digest[:16]}"
     derivation_id, attempt, owner_id, _ = claim(engine, plan.generation_id, STAGE, version, entities.id,
                                                 {**scope, "digest": digest})
     if attempt is None:

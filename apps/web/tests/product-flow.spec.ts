@@ -2,8 +2,9 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { chooseArthur, signIn, uploadCorpus } from "./fixtures";
 
-test.skip(process.env.VISION_TEST_LIVE_WORKSPACE !== "1", "Explicit live local-model/Groq browser gate");
-test("real local models and Groq produce a stored profile with exact evidence and identical JSON export", async ({ page }) => {
+const provider = process.env.VISION_QUERY_PROVIDER ?? "groq";
+test.skip(process.env.VISION_TEST_LIVE_WORKSPACE !== "1", "Explicit live local-model/provider browser gate");
+test(`real local models and ${provider} produce a stored profile with exact evidence and identical JSON export`, async ({ page }) => {
   test.setTimeout(420000);
   await signIn(page);
   const workId = await uploadCorpus(page, "Live product gate");
@@ -34,5 +35,5 @@ test("real local models and Groq produce a stored profile with exact evidence an
   await profile.getByRole("button", { name: "Export JSON", exact: true }).click();
   const path = await (await download).path();
   expect(JSON.parse(readFileSync(path!, "utf8"))).toEqual(stored.result.data);
-  await page.screenshot({ path: "../../.local/live-product-gate.png", fullPage: true });
+  await page.screenshot({ path: `../../.local/live-product-${provider}.png`, fullPage: true });
 });

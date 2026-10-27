@@ -16,8 +16,9 @@ from app.models.visual_facts import VisualFact
 from app.providers.adjudication import PROMPT_VERSION as ADJUDICATION_PROMPT
 from app.providers.consolidation import PROMPT_VERSION as CONSOLIDATION_PROMPT
 from app.providers.consolidation import Consolidation
-from app.providers.contracts import ProviderAdapter
+from app.providers.contracts import ProviderAdapter, adapter_version
 from app.providers.openai_compatible import GroqGateway
+from app.providers.openai_responses import OpenAIResponses
 from app.schemas.outcomes import (
     ContextChoice,
     Failed,
@@ -75,7 +76,12 @@ RETRYABLE = frozenset({"PROVIDER_RATE_LIMITED", "PROVIDER_TIMEOUT", "PROVIDER_UN
 
 
 def consolidation_adapter() -> ProviderAdapter | None:
-    return GroqGateway.from_environment()
+    provider = os.environ.get("VISION_QUERY_PROVIDER", "groq")
+    if provider == "groq":
+        return GroqGateway.from_environment()
+    if provider == "openai":
+        return OpenAIResponses.from_environment()
+    return None
 
 
 def adjudicator(adapter: ProviderAdapter | None) -> ProviderAdapter | None:
@@ -203,7 +209,7 @@ def versions(db, plan, adapter, embedder, judge, budget) -> dict:
         Derivation.processing_version == index_version(embedder), Derivation.status == "succeeded"))
     return {"entities": str(entities.id), "appearance": str(appearance.id) if appearance else None,
             "index": str(indexed) if indexed else None, "query_plan": plan.rules_version,
-            "consolidation": f"{CONSOLIDATION_PROMPT}/{Consolidation.schema_version}/{adapter.provider}/{adapter.model}",
-            "adjudication": f"{ADJUDICATION_PROMPT}/{judge.provider}/{judge.model}" if judge else None,
+            "consolidation": f"{CONSOLIDATION_PROMPT}/{Consolidation.schema_version}/{adapter_version(adapter)}",
+            "adjudication": f"{ADJUDICATION_PROMPT}/{adapter_version(judge)}" if judge else None,
             "gates": GATES_VERSION, "prompt": COMPOSE_VERSION, "spec": SPEC_VERSION, "fusion": json.dumps(WEIGHTS, sort_keys=True),
             "budget": [budget.passages, budget.characters]}

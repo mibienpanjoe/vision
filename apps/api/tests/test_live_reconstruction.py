@@ -1,9 +1,9 @@
-"""Opt-in live evaluation: real worker with local models, real Groq consolidation and adjudication.
+"""Opt-in live evaluation: real worker with local models and configured text inference.
 
-Set VISION_LIVE_RECONSTRUCTION=1 with GROQ_API_KEY and the local model weights. The synthetic corpus is
+Set VISION_LIVE_RECONSTRUCTION=1 with the selected provider's key and local model weights. The synthetic corpus is
 uploaded through the API, ingested by a real Dramatiq worker in local mode, and every annotated case is
-requested through the stored-visualization route about once a minute (Groq's free tier allows 8,000 tokens
-per minute). The report, with tokens and latency per case, goes to .local/measurements/reconstruction-live.json.
+requested through the stored-visualization route. Groq is paced once a minute by default; OpenAI defaults
+to no deliberate delay. Reports stay local and separate from the historical Groq baseline.
 """
 
 import json
@@ -27,10 +27,29 @@ from tests.reconstruction_eval import DATA, evaluate, query, summary
 
 pytestmark = [pytest.mark.integration, pytest.mark.skipif(
     os.environ.get("VISION_LIVE_RECONSTRUCTION") != "1", reason="Set VISION_LIVE_RECONSTRUCTION=1 for the live run")]
-PACE = float(os.environ.get("VISION_LIVE_PACE", "65"))
+PROVIDER = os.environ.get("VISION_QUERY_PROVIDER", "groq")
+PACE = float(os.environ.get("VISION_LIVE_PACE", "0" if PROVIDER == "openai" else "65"))
 
 
 def test_live_reconstruction_of_every_annotated_case(database, monkeypatch, tmp_path):
+    from app.providers.contracts import ProviderUnavailable
+    from app.services.visualization.specification import consolidation_adapter
+
+    adapter = consolidation_adapter()
+    assert adapter is not None
+    calls = []
+    if PROVIDER == "openai":
+        # This opt-in evaluation is finite, not a loop that can spend indefinitely on bad responses.
+        from app.providers.openai_responses import OpenAIResponses
+        complete = OpenAIResponses.complete
+
+        def bounded(self, call):
+            if len(calls) >= 50:
+                raise ProviderUnavailable()
+            calls.append(1)
+            return complete(self, call)
+
+        monkeypatch.setattr(OpenAIResponses, "complete", bounded)
     monkeypatch.setenv("VISION_SOURCE_ROOT", str(tmp_path / "originals"))
     monkeypatch.setenv("REDIS_URL", os.environ["VISION_TEST_REDIS_URL"])
     monkeypatch.setenv("VISION_QUEUE_NAMESPACE", f"vision_live_{os.getpid()}")
@@ -89,12 +108,22 @@ def test_live_reconstruction_of_every_annotated_case(database, monkeypatch, tmp_
                           "error": result.get("error", {}).get("code"),
                           "calls": [(r.purpose, r.outcome, r.input_tokens, r.output_tokens, r.duration_ms) for r in runs]})
             reports.append(evaluate(case, result, passage_chapters))
+            print(json.dumps({"case": case["id"], "outcome": result["outcome"], "seconds": elapsed,
+                              "provider_calls": len(runs)}, ensure_ascii=False), flush=True)
     totals = summary(reports)
     tokens = sum((c[2] or 0) + (c[3] or 0) for cost in costs for c in cost["calls"])
-    report = {"ingestion_s": ingestion_s, "summary": totals, "tokens": tokens,
+    input_tokens = sum(c[2] or 0 for cost in costs for c in cost["calls"])
+    output_tokens = sum(c[3] or 0 for cost in costs for c in cost["calls"])
+    report = {"provider": adapter.provider, "model": adapter.model,
+              "configuration": getattr(adapter, "configuration", {}),
+              "ingestion_s": ingestion_s, "summary": totals, "tokens": tokens,
+              "input_tokens": input_tokens, "output_tokens": output_tokens,
               "seconds": sum(c["seconds"] for c in costs), "costs": costs, "reports": reports}
-    out = Path(__file__).parents[3] / ".local/measurements/reconstruction-live.json"
+    if adapter.provider == "openai" and adapter.model == "gpt-6-luna":
+        report["estimated_standard_usd"] = (input_tokens * 0.10 + output_tokens * 0.50) / 1_000_000
+    suffix = f"-{adapter.provider}-{adapter.model}-{adapter.effort}" if adapter.provider == "openai" else "-live"
+    out = Path(__file__).parents[3] / f".local/measurements/reconstruction{suffix}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=1, ensure_ascii=False))
     print(json.dumps({k: report[k] for k in ("ingestion_s", "summary", "tokens", "seconds")}, indent=1))
-    assert totals["leaks"] == 0
+    assert totals["blocking"] == []
