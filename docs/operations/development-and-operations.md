@@ -1,14 +1,16 @@
 # Development and operations
 
-**Status:** executable local foundation and TXT/Markdown source-ingestion/evidence
-checks implemented; narrative reconstruction and richer formats pending.
-The CI workflow checks the same foundation commands without deployment or model calls.
+**Status:** local product, packaging, deletion and recovery implemented.
+Final acceptance is scoped in the [acceptance strategy](../testing/acceptance-strategy.md).
+CI runs the automated regressions; live provider calls and packaged local-model
+drills have separate opt-in evidence.
 
 ## Current repository
 
 The repository contains working specifications, brand assets, a synthetic corpus,
-a locked API, generated contracts, local accounts/sessions, a themed web shell,
-private text uploads/library/evidence, and durable probe/text-parser workers. PostgreSQL/pgvector and Redis use dedicated loopback
+a locked API, generated contracts, local accounts/sessions, the browser product
+workspace, four-format ingestion, scoped reconstruction, optional private image
+rendering and durable processing/deletion workers. PostgreSQL/pgvector and Redis use dedicated loopback
 services. The [documentation map](../documentation-map.md) remains the entrypoint
 for the product contracts; the commands below own the executable setup.
 
@@ -16,19 +18,17 @@ for the product contracts; the commands below own the executable setup.
 
 | Component | Selected technology | Current boundary |
 |---|---|---|
-| Web | Next.js, TypeScript, Tailwind, shadcn/ui | Themed shell implemented; library/reconstruction screens pending |
-| API | Python, FastAPI, Pydantic | Health/auth/probe and text upload/library/evidence implemented; narrative endpoints pending |
-| Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Access, work/document, ingestion, chapters/passages and vector extension; narrative tables pending |
-| Jobs | Redis, Dramatiq | Real probe and text parser with bounded retry, cancellation and interrupted-job reconciliation |
-| Sources/assets | Private local filesystem | Storage root, permissions, quota and retention |
-| Models | Role-specific provider adapters | Installed FreeLLM selected; role/model checks remain before first live consumer |
-| Integration | Docker Compose | Pinned private local services and verification commands below |
+| Web | Next.js, TypeScript, Tailwind, shadcn/ui | Library, scoped explorer, source reader, reconstruction/export, refinement and render history |
+| API | Python, FastAPI, Pydantic | Authenticated owned resources, revision/idempotency guards and safe outcomes |
+| Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Versioned sources, narrative/index derivations, specifications, render lineage and deletion tombstones |
+| Jobs | Redis, Dramatiq | Ingestion, narrative, rendering and deletion with durable SQL intent and recovery |
+| Sources/assets | Private local filesystem | Opaque originals/images, owner-only permissions, deletion and offline snapshots |
+| Models | Role-specific provider adapters | Local extraction/embeddings, Groq query-time consolidation and optional configured image providers |
+| Integration | Docker Compose | Pinned services and reproducible local API/worker/web images |
 
-The first executable setup change must document actual prerequisites, pinned
-versions, environment variables, startup/stop/reset commands, migration order,
-synthetic seed inputs, checks, and expected health results here. Destructive
-database resets must be distinguished from routine startup. Commit only a
-secret-free environment example.
+Setup and recovery commands below preserve private runtime data. Database/volume
+removal is a destructive reset, separate from routine startup and from restoring
+into a new target. Commit only a secret-free environment example.
 
 ## Selected toolchain — D0
 
@@ -101,8 +101,10 @@ diagnosable without routinely retaining book passages or secrets.
 
 On interruption, determine the durable outcome before retrying effects. A worker
 redelivery may resume or reuse completed units but cannot duplicate canonical
-facts or charge for an unnecessary image silently. Exact idempotency keys,
-lease/recovery mechanisms, and provider retry policy are not yet chosen.
+facts or charge for an unnecessary image silently. SQL intent, advisory execution
+leases and bounded attempts implement these rules. Interrupted image claims
+settle as acceptance unknown; the [restore procedure](#backup-and-restoration--t47)
+also treats queued snapshot image attempts conservatively.
 
 ## Reprocessing and restoration
 
@@ -110,8 +112,9 @@ Version parsing, extraction, embeddings, retrieval, prompts, and schema inputs.
 Do not mix incompatible embeddings or reuse a state from another generation,
 owner, cutoff, moment, or creative mode. Restore databases and source storage
 together so citations still resolve; restore indexes from compatible versions
-or explicitly rebuild them. Retention and deletion need a defined policy before
-real users depend on persisted evidence.
+or explicitly rebuild them. [Book deletion](#work-retention-and-deletion--t46)
+and [offline restoration](#backup-and-restoration--t47) define the implemented
+local lifecycle; account deletion and automatic expiry remain outside it.
 
 ## Deployment gate
 
@@ -288,8 +291,8 @@ installs use frozen locks and disabled dependency lifecycle scripts. No global
 package upgrade or FreeLLM call is part of setup.
 
 `make dev` starts/checks the local database/broker, applies migrations and runs
-API, worker and web processes. Open `http://127.0.0.1:3000`; the honest library
-shell says uploads are not yet available. Ctrl+C stops the development processes;
+API, worker and web processes. Open `http://127.0.0.1:3000` and sign in with a
+locally provisioned account to upload a book. Ctrl+C stops the development processes;
 `make stop` stops the persistent containers without deleting volumes. The API
 binds loopback 8000, PostgreSQL 55432 and Redis 56379. The command is local-only.
 
@@ -585,6 +588,11 @@ reference inventory. The manifest is written and synced last. Account hashes
 and private source content are included; `.env`, provider keys and model weights
 are not. Encryption, off-device copies, backup frequency and expiry are
 operator-managed, with no automatic schedule.
+
+Each exported deletion ledger carries its own checksum. Restore checks it before
+writing anything, so corrupted ownership/IDs cannot silently skip an erasure.
+Checksums detect corruption; they do not authenticate an archive from an
+untrusted source.
 
 For the host filesystem runtime:
 

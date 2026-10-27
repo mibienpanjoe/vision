@@ -1,7 +1,7 @@
 # Contributing to Vision
 
-Vision has an executable local foundation and a checked synthetic corpus;
-book ingestion and reconstruction remain planned. Start with the
+Vision implements a local book-ingestion, grounded reconstruction and optional
+rendering workspace, with private storage and recovery. Start with the
 [documentation map](docs/documentation-map.md), then the owning specification for
 the area you are changing. The roadmap distinguishes the target product from
 delivered capabilities.

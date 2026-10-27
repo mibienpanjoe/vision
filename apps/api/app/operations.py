@@ -171,9 +171,16 @@ def copy_private(source, target):
 
 def ledger_data(connection):
     rows = connection.execute(select(WorkDeletion.__table__)).mappings()
-    return {"format": 1, "exported_at": datetime.now(UTC).isoformat(),
+    data = {"format": 1, "exported_at": datetime.now(UTC).isoformat(),
             "deletions": [{k: str(v) if isinstance(v, (uuid.UUID, datetime)) else v for k, v in row.items()}
                           for row in rows]}
+    data["sha256"] = ledger_checksum(data)
+    return data
+
+
+def ledger_checksum(data):
+    payload = {key: value for key, value in data.items() if key != "sha256"}
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
 def export_deletions(engine, path):
@@ -252,6 +259,8 @@ def validate(directory, ledger):
         if digest(directory / item["kind"] / item["reference"]) != item["sha256"]:
             raise SnapshotError("Object backup integrity check failed.")
     data = json.loads(ledger.read_bytes())
+    if not isinstance(data, dict) or data.get("sha256") != ledger_checksum(data):
+        raise SnapshotError("Deletion ledger integrity check failed; export a fresh ledger from the source.")
     if data["format"] != 1 or datetime.fromisoformat(data["exported_at"]) < datetime.fromisoformat(manifest["created_at"]):
         raise SnapshotError("Deletion ledger is older than the backup; export the latest ledger first.")
     return manifest, data

@@ -130,6 +130,27 @@ def test_backup_refuses_a_held_worker_lease(world, tmp_path):  # noqa: F811
             backup(story.engine, tmp_path / "snapshot")
 
 
+def test_corrupted_deletion_ledger_cannot_silently_skip_an_erasure(world, target, tmp_path, monkeypatch):  # noqa: F811
+    import json
+
+    from app.services.works.deletion import execute_purge
+
+    clients, story, ids, *_ = world
+    story.db.close()
+    archive, ledger = tmp_path / "snapshot", tmp_path / "latest.json"
+    backup(story.engine, archive)
+    assert delete(clients["reader"], ids["work_id"]).status_code == 202
+    execute_purge(ids["work_id"])
+    export_deletions(story.engine, ledger)
+    data = json.loads(ledger.read_bytes())
+    data["deletions"][0]["owner_id"] = str(uuid.uuid4())
+    ledger.write_text(json.dumps(data))  # valid JSON, but the deletion would otherwise be silently skipped
+    new_roots(monkeypatch, tmp_path)
+    with pytest.raises(SnapshotError, match="ledger integrity"):
+        restore(target, archive, ledger)
+    assert inspect(target).get_table_names() == []
+
+
 def test_interrupted_restore_keeps_api_and_workers_offline(world, target, tmp_path, monkeypatch):  # noqa: F811
     from app import operations
     from app.core.storage import restore_marker

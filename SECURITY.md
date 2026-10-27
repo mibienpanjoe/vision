@@ -99,7 +99,8 @@ time-based retention. Account deletion is a separate local-administration
 follow-up; it is not implemented by deleting a book.
 
 Restoration requires an empty target and the latest separately saved deletion
-ledger. It revokes old sessions, purges deleted content before serving, and
+ledger. Its checksum is checked before any restore writes, detecting corruption
+that could otherwise silently skip a deletion. Restore revokes old sessions, purges deleted content before serving, and
 refuses incompatible schema/index state. An interrupted restore leaves a marker
 that blocks API access/readiness and worker engine creation. Queued or running
 image attempts in a backup are treated as acceptance unknown, avoiding an

@@ -1,10 +1,11 @@
-# HTTP API contract draft
+# HTTP API contract
 
 **Status:** shared outcomes and mutation conventions selected in DEC-23.
-Health, authentication, probe jobs, private text-upload/library and bounded
-evidence routes exist as detailed below; reconstruction resources remain illustrative. T06 implements
-strict shared Pydantic models and generated JSON Schema/TypeScript, independently
-of the illustrative resource payloads below.
+Health, authentication, four-format ingestion/library, narrative browsing,
+bounded evidence, stored reconstruction/refinement, rendering and work deletion
+are implemented in the task-specific sections below. Pydantic/OpenAPI and the
+generated JSON Schema/TypeScript own executable serialization. Early conceptual
+payloads and the resource sketch remain explicitly illustrative.
 
 ## Shared requirements
 
@@ -20,7 +21,11 @@ Old sessions are revoked on restore. Access resumes only after deletion replay,
 job reconciliation and source/image integrity checks; see the
 [operator procedure](../operations/development-and-operations.md#backup-and-restoration--t47).
 
-## Resource surface
+## Initial conceptual resource sketch
+
+This early sketch is not the implemented route inventory. The task-specific
+sections and generated OpenAPI describe the actual nested resource paths and
+outcomes; the fictional payload examples below explain domain concepts.
 
 | Method and path | Intended behavior | Draft success outcome |
 |---|---|---|

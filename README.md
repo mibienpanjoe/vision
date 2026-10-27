@@ -18,20 +18,21 @@
   · <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
-Vision is a planned narrative-aware visual reconstruction platform. Ask for a
+Vision is a local narrative-aware visual reconstruction workspace. Ask for a
 character as a child, a fortress before a siege, or a family dinner after a war.
-Vision is designed to recover the relevant passages, reconstruct the appearance
+Vision recovers the relevant passages, reconstructs the appearance
 at that moment, and produce a structured specification for image generation.
 
 ## Status
 
-**Local executable foundation; the book pipeline is still being built.**
-The repository includes a themed web shell, authenticated API, PostgreSQL/pgvector,
-private TXT/Markdown/PDF/EPUB uploads, a durable parser worker with retry and
-cancellation, bounded source-evidence reads and generated shared contracts.
-Upload/reader screens, narrative extraction and grounded reconstruction are not
-available yet. There is no release.
-Logo assets are brand material, not product screenshots.
+**Implemented for local use; final acceptance is tracked in the documentation.**
+Upload TXT, Markdown, text-layer PDF or EPUB, explore entities within a reading
+boundary, inspect exact source spans, and create, refine and export grounded
+visual specifications. Optional image rendering retains private assets and
+specification history. Local packaging, book deletion and backup/restoration
+are implemented. See the [acceptance scope and measured limits](docs/testing/acceptance-strategy.md)
+before treating model output as complete or images as faithful to every detail.
+No hosted service or production release is claimed.
 
 ## Run locally
 
@@ -44,16 +45,18 @@ make dev
 
 Open `http://127.0.0.1:3000`. Setup generates private local service credentials;
 see [operations](docs/operations/development-and-operations.md) for account setup,
-verification commands and shutdown. Vision runs locally; LLM integration will use
-the installed FreeLLM API gateway.
+verification commands and shutdown. Ingestion and embeddings run locally;
+query-time consolidation uses configured Groq access. Image rendering requires
+separate provider configuration. The [operations guide](docs/operations/development-and-operations.md)
+owns model setup, private storage and recovery.
 
-## Planned capabilities
+## Capabilities
 
 - Explore characters, places, objects, and their contextual appearances.
 - Keep identity, changes over time, and scene-specific details separate.
 - Inspect source evidence behind each canonical visual attribute.
 - Respect reading boundaries, including descriptions revealed in later flashbacks.
-- Export provider-independent visual JSON, with optional image rendering later.
+- Export provider-independent visual JSON and optionally render a validated revision.
 
 ## Start here
 

@@ -101,6 +101,8 @@ export and restoration into a new target. Restore revokes sessions, reapplies
 later deletions before access, and conservatively settles both queued and
 running image attempts as acceptance unknown. Snapshot/copy frequency, encryption
 and expiry remain operator-managed; no external backup service is selected.
+T48's closing recovery audit adds an independent checksum to deletion-ledger
+exports: corrupted ledgers are refused before restoration can write data.
 
 ## Proposed elaborations
 

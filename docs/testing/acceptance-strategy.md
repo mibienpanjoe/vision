@@ -89,13 +89,15 @@ invent target percentages or claim exhaustive recall from one synthetic story.
 
 ## Current verification boundary
 
-The foundation checks establish database readiness/migrations, authenticated
-ownership/session boundaries, real broker/worker probe execution, shared contracts
-and the browser shell/font/icon/session surfaces. Commands and isolated fixture
+The suites below cover database readiness/migrations, ownership/sessions,
+four-format ingestion, real broker/worker execution, scoped narrative/retrieval,
+stored specifications, source spans, browser workflows, optional rendering,
+deletion and restoration. Commands and isolated fixture
 setup belong to [operations](../operations/development-and-operations.md#local-commands-and-verification).
-They do not establish ingestion, extraction/retrieval quality, narrative temporal
-correctness, rendered images or full product security. The synthetic oracle is
-still the expected input to those later evaluations. Check the actual CI run for
+Deterministic adapters, live local models, live remote providers and browser
+checks establish different evidence levels. Measured model recall and pixel
+limitations remain explicit in the relevant sections; these checks do not prove
+universal fidelity, full WCAG coverage or production security. Check the actual CI run for
 a named commit; local success alone is not remote CI evidence.
 
 
@@ -113,10 +115,11 @@ passages and checks owner, source/parser revision, quote, context size and chapt
 cutoff. Python/Node conformance includes an emoji highlight and rejects an altered
 excerpt. A real Chromium session uploads through the Next.js proxy, reads library
 metadata and retrieves byte-equivalent Unicode/newline source text. This is API
-and transport coverage; product upload/reader controls are still planned.
-
-Broader worker interruption/retry/cancellation, PDF/EPUB adapters and reprocessing
-remain separate acceptance tasks. Parsed source evidence is not proof of live
+and transport coverage; product upload/reader controls are covered by T34–T39.
+Integration tests also cover interrupted workers, retry/cancellation, synthetic
+PDF/EPUB inputs and versioned reprocessing. Scanned PDFs are unsupported, and
+broader real-book PDF/EPUB fidelity is not established by these fixtures.
+Parsed source evidence is not proof of live
 narrative extraction, hybrid retrieval or grounded visual reconstruction.
 
 ## Grounded reconstruction evaluation — T33
@@ -385,7 +388,7 @@ image's clients and restores into empty isolated databases/private roots. It
 compares exact original, stored specification and image bytes over the API,
 checks the other owner's safe `404` and revoked old sessions, replays a deletion
 made after the snapshot, refuses occupied/corrupt targets and older deletion
-ledgers, refuses a held worker lease, and proves an interrupted restore remains
+ledgers (including valid-JSON corruption of a deletion's owner), refuses a held worker lease, and proves an interrupted restore remains
 unavailable. Queued and running image attempts settle as acceptance unknown
 without another adapter call. Interrupted ingestion resumes in a real
 Redis/Dramatiq worker with one passage set under redelivery. Probe publication is
@@ -402,3 +405,53 @@ drill; it is not a book-length restoration or disaster-recovery target.
 `packaged-restore.spec.ts` then signs in through the restored production web
 server, checks the surviving library entry and deleted book's absence, opens the
 restored entity explorer, and checks a narrow layout and browser errors.
+
+## Local release scope — T48
+
+The intended environment is one Linux machine, loopback web access, locally
+provisioned accounts, PostgreSQL 17/pgvector, Redis and one serial worker.
+Supported runtimes are the host commands and the packaged Compose stack with
+private filesystem storage. DEC-25 excludes external hosting, S3 provisioning
+and production acceptance. The application versions, schema and model identities
+come from the named commit, lockfiles, image revision labels and stored lineage.
+
+| Requirements | Acceptance evidence |
+|---|---|
+| REQ-01 | Two-owner API/browser/storage boundaries, revoked sessions, deletion and restore isolation (T07, T41, T43, T46–T47) |
+| REQ-02–REQ-04 | Four-format synthetic ingestion, immutable sources, interrupted workers, stable old citations and restored exact excerpts (T10–T16, T36, T47) |
+| REQ-05–REQ-07, REQ-09–REQ-10 | Source-linked identities, partial chronology, visual states and temporal/attribution regressions; live recall limits remain recorded in T33 |
+| REQ-08 | Lexical/entity/vector retrieval, protected evidence and explicit overflow; measured book-length budgets (T24–T27, T44) |
+| REQ-11 | Cutoff/dependency checks before retrieval, consolidation, cache, specification/history and evidence access (T21, T30, T32, T35–T39, T43) |
+| REQ-12–REQ-16 | Explicit ambiguity/insufficiency, grounding gates, exact-span reader, locked refinement, portable JSON and persisted browser export (T28–T39) |
+| REQ-17–REQ-19, REQ-21 | Versioned role contracts, scoped cache, bounded workers/providers, packaging, deletion and restoration (T17, T25, T32, T40, T43–T47) |
+| REQ-20 | Optional specification-only rendering, immutable lineage and private history; live pixels are the T42 evidence, with current synthetic worker/storage/recovery regression |
+| REQ-22 | Hostile input, instruction/data separation, literal browser rendering and safe log/error checks (T43) |
+
+The closing local run comprises `make check integration`, the session, library
+and workspace browser harnesses, and `make images package-check`. The opt-in
+`VISION_TEST_LIVE_WORKSPACE=1` browser gate additionally uses the actual local
+models and configured Groq consolidation/adjudication on the synthetic narrative:
+upload → processing → stored specification → selected exact source highlight →
+JSON download equal to the stored revision. It checks persisted local/Groq model
+records, vectors and revisions. It does not request a new paid image.
+
+The final pushed commit must also pass the actual `foundation` CI job before G7
+is closed. That job covers static/contracts/build, real database/broker/worker,
+session/library/workspace browser and dependency-advisory checks. Packaged images,
+real local models and live remote providers retain separate local/opt-in proof;
+CI does not silently stand in for those runs. A verified phase and a merged PR
+remain separate facts.
+
+Handover retains the T33 model-quality and T42 pixel limitations, the T44 free-tier
+context/rate-limit measurements and unaccepted PROP-07/08 proposals. Larger
+corpora, full real-book PDF/EPUB fidelity, OCR, broader languages, physical-device
+and full screen-reader/WCAG audits, provider-side deletion guarantees, automatic
+account deletion/expiry and off-machine disaster recovery are not established.
+The [operations guide](../operations/development-and-operations.md) owns startup,
+readiness, dispatch, private storage and the rollback/restore procedure. Keep the
+source environment intact and stopped until a restored target passes acceptance;
+do not process on both at once.
+Returning to that untouched source is a rollback only before accepting new user
+writes on the target. Afterwards, recover from the current state and latest
+deletion ledger into another empty target; do not run an older image against a
+newer schema or replace a live database in place.

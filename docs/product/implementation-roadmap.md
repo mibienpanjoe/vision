@@ -1,9 +1,10 @@
 # Implementation roadmap
 
-**Status:** milestones 1–3 have local implementation and acceptance evidence.
-The order derives from overview §12 and the accepted phase plan; optional
-rendering and release/operations gates remain open. The
-[acceptance strategy](../testing/acceptance-strategy.md) owns the evidence and
+**Status:** the product and optional rendering have local acceptance evidence;
+operational packaging, deletion and restoration are implemented. The order derives
+from overview §12 and the accepted phase plan. The
+[acceptance strategy](../testing/acceptance-strategy.md) owns the closing local
+release gate, exact-head CI evidence and
 measured model-quality limits; local acceptance does not establish deployment readiness.
 This document owns milestone scope, not a second requirement list.
 
