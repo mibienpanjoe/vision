@@ -170,3 +170,7 @@ Q08 implements the authorized quality refinement within DEC-38: bounded,
 cutoff-scoped entity refs and unique visible aliases normalize model subjects and
 participants before existing publication gates. `consolidate-v6` separates old
 derivations and caches. Ambiguous titles and unquoted identities remain unresolved.
+
+Q09 clarifies DEC-38 extraction instructions and schema descriptions without
+changing canonical/inferred policy or splitting the combined provider call.
+Prompt/schema versions invalidate prior consolidation reuse.

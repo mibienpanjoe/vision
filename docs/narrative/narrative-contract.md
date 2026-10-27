@@ -408,3 +408,12 @@ Normalization preserves the raw captured output and does not create identities
 or widen the selected reading boundary. Publication still requires exact source
 quotes, attribution and temporal evidence. Component entities (roof, room,
 compass) remain distinct; membership of a place cannot be invented from proximity.
+
+Q09 clarifies the combined extraction contract (`consolidate-v7`, schema v3):
+component material and condition are distinct; explicit component ownership may
+anchor an owner attribute, while nearby rooms do not become the same place.
+Facts link only to moments established by their quotes. Earlier acquired
+changes are left for conservative reconstruction, and a later direct statement
+gets its own evidence. Negated removals never become affirmed current clothing.
+Prompt examples are instructions, never admissible evidence. This keeps DEC-38's
+one-call consolidation; improved live-model quality requires measurement.
