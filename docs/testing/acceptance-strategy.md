@@ -486,6 +486,7 @@ Every cited span still passed local grounding and reading-boundary checks.
 | Historical Groq T33, 2026-10-21 | 13/17 | 14/23 | 0 / 0 | 5.1 s | Not repriced here |
 | Luna, low reasoning | 6/17 | 6/23 | 0 / 0 | 39.2 s | $0.02730 |
 | Luna, no extra reasoning | 12/17 | 17/23 | 0 / 0 | 20.9 s | $0.01605 |
+| Luna, medium reasoning | 6/17 | 4/23 | 0 / 0 | 38.1 s | $0.02909 |
 
 Low effort exhausted the consolidation output budget nine times; another call
 was unavailable. No extra reasoning completed all 22 provider calls without a
@@ -494,6 +495,16 @@ budget/refusal failure. It used 29,159 input and 26,268 output tokens across the
 30,126 input and 48,568 output tokens, with 609.8 s query time. These are
 reported-token estimates at standard uncached Luna rates, not invoices; unknown
 usage, caching, taxes and future price changes can change billed totals.
+
+The follow-up medium-effort run kept those same token limits and completed all
+17 cases in 553.1 s query time plus 21.7 s local ingestion. Nine consolidation
+requests exhausted the 4,096-output-token cap; 10 other provider calls succeeded.
+Reported usage was 30,042 input and 52,162 output tokens. This is a constrained
+configuration result, not a quality comparison with adequate reasoning allowance:
+many requests failed before returning a complete answer. No annotated incorrect
+canonical claim or spoiler leak was scored; three unannotated extras remain
+unscored. A larger-budget medium experiment is separate from this run and has
+not been performed. The saved default and limits were not changed.
 
 The OpenAI opt-in therefore defaults to `none`; `low` remains selectable for
 evaluation. The comparison does not establish that Luna is uniformly better:
