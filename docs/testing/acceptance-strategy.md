@@ -489,6 +489,7 @@ Every cited span still passed local grounding and reading-boundary checks.
 | Luna, no extra reasoning | 12/17 | 17/23 | 0 / 0 | 20.9 s | $0.01605 |
 | Luna, medium reasoning | 6/17 | 4/23 | 0 / 0 | 38.1 s | $0.02909 |
 | Luna, low reasoning, native output allowance | 11/17 | 17/23 | 0 / 0 | 31.6 s | $0.02598 |
+| Luna, medium reasoning, native output allowance | 12/17 | 13/23 | 1 / 0 | 39.9 s | $0.03244 |
 
 Low effort exhausted the consolidation output budget nine times; another call
 was unavailable. No extra reasoning completed all 22 provider calls without a
@@ -505,8 +506,8 @@ Reported usage was 30,042 input and 52,162 output tokens. This is a constrained
 configuration result, not a quality comparison with adequate reasoning allowance:
 many requests failed before returning a complete answer. No annotated incorrect
 canonical claim or spoiler leak was scored; three unannotated extras remain
-unscored. A larger-budget medium experiment is separate from this run and has
-not been performed. The saved default and limits were not changed.
+unscored. Q04 below separately tests medium with the larger allowance. The
+saved default and limits were not changed.
 
 Q03 retries low effort with Luna's model-native 128,000-output-token ceiling,
 a 200,000-total-token guard and a 300-second per-call timeout for consolidation
@@ -529,9 +530,30 @@ recover all expected traits or establish real-book reliability. Reports preserve
 the capped baseline byte-for-byte and save native limits plus per-call metadata
 separately in the ignored measurement directory.
 
-The OpenAI opt-in therefore defaults to `none`; `low` remains selectable for
-evaluation. The comparison does not establish that Luna is uniformly better:
-canonical recall improved against the historical Groq run, outcome agreement
+Q04 repeats medium effort with the same evaluation-only 128,000-output-token,
+200,000-total-token and 300-second limits as Q03. All 17 cases completed, but the
+quality assertion failed: 13/23 expected canonical traits were found and one
+incorrect canonical claim was scored in `house-war`. The returned `roof_material`
+was `slate`, matching the intact/restored roof annotations rather than the
+wartime destroyed-roof state. No spoiler leak was scored; two unannotated extras
+remain unscored. Outcome agreement was 12/17 and does not override that failure.
+
+All 22 provider calls succeeded. Five exceeded 4,096 output tokens and the largest
+used 9,006. Reported usage was 29,566 input plus 58,957 output tokens (88,523 total),
+with 594.5 s query time plus 18.4 s ingestion and a 39.945 s API-backed median.
+The standard uncached reported-token estimate is $0.03244. Pytest completed with
+one failed quality assertion in 617.44 s; this is a completed measurement, not a
+passing acceptance gate. The capped medium report was preserved byte-for-byte;
+separate native-output and per-call metadata reports remain ignored. No prompts,
+source selection, production limits, saved settings or private-book policy were
+changed. The larger allowance improved medium's capped trait count from 4/23 to
+13/23, but medium found fewer traits than low/none and introduced a scored error
+in this single synthetic run.
+
+The OpenAI opt-in continues to default to `none`; `low` and `medium` remain
+selectable for evaluation. The comparison does not establish that Luna is
+uniformly better: the `none` run improved canonical recall against the historical
+Groq run, while outcome agreement
 was lower, and response time was slower. Runs occurred on a shared development
 host at different times. Six annotated canonical traits remain missing under
 `none`, including unresolved house/Mira/childhood-compass cases and the incomplete
