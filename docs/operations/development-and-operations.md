@@ -593,6 +593,11 @@ Each exported deletion ledger carries its own checksum. Restore checks it before
 writing anything, so corrupted ownership/IDs cannot silently skip an erasure.
 Checksums detect corruption; they do not authenticate an archive from an
 untrusted source.
+The ledger also checkpoints each owner's consumed render-reservation count.
+Restoration merges it monotonically with the snapshot's account counters; book
+purge never refunds the five-reservation cap. Save the latest ledger after new
+reservations as well as after deletions, before cutting over or discarding the
+source.
 
 For the host filesystem runtime:
 
@@ -667,4 +672,13 @@ reconciliation. Accounts created after the snapshot are outside its recovery
 point. Only trusted Vision archives may be restored: a database dump contains
 executable SQL. These commands do not establish an off-machine disaster-recovery
 target or a production RTO/RPO.
+
+Migration `0026` backfills consumed reservations from retained render receipts.
+If an earlier candidate already completed book purges, its erased receipts
+cannot establish prior usage: the migration conservatively exhausts the
+five-reservation cap for those owners. It does not retain deleted book data or
+automatically grant more calls. Stop application processes before upgrading,
+apply migrations, then start the matching images. Older candidate snapshots
+require version-specific offline recovery and usage reconciliation; upgrade an
+intact source and export a fresh snapshot/ledger for the supported release.
 

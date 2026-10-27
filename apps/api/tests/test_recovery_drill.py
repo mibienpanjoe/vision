@@ -186,6 +186,7 @@ def test_restored_interrupted_jobs_reconcile_without_rebilling_and_restart_in_a_
     from datetime import UTC, datetime
     from pathlib import Path
 
+    from app.models.access import Principal
     from app.models.entities import Entity
     from app.models.jobs import Job
     from app.models.model_runs import Derivation
@@ -222,6 +223,7 @@ def test_restored_interrupted_jobs_reconcile_without_rebilling_and_restart_in_a_
         job = db.get(IngestionJob, job_id)
         job.status, job.attempts = "running", 1
         original = db.get(RenderJob, uuid.UUID(ids["job_id"]))
+        db.get(Principal, original.owner_id).render_reservations_used += 1
         interrupted = RenderJob(**{key: getattr(original, key) for key in (
             "owner_id", "work_id", "visualization_id", "specification_revision", "specification",
             "specification_sha256", "request_hash", "provider", "model")},

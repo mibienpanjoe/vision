@@ -173,7 +173,9 @@ def ledger_data(connection):
     rows = connection.execute(select(WorkDeletion.__table__)).mappings()
     data = {"format": 1, "exported_at": datetime.now(UTC).isoformat(),
             "deletions": [{k: str(v) if isinstance(v, (uuid.UUID, datetime)) else v for k, v in row.items()}
-                          for row in rows]}
+                          for row in rows],
+            "render_reservations": {str(owner): used for owner, used in connection.execute(
+                select(Principal.id, Principal.render_reservations_used))}}
     data["sha256"] = ledger_checksum(data)
     return data
 
@@ -261,6 +263,9 @@ def validate(directory, ledger):
     data = json.loads(ledger.read_bytes())
     if not isinstance(data, dict) or data.get("sha256") != ledger_checksum(data):
         raise SnapshotError("Deletion ledger integrity check failed; export a fresh ledger from the source.")
+    usage = data.get("render_reservations")
+    if not isinstance(usage, dict) or any(type(used) is not int or used < 0 for used in usage.values()):
+        raise SnapshotError("Usage checkpoint is missing or invalid; export a fresh ledger from the source.")
     if data["format"] != 1 or datetime.fromisoformat(data["exported_at"]) < datetime.fromisoformat(manifest["created_at"]):
         raise SnapshotError("Deletion ledger is older than the backup; export the latest ledger first.")
     return manifest, data
@@ -290,6 +295,10 @@ def restore(engine, directory, ledger):
                 stdin=source, stdout=subprocess.PIPE)
     with Session(engine) as db, db.begin():
         db.execute(delete(LoginSession))  # Never revive an old browser session.
+        for owner, used in data["render_reservations"].items():
+            principal = db.get(Principal, uuid.UUID(owner))
+            if principal is not None:
+                principal.render_reservations_used = max(principal.render_reservations_used, used)
         for row in data["deletions"]:
             owner_id, work_id = uuid.UUID(row["owner_id"]), uuid.UUID(row["work_id"])
             if db.get(Principal, owner_id) is None:

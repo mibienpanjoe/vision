@@ -98,6 +98,11 @@ Provider-side image deletion/retention remains unverified. There is no automatic
 time-based retention. Account deletion is a separate local-administration
 follow-up; it is not implemented by deleting a book.
 
+The consumed image-reservation count belongs to the account and survives book
+purge without retaining book references or content. A latest ledger also carries
+that aggregate into restoration, so deleting a book or loading an older snapshot
+cannot reset its owner's image budget.
+
 Restoration requires an empty target and the latest separately saved deletion
 ledger. Its checksum is checked before any restore writes, detecting corruption
 that could otherwise silently skip a deletion. Restore revokes old sessions, purges deleted content before serving, and

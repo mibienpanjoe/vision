@@ -103,6 +103,10 @@ running image attempts as acceptance unknown. Snapshot/copy frequency, encryptio
 and expiry remain operator-managed; no external backup service is selected.
 T48's closing recovery audit adds an independent checksum to deletion-ledger
 exports: corrupted ledgers are refused before restoration can write data.
+The closing cost audit preserves DEC-51's cap in an account-level consumed
+reservation counter, independent of deletable history. The latest ledger also
+checkpoints that aggregate, so neither book purge nor restore refunds usage.
+No book content, work reference or per-book model-run history is retained there.
 
 ## Proposed elaborations
 

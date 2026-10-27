@@ -26,7 +26,7 @@ from app.services.dispatch import dispatch_renders
 from app.services.ingestion.jobs import job_lock
 from app.services.visualization import history
 from app.services.visualization.refinement import require_current_inputs
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 
@@ -37,7 +37,8 @@ def fingerprint(value):
 def reserve(db, actor, work_id, visualization_id, body, key):
     history.owned(db, actor, work_id, visualization_id)
     # Serialize an owner's reservations so concurrent requests cannot exceed the cap.
-    db.scalar(select(Principal.id).where(Principal.id == actor.owner_id).with_for_update())
+    principal = db.scalar(select(Principal).where(Principal.id == actor.owner_id).with_for_update()
+                          .execution_options(populate_existing=True))
     digest = fingerprint(body.model_dump(mode="json"))
     prior = db.scalar(select(RenderJob).where(RenderJob.owner_id == actor.owner_id,
         RenderJob.visualization_id == visualization_id, RenderJob.idempotency_key == key))
@@ -54,8 +55,7 @@ def reserve(db, actor, work_id, visualization_id, body, key):
         raise PublicError(409, "SPECIFICATION_CHANGED", "Specification changed. Reload its current revision.")
     spec = history.view(db, visualization).result.data
     require_current_inputs(db, actor, work_id, spec)
-    reserved = db.scalar(select(func.count()).select_from(RenderJob).where(RenderJob.owner_id == actor.owner_id))
-    if reserved >= policy.max_reservations_per_owner:
+    if principal.render_reservations_used >= policy.max_reservations_per_owner:
         raise PublicError(429, "RENDER_LIMIT", "The configured image-render limit has been reached.")
     snapshot = spec.model_dump(mode="json")
     job = RenderJob(owner_id=actor.owner_id, work_id=work_id, visualization_id=visualization_id,
@@ -63,6 +63,7 @@ def reserve(db, actor, work_id, visualization_id, body, key):
         specification_sha256=fingerprint(snapshot), request_hash=digest, idempotency_key=key,
         provider=policy.provider, model=policy.model)
     db.add(job)
+    principal.render_reservations_used += 1
     db.commit()
     # Intent is already committed; a failed enqueue stays pending for `make dispatch`.
     dispatch_renders(db.get_bind(), job.id)

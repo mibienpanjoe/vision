@@ -397,6 +397,13 @@ the saved derivation with unchanged entity IDs. These recovery tests use
 deterministic model adapters; the packaged drill separately runs pinned local
 extraction and embedding models.
 
+`test_render_budget_retention.py` proves that a completed book purge and an
+older snapshot cannot reopen an exhausted owner's image budget. It exercises
+real reservation APIs with independent valid book specifications, monotonic
+post-snapshot usage checkpoints, and migration downgrade/upgrade with retained
+receipts and conservatively exhausted legacy purge history. No image provider
+call is made by these quota checks.
+
 `make package-check` also backs up actual stopped Compose volumes, makes a later
 deletion on the source, restores into a new project/database/volumes, and checks
 exact original bytes, owner isolation, revoked sessions and deletion replay

@@ -540,6 +540,13 @@ is a new, explicit, counted reservation; there is no automatic retry and no
 reconciliation route, because the provider exposes neither request lookup nor
 idempotency keys.
 
+Consumption is an account-level counter, incremented under the owner lock in the
+same transaction as a new reservation; replay does not increment it. Purging a
+book removes its render history without refunding the counter. The latest
+offline ledger carries aggregate usage as well as deletions, and restoration
+takes the greater of snapshot and checkpoint usage. It cannot reopen a budget
+consumed after an older snapshot.
+
 After commit the reservation is published to the `render` queue; `dispatched:
 false` means publication has not occurred and `make dispatch` retries it. The
 worker claims a queued job (`running`, revision +1), sends only the snapshot's
