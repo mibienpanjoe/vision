@@ -71,7 +71,10 @@ def consolidation_rule(sources):
         facts.append({"subject": "Arthur", "attribute": "eyes", "value": "golden", "kind": "identity",
                       "support": "explicit", "modality": "fact", "evidence": [{"ref": ref(RUMOR), "quote": RUMOR}]})
     if ref("I was Wren at ten"):
-        links.append({"subject": "Wren", "object": "Arthur", "support": "explicit", "ref": ref("I was Wren at ten"),
+        request = next(s["text"] for s in sources if s["ref"] == "request")
+        refs = {e["label"]: e["ref"] for e in json.loads(request)["entities"]}
+        # Wren is also Arthur's revealed alias: identify the two records by registry ref.
+        links.append({"subject": refs["Wren"], "object": refs["Arthur"], "support": "explicit", "ref": ref("I was Wren at ten"),
                       "quote": "Only this chapter established that Wren and Arthur were the same person."})
     return {"events": events, "facts": facts, "identity_links": links}
 

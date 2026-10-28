@@ -1,6 +1,17 @@
 """Opt-in synthetic evaluation tooling. Never installed in the application path."""
 
-from app.providers.contracts import ProviderResult, call_digest
+from app.providers.contracts import ProviderResult, ProviderUnavailable, call_digest
+
+
+class CallBudget:
+    def __init__(self, limit):
+        self.limit, self.used, self.exhausted = limit, 0, False
+
+    def take(self):
+        if self.used >= self.limit:
+            self.exhausted = True
+            raise ProviderUnavailable()
+        self.used += 1
 
 
 class CaptureAdapter:

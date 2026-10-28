@@ -401,7 +401,9 @@ Consolidation receives a bounded registry of entities mentioned in the selected,
 cutoff-eligible passages, plus the requested subject and participants. Registry
 refs identify those entities for fact subjects, event participants and identity
 links. Visible unique name surfaces may resolve to the same stored identity;
-shared titles never resolve by likelihood. Display labels are cutoff-safe, even
+shared titles never resolve by likelihood. Uniqueness is checked across all
+cutoff-visible mentions, labels and aliases, including unselected passages.
+Unknown or ambiguous output names are rejected before publication. Display labels are cutoff-safe, even
 when a stored label was learned later. The registry is prioritized for requested
 entities and fits the remaining input allowance; omitted refs are not resolved.
 Normalization preserves the raw captured output and does not create identities
@@ -417,3 +419,7 @@ changes are left for conservative reconstruction, and a later direct statement
 gets its own evidence. Negated removals never become affirmed current clothing.
 Prompt examples are instructions, never admissible evidence. This keeps DEC-38's
 one-call consolidation; improved live-model quality requires measurement.
+
+Review guards in `consolidate-v8` retain Q09 extraction semantics and use the
+full cutoff-visible narrative to establish registry alias uniqueness. Inferred
+facts with missing or blank assumptions are rejected at publication.

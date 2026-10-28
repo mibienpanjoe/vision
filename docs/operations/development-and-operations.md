@@ -486,7 +486,9 @@ uv run --project apps/api --locked pytest apps/api/tests/test_live_reconstructio
 
 The 17-case evaluation is capped at 50 OpenAI transport attempts and writes a
 separate ignored `reconstruction-openai-gpt-6-luna-none-annotation-match-v4.json`
-in `.local/measurements`, preserving historical reports. A companion `-trace.json`
+in `.local/measurements`, preserving historical reports. Reports and traces record
+the call allowance, attempted count and whether a further call was blocked; a
+blocked call fails the evaluation as incomplete even if no safety check failed. A companion `-trace.json`
 retains requests/responses and stage decisions for this pinned synthetic corpus
 only; production/private-book source logging stays disabled. It records quality, API latency and
 input/output tokens. The USD estimate uses uncached standard Luna rates
@@ -752,7 +754,7 @@ provider or effort, enable automatic escalation, or authorize private books.
 |---|---|---|
 | `none` | 4,096 / 12,000 / 90 s | 2,048 / 8,000 / 60 s |
 | `low` | 8,192 / 24,000 / 120 s | 4,096 / 16,000 / 90 s |
-| `medium` and higher | 16,384 / 32,000 / 180 s | 8,192 / 24,000 / 120 s |
+| `medium` and higher | 16,384 / 32,000 / 150 s | 8,192 / 24,000 / 90 s |
 
 Input-character and reading-boundary limits stay unchanged. Output includes
 internal reasoning, so a complete reasoning call can exceed the old Groq
@@ -761,3 +763,6 @@ efforts remain uncalibrated, with no quality claim. These finite allowances are
 not the model-native 128,000 ceiling used in isolated comparisons. Selected
 limits are recorded with runs and separate cache/derivation reuse. A larger
 allowance avoids truncation in more cases; it does not establish factual quality.
+
+The medium and higher stage timeouts total 240 seconds, leaving 60 seconds
+inside the browser proxy allowance for retrieval, persistence and response work.

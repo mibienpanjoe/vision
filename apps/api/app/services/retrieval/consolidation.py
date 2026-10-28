@@ -107,10 +107,12 @@ def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limi
             derivation.status = "cancelled" if result.record.outcome == "cancelled" else "failed"
             derivation.error_code = result.record.error_code
         else:
-            output = canonicalize(result.output, names)
+            normalization_rejections = Counter()
+            output = canonicalize(result.output, names, normalization_rejections)
             outputs = [(group, output, run.id)]
             keys: dict = {}
             rejected = Counter(publish_events(db, derivation_id, entities.id, outputs, keys))
+            rejected.update(normalization_rejections)
             keyed = [(key, event.id, event.label, event.modality, 0, 0) for key, event in keys.items() if event]
             rejected.update(publish_facts(db, derivation_id, entities.id, keyed, outputs))
             rejected.update(publish_links(db, derivation_id, entities.id, group, output, run.id))

@@ -211,7 +211,8 @@ def adjudicate(db, plan, derivation_id, result: Verification, adapter: ProviderA
             continue
         item = {"ref": f"p{passage.ordinal}", "text": passage.text[start:end]}
         candidate = {**first, "related_passages": [*related, item], "related_complete": False}
-        if len(INSTRUCTIONS) + others + len(json.dumps(candidate, ensure_ascii=False)) > limits.max_input_chars:
+        size = len(json.dumps(candidate, ensure_ascii=False))
+        if size > 16_000 or len(INSTRUCTIONS) + others + size > limits.max_input_chars:
             complete = False
         else:
             related.append(item)

@@ -18,7 +18,7 @@ from app.providers.extraction import Key, Label, Quote, Ref
 from app.providers.visual_facts import FactKind
 from pydantic import Field
 
-PROMPT_VERSION = "consolidate-v7"
+PROMPT_VERSION = "consolidate-v8"
 REQUEST_REF = "request"
 
 INSTRUCTIONS = f"""Consolidate the selected book passages into source-grounded visual facts at the requested scene.

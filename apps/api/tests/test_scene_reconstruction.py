@@ -93,3 +93,16 @@ def test_scene_from_a_stored_consolidation(story):
     from app.models.model_runs import Derivation
     assert story.db.get(Derivation, derivation_id).rejections["unattributed"] == 1
     assert (found.world, found.unknown) == ([], ["setting"])
+
+
+def test_unexplained_inference_cannot_establish_scene_membership():
+    from app.services.narrative.chronology import Chronology
+    from app.services.reconstruction.scene import Entity, compose_scene
+    from app.services.reconstruction.state import Fact
+    arthur = Entity(frozenset({"arthur"}), "character", "Arthur")
+    mira = Entity(frozenset({"mira"}), "character", "Mira")
+    facts = [Fact("hair", "arthur", "hair", "chestnut", "scene", "explicit", "fact", "affirmed", frozenset({"dinner"})),
+             Fact("bad", "mira", "held_object", "compass", "scene", "inferred", "fact", "negated",
+                  frozenset({"dinner"}), " ")]
+    result = compose_scene(facts, Chronology({"dinner": "fact"}, []), "dinner", arthur, [mira], {"arthur"}, [], set())
+    assert [m.entity.label for m in result.members] == ["Arthur"]

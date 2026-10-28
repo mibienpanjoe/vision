@@ -241,3 +241,22 @@ def test_adjudication_does_not_settle_or_erase_documented_disputes(story):
                             RuleAdapter(verdict_rule({"green": ("not_entailed", None), "blue": ("not_entailed", None)})))
     assert verified.traits["eyes"].status == "disputed"
     assert set(verified.traits["eyes"].values) == {"green", "blue"}
+
+
+@pytest.mark.integration
+def test_larger_total_input_cannot_overfill_one_source_item(home):
+    from app.models.model_runs import Derivation
+    from app.providers.contracts import Limits
+    story, plan, derivation_id, state, _ = home
+    derivation = story.db.get(Derivation, derivation_id)
+    derivation.scope = {**derivation.scope, "spans": derivation.scope["spans"] * 12}
+    story.db.commit()
+    seen = []
+    def rule(sources):
+        seen.extend(sources)
+        return {"verdicts": [{"claim": s["ref"], "verdict": "entailed", "quote": json.loads(s["text"])["quotes"][0]}
+                             for s in sources]}
+    result = verify_state(story.db, plan, derivation_id, state, set(plan.subject.entity_ids), ["arthur"],
+                          RuleAdapter(rule), Limits(max_input_chars=48_000))
+    assert seen and all(len(s["text"]) <= 16_000 for s in seen)
+    assert result.adjudication == "unavailable" and json.loads(seen[0]["text"])["related_complete"] is False

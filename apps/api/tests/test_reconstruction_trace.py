@@ -24,3 +24,14 @@ def test_capture_and_replay_preserve_the_full_result_and_reject_a_changed_reques
         ReplayAdapter(capture.calls).complete(call.model_copy(update={"data": "changed"}))
     with pytest.raises(ValueError, match="exhausted"):
         replay.complete(call)
+
+
+def test_call_budget_flags_a_blocked_attempt_but_not_an_exactly_filled_allowance():
+    from app.providers.contracts import ProviderUnavailable
+    from tests.reconstruction_trace import CallBudget
+    budget = CallBudget(1)
+    budget.take()
+    assert budget.used == 1 and not budget.exhausted
+    with pytest.raises(ProviderUnavailable):
+        budget.take()
+    assert budget.used == 1 and budget.exhausted

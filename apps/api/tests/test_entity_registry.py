@@ -46,3 +46,30 @@ def test_pronouns_and_negated_phrases_are_not_name_aliases():
     entries, names = registry(view, {"p"}, {entity_id})
     assert entries[0]["aliases"] == ["brann"]
     assert "he" not in names and "brann, not arthur" not in names
+
+
+def test_alias_uniqueness_uses_unselected_but_cutoff_visible_mentions():
+    from collections import Counter
+    a, b = UUID(int=1), UUID(int=2)
+    view = Narrative({"selected": (1, "Alex"), "outside": (1, "Alex")},
+                     entities={a: SimpleNamespace(label="Alex", kind="character"),
+                               b: SimpleNamespace(label="Captain South", kind="character")},
+                     labels={a: "Alex", b: "Captain South"},
+                     mentions=[SimpleNamespace(id="a", passage_id="selected", start=0, end=4),
+                               SimpleNamespace(id="b", passage_id="outside", start=0, end=4)],
+                     candidates={"a": {a}, "b": {b}})
+    entries, names = registry(view, {"selected"}, {a})
+    assert len(entries) == 1 and entries[0]["label"] == "Alex"
+    assert "alex" not in names and "alex" not in entries[0]["aliases"]
+    output = Consolidation.model_validate({"facts": [{"subject": "Alex", "attribute": "hair", "value": "black",
+        "kind": "identity", "support": "explicit", "modality": "fact", "evidence": [{"ref": "p0", "quote": "Alex had black hair."}]}]})
+    rejected = Counter()
+    assert canonicalize(output, names, rejected).facts == []
+    assert rejected["unknown_subject"] == 1
+
+    from app.providers.consolidation import IdentityLink
+    link = IdentityLink(subject="Alex", object="entity:0", support="explicit", ref="p0", quote="Alex was Alex.")
+    assert canonicalize(output.model_copy(update={"identity_links": [link]}), names).identity_links == []
+    resolved = canonicalize(output.model_copy(update={"identity_links": [link.model_copy(
+        update={"subject": "entity:0"})]}), names)
+    assert resolved.identity_links[0].subject == "Alex"

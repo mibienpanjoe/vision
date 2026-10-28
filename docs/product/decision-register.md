@@ -193,3 +193,10 @@ higher 16,384/8,192 for consolidation/adjudication, with bounded total/time limi
 documented in operations. Selection and canonical/source gates are unchanged;
 limits separate cache/derivation reuse. No provider/default/disclosure-policy
 change or automatic escalation is introduced. Higher efforts are unmeasured.
+
+Implementation clarification for query reconstruction: registry selection stays
+query-scoped, but alias uniqueness uses the full cutoff-visible narrative.
+Unexplained inferences cannot remove established facts or establish scene
+membership. Reasoning stage timeouts reserve browser proxy overhead, and a live
+evaluation that blocks a call at its finite allowance is explicitly incomplete.
+These guards do not change the accepted provider defaults or public API.

@@ -24,3 +24,10 @@ def test_adjudication_and_explicit_non_luna_models_keep_separate_bounds():
     assert query_limits(adapter, "adjudication", default).max_output_tokens == 8192
     adapter.model = "explicit-other-model"
     assert query_limits(adapter, "adjudication", default) == default
+
+
+def test_reasoning_timeouts_leave_a_margin_inside_the_browser_proxy():
+    adapter = SimpleNamespace(provider="openai", model="gpt-6-luna", configuration={"reasoning": "medium"})
+    default = Limits()
+    assert sum(query_limits(adapter, stage, default).timeout_seconds
+               for stage in ("consolidation", "adjudication")) <= 240

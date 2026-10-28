@@ -62,6 +62,10 @@ class Fact:
     assumption: str | None = None
 
     @property
+    def explained(self) -> bool:
+        return self.support != "inferred" or bool(self.assumption and self.assumption.strip())
+
+    @property
     def canonical(self) -> bool:
         return self.support == "explicit" and self.polarity == "affirmed" and self.modality in CANONICAL_MODALITY
 
@@ -106,23 +110,23 @@ def reconstruct(facts: list[Fact], subject_ids, kind: str, event, chronology: Ch
     """The state of `subject_ids` at `event` (None: unspecified) from claims already inside the reading boundary."""
     own = [f for f in facts if f.subject in subject_ids]
     if event is None:
-        choices = moment_choices(own, chronology)
+        choices = moment_choices([f for f in own if f.explained], chronology)
         if len(choices) > 1:
             return State("needs_context", None, choices=choices)
         event = choices[0] if choices else None
     state = State("resolved", event)
-    removed = [f for f in own if f.polarity == "negated" and f.modality in CANONICAL_MODALITY
+    removed = [f for f in own if f.explained and f.polarity == "negated" and f.modality in CANONICAL_MODALITY
                and (event is None or position(f, event, chronology) in {"direct", "before"})]
     direct, carried = {}, {}
     for fact in own:
+        if not fact.explained:
+            state.excluded[fact.id] = "missing_assumption"
+            continue
         if fact.modality not in CANONICAL_MODALITY:
             state.excluded[fact.id] = fact.modality
             continue
         if fact.polarity == "negated":
             state.excluded[fact.id] = "negated"
-            continue
-        if fact.support == "inferred" and not (fact.assumption and fact.assumption.strip()):
-            state.excluded[fact.id] = "missing_assumption"
             continue
         key, item = fact.attribute.casefold(), part(fact.attribute)
         where = ("direct" if event is None else "untimed") if not fact.events else \
@@ -176,6 +180,13 @@ def reconstruct(facts: list[Fact], subject_ids, kind: str, event, chronology: Ch
         if len({(f.attribute.casefold(), f.value.casefold()) for f in latest}) == 1:
             reason = ("stated without a story moment" if not latest[0].events
                       else "acquired earlier; no persistence to this moment is established")
+            assumptions = sorted({f.assumption.strip() for f in latest if f.support == "inferred" and f.assumption})
+            if assumptions:
+                temporal = "inferred without a story moment" if not latest[0].events else reason
+                assumption = assumptions[0] if len(assumptions) == 1 else "Multiple provider assumptions"
+                available = 256 - len(temporal) - 2
+                prefix = assumption if len(assumption) <= available else assumption[:available - 3] + "..."
+                reason = f"{prefix}; {temporal}"
             key = latest[0].attribute.casefold()
             state.traits[key] = Trait(key, "inferred", [latest[0].value], [f.id for f in latest], reason)
         else:

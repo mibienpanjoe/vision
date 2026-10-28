@@ -81,10 +81,7 @@ counts for nothing, and a provider failure leaves the deterministic result
 with adjudication `unavailable`. Missing, duplicate or misquoted verdicts and
 incomplete context also yield `unavailable`, rather than claiming full coverage.
 A single accepted verdict cannot mark other facts as checked. Adjudication runs on survivors only, so it can
-never approve or promote a claim. A live Groq sample on the synthetic dinner
-(985 input and 211 output tokens, 0.9 s) entailed both the linen shirt and the
-visible scar. Without passage context it had rejected the scar because the
-quote says "his", which led to the context field.
+never approve or promote a claim.
 
 `prompt_problems` checks a final prompt. It fails when an excluded or removed
 value appears and no kept value contains it, when a disputed trait's value
@@ -111,7 +108,7 @@ the textual contract; generated pixels never become evidence for new facts.
 [Image rendering](../api/api-contract.md#image-rendering--t40) sends only the
 gated `generation.prompt`; the selected model takes no negative prompt, so
 excluded values are not enforced by the provider and must be checked in the
-pixels. The composed prompt (`compose-v4`, part of the result cache key) states a
+pixels. The composed prompt (`compose-v5`, part of the result cache key) states a
 single scene, counts the other people present and omits an object already named
 as a member's trait value, so image models neither merge people, split them into
 panels nor redraw the object twice. The subject stands in the foreground and its
@@ -134,5 +131,11 @@ canonical traits only; source-supported disputed values stay disputed and cannot
 be arbitrated or erased by that checker. A negated relation value matching a
 verified scene member's name is not a global prohibition on that person.
 Composition/refinement and the final prompt gate preserve verified member labels
-while continuing to reject excluded visual details. `compose-v5`/`verify-v5`
+while continuing to reject excluded visual details. `compose-v5`/`verify-v6`
 invalidate prior results.
+
+An inferred fact needs a nonblank assumption before it can remove an earlier
+fact or establish scene membership. Carried inferences retain their assumption
+and temporal uncertainty. Verification context is bounded both by the total
+input allowance and by each source item's 16,000-character contract; omitted
+context keeps adjudication unavailable.

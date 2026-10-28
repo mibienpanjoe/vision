@@ -214,3 +214,21 @@ def test_states_from_a_stored_consolidation(story):
     assert unspecified.outcome == "needs_context" and len(unspecified.choices) == 3
     unanchored = state(2, "Arthur in spring")
     assert (unanchored.outcome, unanchored.unknown) == ("insufficient_evidence", ["moment"])
+
+
+def test_unexplained_negated_inference_cannot_remove_an_earlier_fact():
+    facts = [Fact("old", "arthur", "left_cheek", "scar", "acquired", "explicit", "fact", "affirmed", frozenset({"war"})),
+             Fact("bad", "arthur", "left_cheek", "scar", "acquired", "inferred", "fact", "negated",
+                  frozenset({"dinner"}), "   ")]
+    state = reconstruct(facts, {"arthur"}, "character", "dinner", chronology_at(3))
+    assert state.traits["left_cheek"].values == ["scar"]
+    assert state.excluded["bad"] == "missing_assumption"
+
+
+def test_carried_inference_keeps_its_assumption_without_calling_it_stated():
+    assumption = "Material inferred from a similar roof."
+    fact = Fact("roof", "house", "roof_material", "slate", "identity", "inferred", "fact", "affirmed",
+                frozenset(), assumption)
+    state = reconstruct([fact], {"house"}, "place", "dinner", chronology_at(3))
+    assert assumption in state.traits["roof_material"].reason
+    assert "stated without" not in state.traits["roof_material"].reason

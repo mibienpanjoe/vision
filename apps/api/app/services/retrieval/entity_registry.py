@@ -2,7 +2,7 @@
 
 import json
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 from app.services.retrieval.entity_lookup import PRONOUNS, fold
 
@@ -11,16 +11,17 @@ def registry(view, passage_ids, required, max_characters=4_000):
     selected = set(required) & view.entities.keys()
     surfaces = defaultdict(set)
     for mention in view.mentions:
-        if mention.passage_id not in passage_ids:
-            continue
         ids = view.candidates.get(mention.id, set())
-        selected.update(ids)
+        if mention.passage_id in passage_ids:
+            selected.update(ids)
         text = view.passages[mention.passage_id][1][mention.start:mention.end]
         name = fold(text).strip()
         if name not in PRONOUNS and not re.search(r"[,;.!?]|\bnot\b", name):
             surfaces[name].update(ids)
-    for entity_id in selected:
-        surfaces[fold(view.labels[entity_id])].add(entity_id)
+    for entity_id, label in view.labels.items():
+        surfaces[fold(label)].add(entity_id)
+    for alias in view.aliases:
+        surfaces[fold(alias.label)].add(alias.entity_id)
     entries, names, used = [], {}, 2
     ordered = sorted(selected, key=lambda e: (e not in required, fold(view.labels[e]), str(e)))
     for i, entity_id in enumerate(ordered):
@@ -39,12 +40,24 @@ def registry(view, passage_ids, required, max_characters=4_000):
     return entries, names
 
 
-def canonicalize(output, names):
-    def resolve(name):
-        return names.get(fold(name), name)
-    return output.model_copy(update={
-        "facts": [f.model_copy(update={"subject": resolve(f.subject)}) for f in output.facts],
-        "events": [e.model_copy(update={"participants": [resolve(p) for p in e.participants]}) for e in output.events],
-        "identity_links": [link.model_copy(update={"subject": resolve(link.subject), "object": resolve(link.object)})
-                           for link in output.identity_links],
-    })
+def canonicalize(output, names, rejected=None):
+    rejected = Counter() if rejected is None else rejected
+    def resolve(name, reason):
+        result = names.get(fold(name))
+        if result is None:
+            rejected[reason] += 1
+        return result
+    facts, events, links = [], [], []
+    for fact in output.facts:
+        subject = resolve(fact.subject, "unknown_subject")
+        if subject is not None:
+            facts.append(fact.model_copy(update={"subject": subject}))
+    for event in output.events:
+        participants = [value for name in event.participants
+                        if (value := resolve(name, "unknown_participant")) is not None]
+        events.append(event.model_copy(update={"participants": participants}))
+    for link in output.identity_links:
+        subject, target = resolve(link.subject, "unknown_entity"), resolve(link.object, "unknown_entity")
+        if subject is not None and target is not None:
+            links.append(link.model_copy(update={"subject": subject, "object": target}))
+    return output.model_copy(update={"facts": facts, "events": events, "identity_links": links})
