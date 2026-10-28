@@ -71,7 +71,9 @@ layout prioritizes the complete sign-in form; browser submission strips only
 surrounding username whitespace and preserves passwords exactly. The API login
 validation and session policy are unchanged. The header now uses the
 maintainer-requested sun/moon button for manual light/dark switching, preserving
-the existing saved theme preference. Narrative retry remains
+the existing saved theme preference. Account identity and Sign out live in
+the shared header; a single session state keeps header and library consistent.
+Decorative slogans and repeated introductory copy are removed from the app. Narrative retry remains
 PROP-06; parsing retry does not claim to retry a failed narrative job.
 T35's chapter catalog is an owned, paginated current-generation read exposing
 numbers and IDs without narrative titles. This implements DEC-10's reading boundary

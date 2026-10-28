@@ -20,7 +20,7 @@ export function Upload({ onUploaded, onUnauthorized, disabled }: { onUploaded: (
     finally { setBusy(false); }
   }
   return <section className="panel upload-panel" aria-labelledby="upload-title">
-    <div><p className="eyebrow">Add a world</p><h2 id="upload-title">Upload a book</h2>
+    <div><h2 id="upload-title">Upload a book</h2>
       <p className="muted-copy">TXT, Markdown, PDF or EPUB · up to 8 MiB.<br />PDFs need a text layer; scanned pages are unsupported.</p></div>
     <form onSubmit={submit} onChange={() => { pending.current = null; setError(""); }} className="form-stack">
       <fieldset disabled={busy || disabled}>

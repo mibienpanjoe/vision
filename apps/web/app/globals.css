@@ -33,6 +33,8 @@ button, select, input, textarea { font: inherit; }
 .skip-link:focus { clip-path: none; width: auto; height: auto; overflow: visible; padding: .75rem 1rem; }
 .site-header { min-height: 7rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-block: 1rem; border-bottom: 1px solid var(--border); }
 .brand { display: flex; align-items: center; gap: .75rem; text-decoration: none; font: 600 1.75rem "Source Serif 4", Georgia, serif; }
+.header-actions { display: flex; align-items: center; justify-content: flex-end; gap: .75rem; flex-wrap: wrap; }
+.account-name { color: var(--muted-foreground); font-size: .875rem; }
 .theme-control { position: relative; display: inline-grid; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: 50%; color: var(--foreground); background: transparent; }
 .theme-control:hover { background: var(--muted); filter: none; }
 .theme-control:active { transform: scale(.96); }
@@ -94,9 +96,7 @@ button:hover { filter: brightness(.92); }
 button:disabled { cursor: default; opacity: .65; }
 button.secondary { color: var(--foreground); background: var(--background); border-color: var(--input); }
 button.secondary:hover { background: var(--muted); filter: none; }
-.library-toolbar, .actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.library-toolbar { margin-bottom: 1.5rem; }
-.library-toolbar p { margin: 0; }
+.actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .upload-panel { display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem; }
 .form-row { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; }
 .book-list { margin-top: 2.5rem; }
@@ -159,8 +159,6 @@ button.source-highlight:hover { text-decoration: underline; filter: none; }
 .render .actions { justify-content: flex-start; margin-top: .75rem; }
 .canonical-locks label { display: flex; align-items: baseline; gap: .75rem; margin-bottom: .75rem; }
 .canonical-locks input { width: 1rem; height: 1rem; flex-shrink: 0; }
-.library-note { margin-top: 1.25rem; color: var(--muted-foreground); font-family: "Source Serif 4", Georgia, serif; font-style: italic; }
-footer { display: flex; justify-content: space-between; gap: 1rem; padding-block: 1.5rem; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: .8125rem; }
 @media (max-width: 56rem) {
   .library-hero, .sign-in-layout { grid-template-columns: minmax(0, 1fr); }
   .library-art, .sign-in-art { display: none; }
@@ -177,6 +175,5 @@ footer { display: flex; justify-content: space-between; gap: 1rem; padding-block
   .explorer-art { display: none; }
   .render { grid-template-columns: minmax(0, 1fr); }
   .empty-art { width: 4.5rem; }
-  footer { flex-direction: column; gap: .25rem; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }

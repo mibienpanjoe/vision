@@ -18,7 +18,6 @@ export function SignIn({ onSignedIn }: { onSignedIn: (actor: PrincipalView) => v
   }
   return <div className="sign-in-layout"><section className="panel sign-in" aria-labelledby="sign-in-title">
     <h1 id="sign-in-title">Sign in to your library</h1>
-    <p className="muted-copy">Your books and discoveries stay in your private workspace.</p>
     <form onSubmit={submit} className="form-stack">
       <label>Username<input name="username" autoComplete="username" autoCapitalize="none" spellCheck={false} required minLength={3} maxLength={32} /></label>
       <label>Password<input name="password" type="password" autoComplete="current-password" required minLength={12} maxLength={128} /></label>

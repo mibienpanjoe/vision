@@ -4,6 +4,10 @@ The browser consumes the owned API contracts through the same-origin `/api/v1`
 proxy. [Visual identity](../design/visual-identity.md) owns presentation;
 [API contracts](../api/api-contract.md) own authorization and mutations.
 
+The shared header holds the current account, Sign out, and the theme control.
+One session state updates the header and library together after sign-in, sign-out
+or an expired session. Decorative slogans and repeated introductory text are
+omitted; format limits, operational states and errors remain visible.
 The header theme control is a sun/moon icon button that switches light and dark
 appearance, names its action for assistive technology and retains the choice.
 

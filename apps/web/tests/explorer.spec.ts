@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
   await page.getByLabel("Username").fill("transport_reader");
   await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByText("Signed in as")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign out", exact: true })).toBeVisible();
 });
 
 test("real upload produces scoped entities; late aliases and stale detail disappear on cutoff change", async ({ page }) => {

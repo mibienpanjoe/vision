@@ -6,7 +6,7 @@ export async function signIn(page: Page) {
   await page.getByLabel("Username").fill("transport_reader");
   await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByText("Signed in as")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign out", exact: true })).toBeVisible();
 }
 
 export async function uploadCorpus(page: Page, title: string) {

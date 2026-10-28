@@ -1,3 +1,4 @@
+import { SessionProvider } from "@/components/session-provider";
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import "@fontsource/inter/latin-400.css";
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body><ThemeProvider>{children}</ThemeProvider></body>
+      <body><ThemeProvider><SessionProvider>{children}</SessionProvider></ThemeProvider></body>
     </html>
   );
 }

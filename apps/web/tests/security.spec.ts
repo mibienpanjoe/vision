@@ -18,7 +18,7 @@ async function signIn(page: Page, username: string) {
   await page.getByLabel("Username").fill(username);
   await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByText("Signed in as")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign out", exact: true })).toBeVisible();
 }
 
 async function inert(page: Page) {
@@ -67,7 +67,7 @@ test("hostile titles and source markup render as inert text", async () => {
 test("another reader cannot open, download or list a private book", async () => {
   const page = await other.newPage();
   await page.goto("/");
-  await expect(page.getByText("Signed in as")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign out", exact: true })).toBeVisible();
   await expect(page.getByRole("article", { name: TITLE, exact: true })).toHaveCount(0);
   await page.goto(`/works/${workId}`);
   await expect(page.locator("p[role=alert]")).toContainText("Resource not found.");
@@ -96,7 +96,7 @@ test("pages refuse framing and the proxy keeps the API's origin check", async ()
 test("signing out in one tab leaves the other tab's controls unable to act", async () => {
   const first = await reader.newPage();
   await first.goto("/");
-  await expect(first.getByText("Signed in as")).toBeVisible();
+  await expect(first.getByRole("button", { name: "Sign out", exact: true })).toBeVisible();
   const second = await reader.newPage();
   await second.goto("/");
   await second.getByRole("button", { name: "Sign out", exact: true }).click();

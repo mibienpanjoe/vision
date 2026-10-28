@@ -91,3 +91,31 @@ test("theme uses an icon button that toggles by keyboard and keeps the choice", 
   await dark.click();
   await expect(page.locator("html")).toHaveClass("dark");
 });
+
+test("library keeps functional guidance without decorative slogans", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Sign in to your library", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  for (const copy of ["A private reading workspace", "Keep your books close. Bring their worlds into focus.",
+    "Every detail begins with a passage.", "Read the words. See the world.",
+    "Your books and discoveries stay in your private workspace."]) {
+    await expect(page.getByText(copy, { exact: true })).toHaveCount(0);
+  }
+});
+
+test("sign out belongs to the header and clears the library session", async ({ page }) => {
+  let signedIn = true;
+  await page.route("**/api/v1/auth/me", route => signedIn
+    ? route.fulfill({ json: { id: "00000000-0000-0000-0000-000000000001", username: "reader" } })
+    : route.fulfill({ status: 401, json: { error: { code: "AUTHENTICATION_REQUIRED" } } }));
+  await page.route("**/api/v1/works", route => route.fulfill({ json: { items: [], next_cursor: null } }));
+  await page.route("**/api/v1/auth/logout", route => { signedIn = false; return route.fulfill({ status: 204 }); });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Upload a book", exact: true })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("button", { name: "Sign out", exact: true })).toHaveCount(0);
+  await page.getByRole("banner").getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Sign in to your library", exact: true })).toBeVisible();
+  await expect(page.getByRole("banner").getByRole("button", { name: "Sign out", exact: true })).toHaveCount(0);
+});
