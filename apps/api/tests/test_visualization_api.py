@@ -35,7 +35,8 @@ def test_resolved_specification_cites_resolvable_in_scope_evidence(api):
                                        "left_cheek": ("canonical", ["scar still visible"])}
     assert {"hair", "eyes"} <= set(spec["subject"]["unknown"])
     assert next(t for t in spec["subject"]["traits"] if t["attribute"] == "attire")["adjudication"] == "entailed"
-    assert spec["verification"]["adjudication"] == "applied"
+    assert spec["verification"]["adjudication"] == "unavailable"  # Fixture supplies only the shirt verdict.
+    assert next(t for t in spec["subject"]["traits"] if t["attribute"] == "left_cheek")["adjudication"] == "unchecked"
     assert set(spec["lineage"]["processing"]) == {"query_plan", "consolidation", "index", "parser"}
     assert spec["lineage"]["processing"]["index"].startswith("index-v1/deterministic/hashed-v1")
     assert "plain linen shirt" in spec["generation"]["prompt"] and "steel armor" not in spec["generation"]["prompt"]
@@ -211,3 +212,13 @@ def test_stored_citations_stay_resolvable_after_new_consolidations(api, monkeypa
             assert clients["reader"].post(f"/v1/works/{work_id}/evidence", headers=ORIGIN, json={
                 "span": span, "parser_revision": again["result"]["data"]["scope"]["parser_revision"],
                 "reading_boundary": boundary}).status_code == 200
+
+
+def test_complete_quoted_verdict_coverage_is_applied_at_the_api(api, monkeypatch):
+    from tests.test_grounding_verification import verdict_rule
+    monkeypatch.setattr(specification, "adjudicator", lambda _: RuleAdapter(verdict_rule({
+        "plain linen shirt": ("entailed", None), "scar still visible": ("entailed", None)})))
+    compose, *_ = api
+    spec = outcome(compose(chapter=3, query="Arthur at home after the war"))["data"]
+    assert spec["verification"]["adjudication"] == "applied"
+    assert all(t["adjudication"] == "entailed" for t in spec["subject"]["traits"] if t["status"] == "canonical")
