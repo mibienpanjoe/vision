@@ -668,3 +668,28 @@ assignment and unsupported paraphrases still account for misses. A known fixture
 expectation also assigns dinner candlelight to the house despite the source
 naming only a room; the conservative attribution gate intentionally refuses it.
 No automatic model escalation or private-book OpenAI disclosure was enabled.
+
+
+Final Q14 acceptance: 180 PostgreSQL/Redis/worker integration tests passed with
+12 explicit opt-in skips (438.27 s). The full run first exposed an obsolete API
+assertion that treated a shirt-only verdict as whole-profile coverage; the
+corrected regression verifies `unavailable` plus an unchecked scar, and a new
+complete-verdict API case verifies `applied`. Application coverage gates were
+not relaxed.
+
+The live Chromium synthetic product gate passed in 60.0 s on the final
+application with OpenAI `none` and normal bounded runtime limits. A profile was
+stored, its exact selected source quote was visibly highlighted, and downloaded
+JSON equalled the persisted revision. Real database checks confirmed local and
+OpenAI runs, 14 vectors and one revision. Reported query usage was 4,227 input
+and 3,528 output tokens (about $0.00219 at the same standard rates). The screenshot
+was inspected, and the normal web proxy was rebuilt and verified at port 8000
+after isolated port-18000 acceptance. No image or private-book provider call
+was involved. This proves the synthetic browser path, not complete factual
+precision or general novel reliability.
+
+Two fixture limits remain explicit: dinner candlelight is assigned to the house
+in an annotation although the quote names only a room; and journey/unknown-attire
+cases submit the same broad profile query with different expected outcomes.
+A profile can legitimately resolve with attire unknown and an inferred scar.
+Outcome agreement therefore also needs those scope qualifications.
