@@ -310,3 +310,15 @@ def test_registry_refs_publish_to_real_entities_without_widening_identity(story)
     facts = story.db.scalars(query(VisualFact).where(VisualFact.derivation_id == derivation)).all()
     assert len(facts) == 1 and facts[0].subject_id in plan.subject.entity_ids
     assert received and "entity:" in json.dumps(received)
+
+
+@pytest.mark.integration
+def test_changed_limits_do_not_reuse_a_consolidation(story):
+    from app.services.retrieval.consolidation import LIMITS
+    plan, expanded, _ = gathered(story, 2, "Arthur during the war")
+    adapter = RuleAdapter(consolidation_rule)
+    first = consolidate(story.engine, plan, expanded, adapter)
+    changed = consolidate(story.engine, plan, expanded, adapter, LIMITS.model_copy(update={"max_output_tokens": 8192}))
+    assert changed != first
+    rows = story.db.scalars(query(ModelRun).where(ModelRun.derivation_id.in_([first, changed]))).all()
+    assert {r.config["max_output_tokens"] for r in rows} == {4096, 8192}

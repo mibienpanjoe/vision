@@ -26,6 +26,7 @@ from app.models.works import Document, Work
 from app.providers.adjudication import INSTRUCTIONS, Adjudication, adjudication_request
 from app.providers.contracts import Limits, ProviderAdapter, SourceItem
 from app.providers.execution import execute, persist_run
+from app.providers.text_limits import query_limits
 from app.schemas.scope import SourceSpan
 from app.services.narrative.eligibility import latest
 from app.services.narrative.visual_facts import assertion_problem
@@ -118,7 +119,7 @@ def problem(source: Source, passages, mentioned, names, subject_ids, plan, canon
 
 
 def verify_state(db, plan, derivation_id: uuid.UUID, state: State, subject_ids, names: list[str],
-                 adjudicator: ProviderAdapter | None = None, limits: Limits = LIMITS) -> Verification:
+                 adjudicator: ProviderAdapter | None = None, limits: Limits | None = None) -> Verification:
     """Re-check every fact behind `state`'s traits; `names` are the subject's visible names (casefolded)."""
     result = Verification(state.event)
     fact_ids = {f for t in state.traits.values() for f in t.facts}
@@ -151,7 +152,8 @@ def verify_state(db, plan, derivation_id: uuid.UUID, state: State, subject_ids, 
                             for s in k.spans] for k in kept},
                 trait.reason)
     if adjudicator is not None:
-        adjudicate(db, plan, derivation_id, result, adjudicator, limits)
+        adjudicate(db, plan, derivation_id, result, adjudicator, limits or query_limits(
+            adjudicator, "adjudication", LIMITS))
     return result
 
 

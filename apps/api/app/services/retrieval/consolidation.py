@@ -27,6 +27,7 @@ from app.providers.consolidation import (
 )
 from app.providers.contracts import Limits, ProviderAdapter, SourceItem, adapter_version
 from app.providers.execution import execute, persist_run
+from app.providers.text_limits import query_limits
 from app.services.narrative.derivations import claim, ground
 from app.services.narrative.eligibility import latest, visible_narrative
 from app.services.narrative.events import publish_events
@@ -61,7 +62,8 @@ def request_item(plan, entities=()) -> str:
                       ensure_ascii=False)
 
 
-def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limits: Limits = LIMITS) -> uuid.UUID:
+def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limits: Limits | None = None) -> uuid.UUID:
+    limits = limits or query_limits(adapter, "consolidation", LIMITS)
     with Session(engine) as db:
         entities = latest(db, plan.generation_id, "entities")
         if entities is None:
@@ -74,7 +76,7 @@ def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limi
     if any(p.document_id != plan.document_id or (plan.cutoff is not None and (p.chapter_ordinal or 0) > plan.cutoff)
            for p in passages.values()):
         raise ValueError("consolidation input must lie inside the plan's reading boundary")
-    scope = scope_of(plan, expanded)
+    scope = {**scope_of(plan, expanded), "limits": limits.model_dump()}
     digest = hashlib.sha256(json.dumps(scope, sort_keys=True).encode()).hexdigest()
     version = f"{PROMPT_VERSION}/{Consolidation.schema_version}/{adapter_version(adapter)}"[:140] + f"/{digest[:16]}"
     derivation_id, attempt, owner_id, _ = claim(engine, plan.generation_id, STAGE, version, entities.id,

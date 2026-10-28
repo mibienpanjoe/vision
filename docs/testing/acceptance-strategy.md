@@ -635,3 +635,36 @@ garments, negated values and wrong sides retain regression coverage. Captured
 outputs can be rescored without repeating provider calls; authoritative boundary
 results from older traces without a passage map are retained and labelled, not
 reconstructed from ambiguous quote matching. New traces save the passage map.
+
+
+### Q12 comparison and Q13 calibration — 2026-10-28
+
+Four finite 17-case runs on the fixed application used the same evaluation-only
+128,000-output/200,000-total/300-second allowance. V3 outputs were uniformly
+rescored from saved full results with `annotation-match-v4`, retaining their
+original authoritative boundary checks; newer traces include the passage map.
+
+| Luna effort/run | Matched canonical annotations | Missed dispute values / inference | Outcome agreement | Median API-backed query | Reported-token USD estimate |
+|---|---|---|---|---|---|
+| `none` A | 15/23 | 2 / 1 | 14/17 | 11.815 s | $0.0134031 |
+| `low` A | 14/23 | 0 / 0 | 14/17 | 24.745 s | $0.0159060 |
+| `medium` A | 13/23 | 2 / 1 | 13/17 | 32.730 s | $0.0267219 |
+| `low` B | 11/23 | 2 / 1 | 13/17 | 16.110 s | $0.0155347 |
+
+All 98 calls succeeded; no annotated incorrect canonical claim or boundary leak
+was flagged. Unscored extras were 8/12/12/13 respectively, so these results do not
+establish complete precision. Low's repeat did not reproduce its initial
+uncertainty handling. `none` stays the inexpensive opt-in baseline, not a proven
+quality winner. Old word-overlap scores are not directly comparable. Shared-host
+latency, one small corpus and limited repetition prevent broader reliability
+claims; no held-out novel or stronger checker was measured.
+
+Consolidation peaks were 3,213 (`none`), 2,603/2,851 (`low`) and 5,995 (`medium`);
+adjudication peaks were 92, 159/121 and 181. The comparison's larger allowance
+is evaluation-only. Q13 separately calibrates finite opt-in production reasoning
+limits and reproduces a 6,000-token medium result through simulated HTTP plus
+real PostgreSQL/API publication. Source/event applicability, entity/component
+assignment and unsupported paraphrases still account for misses. A known fixture
+expectation also assigns dinner candlelight to the house despite the source
+naming only a room; the conservative attribution gate intentionally refuses it.
+No automatic model escalation or private-book OpenAI disclosure was enabled.

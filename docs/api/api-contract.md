@@ -682,3 +682,8 @@ verdict coverage and context; missing/duplicate/misquoted verdicts or truncated
 context produce `unavailable`. Trait `entailed` requires all surviving fact
 verdicts. Rejections can cite selected in-scope change passages, never future or
 other-document text. Public schemas are unchanged.
+
+Q13 selects finite text-provider limits by model, reasoning effort and stage;
+Luna reasoning no longer inherits Groq's output allowance. Runs retain actual
+limits and usage, and budget/timeout outcomes keep their existing safe codes.
+Explicit limits and effort separate reuse. Public schemas are unchanged.

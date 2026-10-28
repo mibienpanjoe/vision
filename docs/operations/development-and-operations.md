@@ -740,3 +740,24 @@ apply migrations, then start the matching images. Older candidate snapshots
 require version-specific offline recovery and usage reconciliation; upgrade an
 intact source and export a fresh snapshot/ledger for the supported release.
 
+
+
+### Luna reasoning allowances — Q13
+
+Luna `none` and Groq retain the original output/total/time bounds. Explicit Luna
+reasoning uses provider-specific bounded limits; this does not change the saved
+provider or effort, enable automatic escalation, or authorize private books.
+
+| Effort | Consolidation output / total / timeout | Adjudication output / total / timeout |
+|---|---|---|
+| `none` | 4,096 / 12,000 / 90 s | 2,048 / 8,000 / 60 s |
+| `low` | 8,192 / 24,000 / 120 s | 4,096 / 16,000 / 90 s |
+| `medium` and higher | 16,384 / 32,000 / 180 s | 8,192 / 24,000 / 120 s |
+
+Input-character and reading-boundary limits stay unchanged. Output includes
+internal reasoning, so a complete reasoning call can exceed the old Groq
+allowance; the Q12 medium measurement peaked at 5,995 output tokens. Higher
+efforts remain uncalibrated, with no quality claim. These finite allowances are
+not the model-native 128,000 ceiling used in isolated comparisons. Selected
+limits are recorded with runs and separate cache/derivation reuse. A larger
+allowance avoids truncation in more cases; it does not establish factual quality.

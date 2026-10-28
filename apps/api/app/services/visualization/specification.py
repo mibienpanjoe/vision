@@ -19,6 +19,7 @@ from app.providers.consolidation import Consolidation
 from app.providers.contracts import ProviderAdapter, adapter_version
 from app.providers.openai_compatible import GroqGateway
 from app.providers.openai_responses import OpenAIResponses
+from app.providers.text_limits import query_limits
 from app.schemas.outcomes import (
     ContextChoice,
     Failed,
@@ -48,6 +49,7 @@ from app.services.reconstruction.cache import lookup as lookup_cached
 from app.services.reconstruction.context import scene
 from app.services.reconstruction.scene import Member
 from app.services.retrieval import query_plan
+from app.services.retrieval.consolidation import LIMITS as CONSOLIDATION_LIMITS
 from app.services.retrieval.consolidation import consolidate
 from app.services.retrieval.entity_lookup import SubjectLookup
 from app.services.retrieval.evidence import collect
@@ -61,6 +63,7 @@ from app.services.retrieval.lexical import (
 )
 from app.services.retrieval.rerank import expand
 from app.services.retrieval.semantic import index_version, semantic
+from app.services.verification.claims import LIMITS as ADJUDICATION_LIMITS
 from app.services.verification.claims import (
     Verification,
     VerifiedTrait,
@@ -213,5 +216,9 @@ def versions(db, plan, adapter, embedder, judge, budget) -> dict:
             "index": str(indexed) if indexed else None, "query_plan": plan.rules_version,
             "consolidation": f"{CONSOLIDATION_PROMPT}/{Consolidation.schema_version}/{adapter_version(adapter)}",
             "adjudication": f"{ADJUDICATION_PROMPT}/{adapter_version(judge)}" if judge else None,
+            "text_limits": json.dumps({
+                "consolidation": query_limits(adapter, "consolidation", CONSOLIDATION_LIMITS).model_dump(),
+                "adjudication": query_limits(judge, "adjudication", ADJUDICATION_LIMITS).model_dump() if judge else None,
+            }, sort_keys=True),
             "gates": GATES_VERSION, "prompt": COMPOSE_VERSION, "spec": SPEC_VERSION, "fusion": json.dumps(WEIGHTS, sort_keys=True),
             "budget": [budget.passages, budget.characters]}

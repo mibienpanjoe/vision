@@ -199,7 +199,8 @@ def test_openai_wire_output_is_grounded_stored_and_cached_separately_by_effort(a
 
     def reply(body):
         output = annotated_consolidation(json.loads(body['input'][0]['content'])['sources'])
-        return {**server.reply[1], 'output': [{'type': 'message', 'content': [
+        return {**server.reply[1], 'usage': {'input_tokens': 40, 'output_tokens':
+                6000 if body['reasoning']['effort'] == 'medium' else 12}, 'output': [{'type': 'message', 'content': [
             {'type': 'output_text', 'text': json.dumps(output)}]}]}
 
     server.factory = reply
@@ -210,11 +211,14 @@ def test_openai_wire_output_is_grounded_stored_and_cached_separately_by_effort(a
     cached = store(api, 'openai-cached', query='Arthur at home after the war')
     assert cached.json()['result'] == stored['result'] and len(server.seen) == 1
     monkeypatch.setattr(specification, 'consolidation_adapter', lambda: OpenAIResponses(
-        'synthetic-key', effort='high', base_url=adapter.base_url))
-    changed = store(api, 'openai-high', query='Arthur at home after the war')
+        'synthetic-key', effort='medium', base_url=adapter.base_url))
+    changed = store(api, 'openai-medium', query='Arthur at home after the war')
     assert changed.json()['result']['outcome'] == 'resolved' and len(server.seen) == 2
     assert changed.json()['result']['data']['lineage']['consolidation_id'] != \
         stored['result']['data']['lineage']['consolidation_id']
     rows = story.db.scalars(select(ModelRun).where(ModelRun.provider == 'openai')).all()
-    assert {r.config['adapter']['reasoning'] for r in rows} == {'none', 'high'}
+    assert {r.config['adapter']['reasoning'] for r in rows} == {'none', 'medium'}
     assert all(r.outcome == 'succeeded' and r.input_tokens == 40 for r in rows)
+
+    assert server.seen[1][1]['max_output_tokens'] == 16384
+    assert any(r.output_tokens == 6000 and r.config['max_output_tokens'] == 16384 for r in rows)

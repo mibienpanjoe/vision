@@ -186,3 +186,10 @@ Q11 preserves existing uncertainty/scene policy: the optional checker does not
 settle documented disputes, and a negated holder is not an absent scene member.
 Verified entity labels are retained in composition/refinement. Registry aliases
 exclude pronouns and negated phrases; display-name ordering stabilizes refs.
+
+Q13 implements the authorized reasoning-budget calibration for opt-in Luna.
+Groq/`none` retain their bounds; low gets 8,192/4,096 output tokens and medium or
+higher 16,384/8,192 for consolidation/adjudication, with bounded total/time limits
+documented in operations. Selection and canonical/source gates are unchanged;
+limits separate cache/derivation reuse. No provider/default/disclosure-policy
+change or automatic escalation is introduced. Higher efforts are unmeasured.
