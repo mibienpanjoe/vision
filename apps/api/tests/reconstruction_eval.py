@@ -9,6 +9,8 @@ import json
 import re
 from pathlib import Path
 
+from app.services.reconstruction.state import attribute_key
+
 DATA = json.loads((Path(__file__).parent / "fixtures/narrative/expected.json").read_text(encoding="utf-8"))
 FACTS = {f["id"]: f for f in DATA["facts"]}
 SUBJECT_TEXT = {"arthur": "Arthur", "house": "the house by the ash tree", "mira": "Mira", "compass": "the brass compass",
@@ -17,7 +19,7 @@ LABELS = {"arthur": "Arthur", "house": "house by the ash tree", "mira": "Mira", 
           "sword": "silver sword", "wren": "Wren", "elodie": "Élodie", "brann": "Brann"}
 MOMENT_TEXT = {"child": "at ten", "war": "during the war", "journey": "travelling home after the war",
                "dinner": "at dinner after the war", "spring": "in the spring after the war"}
-SCORER_VERSION = "annotation-match-v3"
+SCORER_VERSION = "annotation-match-v4"
 STOP = {"the", "and", "with", "still", "his", "her", "its", "possibly", "persists", "established", "ending"}
 
 
@@ -58,7 +60,7 @@ MATCHES = {
     "compass-brass": (r"(?:material|compass_material)", ["brass"]),
     "sword-silver": (r"(?:material|sword_material|blade_material)", ["silver"]),
     "mira-compass": (r"(?:held_object|holding|carried_object|carries)", ["compass", "brass compass"]),
-    "home-compass": (r"(?:held_object(?:_at_dinner)?|holding|carried_object|carries)",
+    "home-compass": (r"(?:held|held_object(?:_at_dinner)?|holding|carried_object|carries)",
                      ["brass compass", "holding her brass compass", "holding a brass compass"]),
     "brann-sword": (r"(?:held_object|holding|carried_object|carries)", ["silver sword", "sword"]),
     "home-light": (r"(?:lighting|light)", ["warm candlelight"]),
@@ -72,10 +74,37 @@ def normalized(value):
 def matches(fid, trait, value):
     attribute, alternatives = MATCHES[fid]
     component = bool(re.fullmatch(attribute, trait["attribute"]))
+    if fid in {"child-coat", "war-armor", "home-no-armor", "home-shirt"}:
+        component = attribute_key(trait["attribute"]) == "attire"
+    if fid == "home-scar" and trait["attribute"] == "left_cheek_scar" and normalized(value) == "visible":
+        return True
     if fid in {"war-scar", "home-scar"} and trait["attribute"] == "cheek_scar":
         component = normalized(value).startswith("left cheek ")
     return component and normalized(value) in {
         normalized(v) for v in alternatives}
+
+
+GARMENTS = {"child-coat": "coat", "war-armor": "armor", "home-no-armor": "armor", "home-shirt": "shirt"}
+
+
+def garment_component(fid, trait):
+    component = GARMENTS.get(fid)
+    return component and trait["attribute"].replace("armour", "armor").split("_")[0] == component
+
+
+def satisfies(fid, traits, status):
+    own = [t for t in traits if t["status"] == status]
+    if any(matches(fid, t, v) for t in own for v in t["values"]):
+        return True
+    if fid not in GARMENTS:
+        return False
+    tokens = set()
+    for trait in own:
+        if garment_component(fid, trait):
+            for value in trait["values"]:
+                if not re.search(r"\b(not|no|without|removed|possibly|perhaps|maybe)\b", value, re.I):
+                    tokens |= words(value.replace("armour", "armor")) | {GARMENTS[fid]}
+    return words(FACTS[fid]["value"].replace("armour", "armor")) <= tokens
 
 
 def evaluate(case, body, passage_chapters: dict) -> dict:
@@ -95,7 +124,7 @@ def evaluate(case, body, passage_chapters: dict) -> dict:
     traits = member["traits"] if member else []
 
     def has(fid, status):
-        return any(matches(fid, t, v) for t in traits if t["status"] == status for v in t["values"])
+        return satisfies(fid, traits, status)
 
     report["missing"] = [fid for fid in case["canonical"] if not has(fid, "canonical")]
     report["inferred_missing"] = [fid for fid in case["inferred"] if not has(fid, "inferred")]
@@ -105,7 +134,9 @@ def evaluate(case, body, passage_chapters: dict) -> dict:
         if trait["status"] != "canonical":
             continue
         for value in trait["values"]:
-            if any(matches(fid, trait, value) for fid in case["canonical"]):
+            if any(matches(fid, trait, value) or has(fid, "canonical") and garment_component(fid, trait)
+                   and words(value) <= words(FACTS[fid]["value"])
+                   for fid in case["canonical"]):
                 continue
             wrong = [fid for fid in case["excluded"] + case["disputed"] + case["inferred"]
                      if fid in MATCHES and FACTS[fid]["subject"] == case["subject"] and matches(fid, trait, value)]

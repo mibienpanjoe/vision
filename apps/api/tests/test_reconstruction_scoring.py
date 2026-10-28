@@ -59,3 +59,28 @@ def test_left_cheek_in_the_complete_value_can_qualify_a_component_attribute():
 
 def test_worn_coat_attribute_keeps_complete_garment_matching():
     assert "child-coat" not in score("child-before-war", "coat_worn", ["blue wool coat"])["missing"]
+
+
+def test_split_coat_properties_require_the_full_garment_description():
+    case = next(c for c in DATA["cases"] if c["id"] == "child-before-war")
+    traits = [{"attribute": "coat_color", "status": "canonical", "values": ["blue"], "evidence": []},
+              {"attribute": "coat_material", "status": "canonical", "values": ["wool"], "evidence": []}]
+    body = {"outcome": "resolved", "data": {"subject": {"entity": {"label": "Arthur"}, "traits": traits,
+                                                       "unknown": []}, "participants": [], "world": []}}
+    assert "child-coat" not in evaluate(case, body, {})["missing"]
+    traits.pop()
+    assert "child-coat" in evaluate(case, body, {})["missing"]
+
+
+def test_scar_condition_and_complete_held_object_are_recognized():
+    assert "home-scar" not in score("home-eye-conflict", "left_cheek_scar", ["visible"])["missing"]
+    assert "home-compass" not in score("mira-dinner", "held", ["brass compass"], label="Captain Mira")["missing"]
+
+
+def test_properties_of_different_garments_cannot_complete_one_coat():
+    case = next(c for c in DATA["cases"] if c["id"] == "child-before-war")
+    traits = [{"attribute": "coat_color", "status": "canonical", "values": ["blue"], "evidence": []},
+              {"attribute": "shirt_material", "status": "canonical", "values": ["wool"], "evidence": []}]
+    body = {"outcome": "resolved", "data": {"subject": {"entity": {"label": "Arthur"}, "traits": traits,
+                                                       "unknown": []}, "participants": [], "world": []}}
+    assert "child-coat" in evaluate(case, body, {})["missing"]

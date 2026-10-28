@@ -625,3 +625,13 @@ phrases (`holding her brass compass`, `left-cheek scar visible`, `coat_worn`)
 while retaining wrong-attribute, incomplete-garment and wrong-side regressions.
 V2 reports remain separate. These curated alternatives do not establish general
 semantic entailment; unrecognized paraphrases remain unscored.
+
+Q12 additionally tests legitimate split garment properties: coat color and
+material can jointly satisfy a complete coat description, while properties of
+different garments cannot. `annotation-match-v4` also recognizes a scar's
+`visible` condition when its attribute explicitly identifies the left-cheek
+scar, and complete held-object/garment synonyms. Wrong attributes, incomplete
+garments, negated values and wrong sides retain regression coverage. Captured
+outputs can be rescored without repeating provider calls; authoritative boundary
+results from older traces without a passage map are retained and labelled, not
+reconstructed from ambiguous quote matching. New traces save the passage map.

@@ -44,13 +44,14 @@ def test_live_reconstruction_of_every_annotated_case(database, monkeypatch, tmp_
     from app.services.visualization import specification
     capture = CaptureAdapter(adapter)
     monkeypatch.setattr(specification, "consolidation_adapter", lambda: capture)
-    stage_trace, results = [], []
+    stage_trace, results, passage_chapters = [], [], {}
     trace = Path(__file__).parents[3] / ".local/measurements" / (
         f"reconstruction-{adapter.provider}-{adapter.model}-{getattr(adapter, 'effort', 'default')}-{SCORER_VERSION}-trace.json")
     def save_trace():
         trace.parent.mkdir(parents=True, exist_ok=True)
         trace.write_text(json.dumps({"scorer_version": SCORER_VERSION, "source_sha256": DATA["source_sha256"],
-                                     "cases": results, "all_calls": capture.calls, "all_stages": stage_trace}, indent=1, ensure_ascii=False))
+                                     "cases": results, "all_calls": capture.calls, "all_stages": stage_trace,
+                                     "passage_chapters": passage_chapters}, indent=1, ensure_ascii=False))
     request.addfinalizer(save_trace)  # Retain charged attempts even if a case raises before its result is scored.
     verify = specification.verify_state
     def traced_verify(*args, **kwargs):

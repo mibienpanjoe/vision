@@ -485,7 +485,7 @@ uv run --project apps/api --locked pytest apps/api/tests/test_live_reconstructio
 ```
 
 The 17-case evaluation is capped at 50 OpenAI transport attempts and writes a
-separate ignored `reconstruction-openai-gpt-6-luna-none-annotation-match-v3.json`
+separate ignored `reconstruction-openai-gpt-6-luna-none-annotation-match-v4.json`
 in `.local/measurements`, preserving historical reports. A companion `-trace.json`
 retains requests/responses and stage decisions for this pinned synthetic corpus
 only; production/private-book source logging stays disabled. It records quality, API latency and
