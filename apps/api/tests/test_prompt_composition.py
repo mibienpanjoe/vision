@@ -46,3 +46,17 @@ def test_marks_on_the_face_come_first_for_every_person():
                       "Wren's forehead in clear view, showing burn mark. Wren's right temple in clear view, on the left "
                       "side of the image as Wren faces the viewer, showing tattoo. Wren's hair: red. "
                       "Also in the scene, 1 other person: Brann (left jaw in clear view, showing old scar; attire: cloak)")
+
+
+def test_a_negated_holder_does_not_remove_that_person_from_the_scene():
+    from app.services.verification.claims import (
+        Verification,
+        VerifiedTrait,
+        prompt_problems,
+    )
+    sword = member("silver sword", "object", "subject", held_by="Brann")
+    arthur = member("Arthur", "character", "participant")
+    prompt, negative = compose_prompt(sword, [arthur], [], [], None, False, ["Arthur"])
+    assert "Arthur" in prompt and "Arthur" not in negative
+    verified = Verification("battle", {"held_by": VerifiedTrait("held_by", "canonical", ["Brann"], [], {})})
+    assert prompt_problems(prompt, verified, ["Arthur"], {}, [], entities=["silver sword", "Arthur"]) == []

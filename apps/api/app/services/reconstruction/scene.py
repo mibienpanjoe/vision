@@ -69,7 +69,7 @@ def compose_scene(facts: list[Fact], chronology: Chronology, event, subject: Ent
     `carriers` maps an object's label to the label of whoever the text says carries it."""
     carriers = carriers or {}
     scene = Scene("resolved", event)
-    tied = {f.subject for f in facts if f.events and position(f, event, chronology) == "direct"}
+    tied = {f.subject for f in facts if f.explained and f.events and position(f, event, chronology) == "direct"}
 
     def present(entity: Entity) -> bool:
         return bool(entity.ids & (event_participants | tied))

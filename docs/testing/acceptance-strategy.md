@@ -464,3 +464,232 @@ Returning to that untouched source is a rollback only before accepting new user
 writes on the target. Afterwards, recover from the current state and latest
 deletion ledger into another empty target; do not run an older image against a
 newer schema or replace a live database in place.
+
+## OpenAI text evaluation — Q01
+
+DEC-53 adds an opt-in text adapter, not a replacement for the accepted private-book
+provider. `test_openai_responses.py` covers the real HTTP wire using a local
+synthetic endpoint: strict copied schemas, defaulted fields, bounded tool-free
+requests, missing usage, HTTP failures, incomplete/refused responses, retained
+charged usage, cancellation, explicit provider selection and effort-dependent
+cache/derivation identity. Its PostgreSQL/API case grounds and stores output,
+proves cache reuse and separates a changed effort. These tests simulate OpenAI;
+the following opt-in measurements use the real provider.
+
+The 2026-10-27 synthetic evaluation used the production local narrative worker,
+pinned local embeddings and GPT-6 Luna through the Responses API. The initial
+effort comparisons kept the existing 4,096-token consolidation and 2,048-token
+adjudication bounds; Q03 separately lifts those bounds in an isolated evaluation.
+Every cited span still passed local grounding and reading-boundary checks.
+
+| Variant | Outcomes matching annotations | Canonical found (heuristic) | Flagged incorrect / leaks | Median API-backed query | Reported-token USD estimate |
+|---|---|---|---|---|---|
+| Historical Groq T33, 2026-10-21 | 13/17 | 14/23 | 0 / 0 | 5.1 s | Not repriced here |
+| Luna, low reasoning | 6/17 | 6/23 | 0 / 0 | 39.2 s | $0.02730 |
+| Luna, no extra reasoning | 12/17 | 17/23 | 0 / 0 | 20.9 s | $0.01605 |
+| Luna, medium reasoning | 6/17 | 4/23 | 0 / 0 | 38.1 s | $0.02909 |
+| Luna, low reasoning, native output allowance | 11/17 | 17/23 | 0 / 0 | 31.6 s | $0.02598 |
+| Luna, medium reasoning, native output allowance | 12/17 | 13/23 | 1 / 0 | 39.9 s | $0.03244 |
+
+Low effort exhausted the consolidation output budget nine times; another call
+was unavailable. No extra reasoning completed all 22 provider calls without a
+budget/refusal failure. It used 29,159 input and 26,268 output tokens across the
+17 questions; total query time was 342.2 s, plus 33 s local ingestion. Low used
+30,126 input and 48,568 output tokens, with 609.8 s query time. These are
+reported-token estimates at standard uncached Luna rates, not invoices; unknown
+usage, caching, taxes and future price changes can change billed totals.
+
+The follow-up medium-effort run kept those same token limits and completed all
+17 cases in 553.1 s query time plus 21.7 s local ingestion. Nine consolidation
+requests exhausted the 4,096-output-token cap; 10 other provider calls succeeded.
+Reported usage was 30,042 input and 52,162 output tokens. This is a constrained
+configuration result, not a quality comparison with adequate reasoning allowance:
+many requests failed before returning a complete answer. No annotated incorrect
+canonical claim or spoiler leak was scored; three unannotated extras remain
+unscored. Q04 below separately tests medium with the larger allowance. The
+saved default and limits were not changed.
+
+Q03 retries low effort with Luna's model-native 128,000-output-token ceiling,
+a 200,000-total-token guard and a 300-second per-call timeout for consolidation
+and adjudication. These are evaluation-only fixture overrides; production limits,
+input selection, prompts and saved provider settings are unchanged. A first
+attempt exposed an application error: a stored model assumption was dropped
+before an inferred trait reached response validation. That interrupted run is
+not a completed comparison. A deterministic API regression reproduced the error;
+Q03's reason-propagation fix preserves the assumption without making it canonical.
+
+The completed fresh run after that fix had 21 successful provider calls, no token
+budget failures and no timeouts. Five calls exceeded 4,096 output tokens; the
+maximum was 6,625. It reported 29,121 input and 46,130 output tokens, with 448.1 s
+query time plus 28.1 s ingestion. The $0.02598 estimate covers this completed run
+only, excluding the interrupted attempt. No annotated incorrect canonical claim
+or spoiler leak was scored; three unannotated extras remain unscored. The larger
+allowance recovered low effort's capped recall from 6/23 to 17/23, matching the
+`none` run's trait count while remaining slower and more expensive. It did not
+recover all expected traits or establish real-book reliability. Reports preserve
+the capped baseline byte-for-byte and save native limits plus per-call metadata
+separately in the ignored measurement directory.
+
+Q04 repeats medium effort with the same evaluation-only 128,000-output-token,
+200,000-total-token and 300-second limits as Q03. All 17 cases completed, but the
+quality assertion failed: the heuristic scored 13/23 expected canonical traits
+and flagged one claim in `house-war`. The returned `roof_material`
+was `slate`, matching the intact/restored roof annotations rather than the
+wartime destroyed-roof state. Q05 below identifies a scoring ambiguity in this
+flag; it does not prove an intact-roof claim. No spoiler leak was scored; two
+unannotated extras remain unscored. Outcome agreement was 12/17 and does not override that failure.
+
+All 22 provider calls succeeded. Five exceeded 4,096 output tokens and the largest
+used 9,006. Reported usage was 29,566 input plus 58,957 output tokens (88,523 total),
+with 594.5 s query time plus 18.4 s ingestion and a 39.945 s API-backed median.
+The standard uncached reported-token estimate is $0.03244. Pytest completed with
+one failed quality assertion in 617.44 s; this is a completed measurement, not a
+passing acceptance gate. The capped medium report was preserved byte-for-byte;
+separate native-output and per-call metadata reports remain ignored. No prompts,
+source selection, production limits, saved settings or private-book policy were
+changed. The larger allowance improved medium's capped trait count from 4/23 to
+13/23, but medium scored fewer traits than low/none and triggered an error flag
+in this single synthetic run.
+
+Q05 audits these measurements before further model tuning. The evaluator matches
+any content word without checking the attribute: a fabricated blue-hair trait
+satisfies the expected blue coat. It also flags `roof_material=slate` as an
+intact/restored roof, although the wartime destruction sentence itself names
+slate. Historical counts above remain unchanged as heuristic scores; they are
+not semantic recall or proof of an intact-roof error. Full corrected scores
+cannot be recovered from summaries that omit the original specifications.
+
+A diagnostic replay with real local ingestion/embeddings and a stub replacing
+all OpenAI calls completed in 34.79 s. All 14 consolidation invocations had
+complete selections, no omitted passages and no unexpanded contexts; the missing
+Mira, compass and roof evidence was available. This establishes synthetic input
+availability, not real-book retrieval quality or live-model reconstruction. Code
+inspection also finds that adjudication receives the broad moment instead of
+both moment and scene, fact subjects resolve only by exact entity label, and
+adjudication lacks change passages beyond the claim's own evidence passages.
+These warrant targeted evaluation/request-contract improvements before more
+reasoning-level comparisons. No production behavior or accepted decision was
+changed by this investigation.
+
+The OpenAI opt-in continues to default to `none`; `low` and `medium` remain
+selectable for evaluation. The comparison does not establish that Luna is
+uniformly better: the `none` run improved the heuristic canonical score against
+the historical Groq run, while outcome agreement
+was lower, and response time was slower. Runs occurred on a shared development
+host at different times. Six annotated canonical traits remain missing under
+`none`, including unresolved house/Mira/childhood-compass cases and the incomplete
+eye-conflict result. No private books or image-generation calls were involved.
+The separate ignored reports preserve both variants and the earlier baseline.
+
+The live Chromium product gate also passed with the production API/worker and
+Luna `none`: a stored canonical profile, an exact selected source highlight and
+JSON export equal to the persisted revision. Database checks found local/OpenAI
+run records, 14 vectors and one revision; query usage was 2,504 input and 3,626
+output tokens (about $0.00206 at the same uncached rates). No image was requested.
+This proves the synthetic browser path, not private-book suitability or faster
+responses. The browser proxy was built and checked against the isolated API
+before the successful run.
+
+
+### Q06 — versioned annotation matching and synthetic replay
+
+New runs use `annotation-match-v2`: subject labels (including title variants),
+curated attribute/component patterns and complete value alternatives must match.
+Material alone does not assert roof condition; a shared color cannot satisfy a
+different attribute or a whole garment description. Inferred and disputed
+claims are scored separately; a missing evidence passage mapping fails the
+boundary check. Unrecognized paraphrases remain unscored extras. This is a
+curated synthetic matcher, not a general semantic entailment judge or a complete
+precision measurement. Historical word-overlap reports stay unchanged and must
+not be compared as if they used this scorer.
+
+The opt-in live synthetic test validates the pinned story digest, captures the
+full request/response without serializing adapter credentials, and saves each
+case's full result, consolidation rejections/scope and verification removals.
+A teardown capture retains attempted calls if a case raises. These artifacts
+live only in ignored `.local/measurements`; application/private-book logging is
+unchanged. A replay adapter checks exact request digests before returning a
+captured result and refuses changed or exhausted requests without network calls.
+Reports and trace filenames include the scorer version to preserve baselines.
+
+
+Q11's first fully traced run revealed and reproduced two application defects:
+the checker erased both sides of an explicit record dispute, and a negated
+holder's name triggered a global excluded-value prompt failure while that person
+was a verified scene member. Regression coverage now preserves disputes and
+member labels through composition/refinement. Synthetic traces also retain
+reconstruction traits/exclusions and prompt-gate failures.
+
+The matcher is refined as `annotation-match-v3` with source-supported complete
+phrases (`holding her brass compass`, `left-cheek scar visible`, `coat_worn`)
+while retaining wrong-attribute, incomplete-garment and wrong-side regressions.
+V2 reports remain separate. These curated alternatives do not establish general
+semantic entailment; unrecognized paraphrases remain unscored.
+
+Q12 additionally tests legitimate split garment properties: coat color and
+material can jointly satisfy a complete coat description, while properties of
+different garments cannot. `annotation-match-v4` also recognizes a scar's
+`visible` condition when its attribute explicitly identifies the left-cheek
+scar, and complete held-object/garment synonyms. Wrong attributes, incomplete
+garments, negated values and wrong sides retain regression coverage. Captured
+outputs can be rescored without repeating provider calls; authoritative boundary
+results from older traces without a passage map are retained and labelled, not
+reconstructed from ambiguous quote matching. New traces save the passage map.
+
+
+### Q12 comparison and Q13 calibration — 2026-10-28
+
+Four finite 17-case runs on the fixed application used the same evaluation-only
+128,000-output/200,000-total/300-second allowance. V3 outputs were uniformly
+rescored from saved full results with `annotation-match-v4`, retaining their
+original authoritative boundary checks; newer traces include the passage map.
+
+| Luna effort/run | Matched canonical annotations | Missed dispute values / inference | Outcome agreement | Median API-backed query | Reported-token USD estimate |
+|---|---|---|---|---|---|
+| `none` A | 15/23 | 2 / 1 | 14/17 | 11.815 s | $0.0134031 |
+| `low` A | 14/23 | 0 / 0 | 14/17 | 24.745 s | $0.0159060 |
+| `medium` A | 13/23 | 2 / 1 | 13/17 | 32.730 s | $0.0267219 |
+| `low` B | 11/23 | 2 / 1 | 13/17 | 16.110 s | $0.0155347 |
+
+All 98 calls succeeded; no annotated incorrect canonical claim or boundary leak
+was flagged. Unscored extras were 8/12/12/13 respectively, so these results do not
+establish complete precision. Low's repeat did not reproduce its initial
+uncertainty handling. `none` stays the inexpensive opt-in baseline, not a proven
+quality winner. Old word-overlap scores are not directly comparable. Shared-host
+latency, one small corpus and limited repetition prevent broader reliability
+claims; no held-out novel or stronger checker was measured.
+
+Consolidation peaks were 3,213 (`none`), 2,603/2,851 (`low`) and 5,995 (`medium`);
+adjudication peaks were 92, 159/121 and 181. The comparison's larger allowance
+is evaluation-only. Q13 separately calibrates finite opt-in production reasoning
+limits and reproduces a 6,000-token medium result through simulated HTTP plus
+real PostgreSQL/API publication. Source/event applicability, entity/component
+assignment and unsupported paraphrases still account for misses. A known fixture
+expectation also assigns dinner candlelight to the house despite the source
+naming only a room; the conservative attribution gate intentionally refuses it.
+No automatic model escalation or private-book OpenAI disclosure was enabled.
+
+
+Final Q14 acceptance: 180 PostgreSQL/Redis/worker integration tests passed with
+12 explicit opt-in skips (438.27 s). The full run first exposed an obsolete API
+assertion that treated a shirt-only verdict as whole-profile coverage; the
+corrected regression verifies `unavailable` plus an unchecked scar, and a new
+complete-verdict API case verifies `applied`. Application coverage gates were
+not relaxed.
+
+The live Chromium synthetic product gate passed in 60.0 s on the final
+application with OpenAI `none` and normal bounded runtime limits. A profile was
+stored, its exact selected source quote was visibly highlighted, and downloaded
+JSON equalled the persisted revision. Real database checks confirmed local and
+OpenAI runs, 14 vectors and one revision. Reported query usage was 4,227 input
+and 3,528 output tokens (about $0.00219 at the same standard rates). The screenshot
+was inspected, and the normal web proxy was rebuilt and verified at port 8000
+after isolated port-18000 acceptance. No image or private-book provider call
+was involved. This proves the synthetic browser path, not complete factual
+precision or general novel reliability.
+
+Two fixture limits remain explicit: dinner candlelight is assigned to the house
+in an annotation although the quote names only a room; and journey/unknown-attire
+cases submit the same broad profile query with different expected outcomes.
+A profile can legitimately resolve with attire unknown and an inferred scar.
+Outcome agreement therefore also needs those scope qualifications.

@@ -110,7 +110,7 @@ def test_adjudication_only_removes_with_a_quote_and_never_approves_alone(home):
     adapter = RuleAdapter(verdict_rule({"plain linen shirt": ("entailed", None),
                                         "scar still visible": ("contradicted", "his scar had healed")}))
     verified = verify_state(story.db, plan, derivation_id, state, subject, ["arthur"], adapter)
-    assert verified.adjudication == "applied"
+    assert verified.adjudication == "unavailable"  # The misquoted second verdict is missing coverage.
     assert verified.traits["attire"].adjudication == "entailed"
     assert verified.traits["left_cheek"].values == ["scar still visible"]  # the mis-quoted verdict counted for nothing
     quoted = RuleAdapter(verdict_rule({"scar still visible": ("not_entailed", None)}))
@@ -162,3 +162,101 @@ def test_live_groq_adjudication_sample(home):
                       "traits": {k: [t.status, t.values, t.adjudication] for k, t in verified.traits.items()},
                       "tokens": [run.input_tokens, run.output_tokens], "ms": run.duration_ms}, indent=1))
     assert verified.adjudication in {"applied", "unavailable"}
+
+
+@pytest.mark.integration
+def test_adjudicator_keeps_scene_query_and_grounded_resolved_event(home):
+    story, plan, derivation_id, state, _ = home
+    seen = []
+    def rule(sources):
+        seen.extend(json.loads(s["text"]) for s in sources)
+        return {"verdicts": []}
+    verify_state(story.db, plan, derivation_id, state, set(plan.subject.entity_ids), ["arthur"], RuleAdapter(rule))
+    assert seen
+    for claim in seen:
+        assert claim["request"] == "Arthur at home after the war"
+        assert claim["scene"] == "at home" and claim["moment"] == "after the war"
+        assert claim["resolved_event"]["label"] == "dinner"
+        assert claim["resolved_event"]["quotes"]
+        assert all("ref" in q and "quote" in q for q in claim["resolved_event"]["quotes"])
+
+
+@pytest.mark.integration
+def test_partial_verdicts_do_not_report_complete_adjudication(home):
+    story, plan, derivation_id, state, _ = home
+    verified = verify_state(story.db, plan, derivation_id, state, set(plan.subject.entity_ids), ["arthur"],
+                            RuleAdapter(verdict_rule({"plain linen shirt": ("entailed", None)})))
+    assert verified.adjudication == "unavailable"
+    assert verified.traits["left_cheek"].adjudication == "unchecked"
+
+
+@pytest.mark.integration
+def test_checker_can_reject_from_a_selected_change_passage(home):
+    story, plan, derivation_id, state, _ = home
+    arthur = plan.subject.entity_ids[0]
+    wrong = planted(story, derivation_id, arthur, "attire", "steel armor", "fact", "Arthur wore steel",
+                    "Arthur wore steel armor.", events=[state.event])
+    forged = State("resolved", state.event, traits={"attire": Trait("attire", "canonical", ["steel armor"], [wrong])})
+    seen = []
+    quote = 'No, I removed it before dinner,'
+    def rule(sources):
+        seen.extend(json.loads(s["text"]) for s in sources)
+        return {"verdicts": [{"claim": "c0", "verdict": "contradicted", "quote": quote}]}
+    verified = verify_state(story.db, plan, derivation_id, forged, {arthur}, ["arthur"], RuleAdapter(rule))
+    assert "attire" not in verified.traits
+    assert verified.removed[wrong] == "adjudicated_contradicted"
+    assert any(quote in p["text"] for claim in seen for p in claim.get("related_passages", []))
+    assert all('I was Wren at ten' not in p["text"] for claim in seen for p in claim.get("related_passages", []))
+
+
+@pytest.mark.integration
+def test_truncated_checker_context_stays_unchecked_and_inside_input_limit(home):
+    from app.providers.contracts import Limits
+    story, plan, derivation_id, state, _ = home
+    calls = []
+    def rule(sources):
+        calls.extend(json.loads(s["text"]) for s in sources)
+        return {"verdicts": [{"claim": s["ref"], "verdict": "entailed", "quote": json.loads(s["text"])["quotes"][0]}
+                             for s in sources]}
+    from app.providers.adjudication import INSTRUCTIONS
+    verify_state(story.db, plan, derivation_id, state, set(plan.subject.entity_ids), ["arthur"], RuleAdapter(rule))
+    complete_size = len(INSTRUCTIONS) + sum(len(json.dumps(c, ensure_ascii=False)) for c in calls)
+    assert calls[0]["related_complete"] is True
+    calls.clear()
+    verified = verify_state(story.db, plan, derivation_id, state, set(plan.subject.entity_ids), ["arthur"],
+                            RuleAdapter(rule), Limits(max_input_chars=complete_size - 1))
+    assert calls and calls[0]["related_complete"] is False
+    assert verified.adjudication == "unavailable"
+    assert all(t.adjudication == "unchecked" for t in verified.traits.values())
+
+
+@pytest.mark.integration
+def test_adjudication_does_not_settle_or_erase_documented_disputes(story):
+    plan, expanded, _ = gathered(story, 4, "Arthur at dinner after the war")
+    derivation_id = consolidate(story.engine, plan, expanded, RuleAdapter(annotated_consolidation))
+    story.db.expire_all()
+    state, _ = appearance(story.db, plan, derivation_id)
+    assert state.traits["eyes"].status == "disputed"
+    verified = verify_state(story.db, plan, derivation_id, state, set(plan.subject.entity_ids), ["arthur"],
+                            RuleAdapter(verdict_rule({"green": ("not_entailed", None), "blue": ("not_entailed", None)})))
+    assert verified.traits["eyes"].status == "disputed"
+    assert set(verified.traits["eyes"].values) == {"green", "blue"}
+
+
+@pytest.mark.integration
+def test_larger_total_input_cannot_overfill_one_source_item(home):
+    from app.models.model_runs import Derivation
+    from app.providers.contracts import Limits
+    story, plan, derivation_id, state, _ = home
+    derivation = story.db.get(Derivation, derivation_id)
+    derivation.scope = {**derivation.scope, "spans": derivation.scope["spans"] * 12}
+    story.db.commit()
+    seen = []
+    def rule(sources):
+        seen.extend(sources)
+        return {"verdicts": [{"claim": s["ref"], "verdict": "entailed", "quote": json.loads(s["text"])["quotes"][0]}
+                             for s in sources]}
+    result = verify_state(story.db, plan, derivation_id, state, set(plan.subject.entity_ids), ["arthur"],
+                          RuleAdapter(rule), Limits(max_input_chars=48_000))
+    assert seen and all(len(s["text"]) <= 16_000 for s in seen)
+    assert result.adjudication == "unavailable" and json.loads(seen[0]["text"])["related_complete"] is False

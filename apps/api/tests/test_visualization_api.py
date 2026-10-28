@@ -35,7 +35,8 @@ def test_resolved_specification_cites_resolvable_in_scope_evidence(api):
                                        "left_cheek": ("canonical", ["scar still visible"])}
     assert {"hair", "eyes"} <= set(spec["subject"]["unknown"])
     assert next(t for t in spec["subject"]["traits"] if t["attribute"] == "attire")["adjudication"] == "entailed"
-    assert spec["verification"]["adjudication"] == "applied"
+    assert spec["verification"]["adjudication"] == "unavailable"  # Fixture supplies only the shirt verdict.
+    assert next(t for t in spec["subject"]["traits"] if t["attribute"] == "left_cheek")["adjudication"] == "unchecked"
     assert set(spec["lineage"]["processing"]) == {"query_plan", "consolidation", "index", "parser"}
     assert spec["lineage"]["processing"]["index"].startswith("index-v1/deterministic/hashed-v1")
     assert "plain linen shirt" in spec["generation"]["prompt"] and "steel armor" not in spec["generation"]["prompt"]
@@ -86,6 +87,24 @@ def test_interpretation_adds_labelled_creative_choices_without_changing_canon(ap
         ("style", "sepia ink wash"), ("hair", "artist's choice"), ("eyes", "artist's choice")}
     assert all(c["support"] == "creative" for c in styled["creative"]) and canon["creative"] == []
     assert '"sepia ink wash"' not in styled["generation"]["prompt"] and "sepia ink wash" in styled["generation"]["prompt"]
+
+
+def test_direct_provider_inference_keeps_its_stored_assumption_in_the_response(api, monkeypatch):
+    assumption = "The shirt is inferred to remain worn at dinner after the described change."
+
+    def inferred(sources):
+        result = annotated_consolidation(sources)
+        for fact in result["facts"]:
+            if fact["subject"] == "Arthur" and fact["attribute"] == "attire" and fact["value"] == "plain linen shirt":
+                fact.update(support="inferred", assumption=assumption)
+        return result
+
+    monkeypatch.setattr(specification, "consolidation_adapter", lambda: RuleAdapter(inferred))
+    created = store(api, "direct-inference", query="Arthur at home after the war")
+    assert created.status_code == 201, created.text
+    trait = next(t for t in created.json()["result"]["data"]["subject"]["traits"] if t["attribute"] == "attire")
+    assert (trait["status"], trait["reason"]) == ("inferred", assumption)
+    assert trait["evidence"] and trait["adjudication"] == "unchecked"
 
 
 def test_scene_requests_keep_members_and_place_evidence(api):
@@ -193,3 +212,13 @@ def test_stored_citations_stay_resolvable_after_new_consolidations(api, monkeypa
             assert clients["reader"].post(f"/v1/works/{work_id}/evidence", headers=ORIGIN, json={
                 "span": span, "parser_revision": again["result"]["data"]["scope"]["parser_revision"],
                 "reading_boundary": boundary}).status_code == 200
+
+
+def test_complete_quoted_verdict_coverage_is_applied_at_the_api(api, monkeypatch):
+    from tests.test_grounding_verification import verdict_rule
+    monkeypatch.setattr(specification, "adjudicator", lambda _: RuleAdapter(verdict_rule({
+        "plain linen shirt": ("entailed", None), "scar still visible": ("entailed", None)})))
+    compose, *_ = api
+    spec = outcome(compose(chapter=3, query="Arthur at home after the war"))["data"]
+    assert spec["verification"]["adjudication"] == "applied"
+    assert all(t["adjudication"] == "entailed" for t in spec["subject"]["traits"] if t["status"] == "canonical")

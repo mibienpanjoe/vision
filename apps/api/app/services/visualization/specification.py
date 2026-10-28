@@ -16,8 +16,10 @@ from app.models.visual_facts import VisualFact
 from app.providers.adjudication import PROMPT_VERSION as ADJUDICATION_PROMPT
 from app.providers.consolidation import PROMPT_VERSION as CONSOLIDATION_PROMPT
 from app.providers.consolidation import Consolidation
-from app.providers.contracts import ProviderAdapter
+from app.providers.contracts import ProviderAdapter, adapter_version
 from app.providers.openai_compatible import GroqGateway
+from app.providers.openai_responses import OpenAIResponses
+from app.providers.text_limits import query_limits
 from app.schemas.outcomes import (
     ContextChoice,
     Failed,
@@ -47,6 +49,7 @@ from app.services.reconstruction.cache import lookup as lookup_cached
 from app.services.reconstruction.context import scene
 from app.services.reconstruction.scene import Member
 from app.services.retrieval import query_plan
+from app.services.retrieval.consolidation import LIMITS as CONSOLIDATION_LIMITS
 from app.services.retrieval.consolidation import consolidate
 from app.services.retrieval.entity_lookup import SubjectLookup
 from app.services.retrieval.evidence import collect
@@ -60,6 +63,7 @@ from app.services.retrieval.lexical import (
 )
 from app.services.retrieval.rerank import expand
 from app.services.retrieval.semantic import index_version, semantic
+from app.services.verification.claims import LIMITS as ADJUDICATION_LIMITS
 from app.services.verification.claims import (
     Verification,
     VerifiedTrait,
@@ -75,7 +79,12 @@ RETRYABLE = frozenset({"PROVIDER_RATE_LIMITED", "PROVIDER_TIMEOUT", "PROVIDER_UN
 
 
 def consolidation_adapter() -> ProviderAdapter | None:
-    return GroqGateway.from_environment()
+    provider = os.environ.get("VISION_QUERY_PROVIDER", "groq")
+    if provider == "groq":
+        return GroqGateway.from_environment()
+    if provider == "openai":
+        return OpenAIResponses.from_environment()
+    return None
 
 
 def adjudicator(adapter: ProviderAdapter | None) -> ProviderAdapter | None:
@@ -166,11 +175,13 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
     excluded_ids = [f for m in [*composed.members, *composed.world] for f, reason in m.state.excluded.items()
                     if reason in RULED_OUT]
     excluded_values = list(db.scalars(select_rows(VisualFact.value).where(VisualFact.id.in_(excluded_ids))))
+    present_labels = [m.entity.label for m in verified]
+    excluded_values = [v for v in excluded_values if v.casefold() not in {n.casefold() for n in present_labels}]
     prompt, negative = compose_prompt(subject_view, participants, world, creative, plan.style,
                                       plan.creative_mode == "interpretation", excluded_values)
     gate = Verification(composed.event, {f"{m.entity.label}:{t.attribute}": VerifiedTrait(
         t.attribute, t.status, t.values, [], {}) for m in verified for t in m.traits})
-    if prompt_problems(prompt, gate, excluded_values, {}, [c.value for c in creative]):
+    if prompt_problems(prompt, gate, excluded_values, {}, [c.value for c in creative], entities=present_labels):
         return failed("PROMPT_GATE_FAILED", "The composed prompt did not pass verification.", correlation_id)
 
     spec = VisualSpecification(
@@ -203,7 +214,11 @@ def versions(db, plan, adapter, embedder, judge, budget) -> dict:
         Derivation.processing_version == index_version(embedder), Derivation.status == "succeeded"))
     return {"entities": str(entities.id), "appearance": str(appearance.id) if appearance else None,
             "index": str(indexed) if indexed else None, "query_plan": plan.rules_version,
-            "consolidation": f"{CONSOLIDATION_PROMPT}/{Consolidation.schema_version}/{adapter.provider}/{adapter.model}",
-            "adjudication": f"{ADJUDICATION_PROMPT}/{judge.provider}/{judge.model}" if judge else None,
+            "consolidation": f"{CONSOLIDATION_PROMPT}/{Consolidation.schema_version}/{adapter_version(adapter)}",
+            "adjudication": f"{ADJUDICATION_PROMPT}/{adapter_version(judge)}" if judge else None,
+            "text_limits": json.dumps({
+                "consolidation": query_limits(adapter, "consolidation", CONSOLIDATION_LIMITS).model_dump(),
+                "adjudication": query_limits(judge, "adjudication", ADJUDICATION_LIMITS).model_dump() if judge else None,
+            }, sort_keys=True),
             "gates": GATES_VERSION, "prompt": COMPOSE_VERSION, "spec": SPEC_VERSION, "fusion": json.dumps(WEIGHTS, sort_keys=True),
             "budget": [budget.passages, budget.characters]}

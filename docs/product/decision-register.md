@@ -58,6 +58,7 @@
 | DEC-50 | Presentation refinement uses a conditional, idempotent revision append: style/mode and canonical locks only; profiles/evidence remain unchanged, provenance and prompt gates rerun; changed source or derivation inputs require a new reconstruction; replay returns its captured revision | T38; [API](../api/api-contract.md#presentation-refinements--t38) |
 | DEC-51 | D5 rendering: OpenAI `gpt-image-2` (default) or `gpt-image-1` via `VISION_RENDER_MODEL`, low quality, 1024×1024 PNG with `OPENAI_API_KEY`; FLUX.1-schnell through the Hugging Face router (`nscale` route) with `HF_TOKEN` remains selectable; explicit opt-in by `VISION_RENDER_PROVIDER`; only the specification's gated `generation.prompt` is sent (derived attributes, locks and style; never source quotes, spans, titles or owner identifiers); negative prompt not sent; at most five reservations per owner; live acceptance (T40, T42) is limited to five requests in total; one charged call per reservation, no automatic retry, unanswered sends recorded as `acceptance_unknown` | Maintainer decision, 2026-10-22; [API](../api/api-contract.md#image-rendering--t40) |
 | DEC-52 | Work deletion: owner-requested, immediate and irreversible; the work and everything derived from it (original, passages, indexes, narrative, specifications, cache, images, model-run records) are absent at once and purged after in-flight jobs stop; only a minimal tombstone (owner, work ID, expected revision, deletion/original-upload idempotency keys, lifecycle times, dispatch/attempt metadata and status; no content or hashes) remains; account deletion is a later CLI follow-up | Maintainer decision, 2026-10-25; [API](../api/api-contract.md#work-deletion--t46) |
+| DEC-53 | Authorize opt-in OpenAI `gpt-6-luna` text integration and a finite synthetic evaluation using the existing project key. Responses API, strict JSON, no extra reasoning by default, no tools or conversation history, `store=false`; local ingestion and all grounding/spoiler gates remain. Groq stays the default; this does not authorize private-book excerpts to OpenAI or assert ZDR | Maintainer instruction, 2026-10-27; [operations](../operations/development-and-operations.md#openai-text-evaluation--q01) |
 
 ## Workspace implementation
 
@@ -111,6 +112,12 @@ The final review also makes backward attribution expansion consume the configure
 DEC-42 budget and gives DEC-52's row-purge transaction a bounded 60-second
 statement timeout; request connections keep their two-second bound.
 
+Q03's larger-output synthetic evaluation exposed a dropped inference reason:
+the assumption was stored with the fact but omitted from reconstruction's
+in-memory claim. The fix preserves that assumption through the response, keeps
+direct inferences non-canonical, and excludes unexplained inferences, consuming
+DEC-44 and the existing specification contract without changing either policy.
+
 ## Proposed elaborations
 
 These make implementation discussions concrete without pretending the source
@@ -153,3 +160,43 @@ Record a changed decision with its reason and affected requirements, contracts,
 tests, and data migration. Expensive architecture changes receive a new ADR;
 superseded ADRs remain available. Do not reopen the selected retrieval stack as
 an A/B comparison without an explicit decision to revisit it.
+
+Q07 implementation refinement of DEC-38/53: adjudication preserves the complete
+request, scene and grounded resolved event instead of dropping the scene when a
+broad moment exists. `adjudicate-v3` invalidates cached checker results; source
+and spoiler boundaries and canonical/inferred policy are unchanged.
+
+Q08 implements the authorized quality refinement within DEC-38: bounded,
+cutoff-scoped entity refs and unique visible aliases normalize model subjects and
+participants before existing publication gates. `consolidate-v6` separates old
+derivations and caches. Ambiguous titles and unquoted identities remain unresolved.
+
+Q09 clarifies DEC-38 extraction instructions and schema descriptions without
+changing canonical/inferred policy or splitting the combined provider call.
+Prompt/schema versions invalidate prior consolidation reuse.
+
+Q10 refines source-bound checking: selected cutoff-safe change passages may
+justify rejection, while entailment still needs the claim's own citation.
+`adjudicate-v4` requires complete valid verdict coverage/context for `applied`
+and complete per-trait coverage for `entailed`; otherwise existing deterministic
+results remain explicitly unchecked/unavailable. No checker verdict admits or
+promotes a claim. Shared context obeys the existing input bounds.
+
+Q11 preserves existing uncertainty/scene policy: the optional checker does not
+settle documented disputes, and a negated holder is not an absent scene member.
+Verified entity labels are retained in composition/refinement. Registry aliases
+exclude pronouns and negated phrases; display-name ordering stabilizes refs.
+
+Q13 implements the authorized reasoning-budget calibration for opt-in Luna.
+Groq/`none` retain their bounds; low gets 8,192/4,096 output tokens and medium or
+higher 16,384/8,192 for consolidation/adjudication, with bounded total/time limits
+documented in operations. Selection and canonical/source gates are unchanged;
+limits separate cache/derivation reuse. No provider/default/disclosure-policy
+change or automatic escalation is introduced. Higher efforts are unmeasured.
+
+Implementation clarification for query reconstruction: registry selection stays
+query-scoped, but alias uniqueness uses the full cutoff-visible narrative.
+Unexplained inferences cannot remove established facts or establish scene
+membership. Reasoning stage timeouts reserve browser proxy overhead, and a live
+evaluation that blocks a call at its finite allowance is explicitly incomplete.
+These guards do not change the accepted provider defaults or public API.

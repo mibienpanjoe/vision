@@ -413,7 +413,7 @@ and returns a `VisualizationResult` with status 200 for every domain outcome:
 - `insufficient_evidence` with `missing` reasons (no eligible subject, a chapter
   beyond the boundary, a moment the eligible text does not establish, no
   verified trait);
-- `failed` with a safe error: `PROVIDER_NOT_ENABLED` (no `GROQ_API_KEY`),
+- `failed` with a safe error: `PROVIDER_NOT_ENABLED` (selected provider unconfigured),
   `PROVIDER_RATE_LIMITED`, `PROVIDER_TIMEOUT`, `PROVIDER_UNAVAILABLE` or
   `PROVIDER_INVALID_OUTPUT` (retryable: the failed consolidation is reclaimed
   on the next request), or `PROMPT_GATE_FAILED`. Consolidation itself makes one
@@ -423,11 +423,26 @@ and returns a `VisualizationResult` with status 200 for every domain outcome:
 Another owner's work or an unknown entity or chapter returns the common `404`,
 an unauthenticated call `401`, an invalid body `422`, and a work without a
 succeeded entity derivation `409 NARRATIVE_NOT_READY`. The call runs the whole
-path synchronously (plan, local retrieval, Groq consolidation reused by scope,
+path synchronously (plan, local retrieval, selected-provider consolidation reused by scope,
 reconstruction, verification with optional adjudication, prompt gate). It stores
 only the consolidation and run records; stored results are created through
 the route in the next section.
-`VISION_ADJUDICATE=0` turns adjudication off.
+`VISION_ADJUDICATE=0` turns adjudication off. The internal checker preserves the
+full request, scene, moment and grounded resolved event; its prompt version is
+part of the cache identity. No new public request fields are required.
+
+Groq remains the default text provider. The opt-in OpenAI synthetic evaluation
+(DEC-53) selects `VISION_QUERY_PROVIDER=openai`, `OPENAI_API_KEY`,
+`VISION_OPENAI_MODEL=gpt-6-luna` and `VISION_OPENAI_REASONING=none`. It uses the
+Responses API with strict JSON, `store=false`, no tools or prior response IDs.
+Unknown provider names or missing credentials fail closed without provider
+fallback. Reasoning effort and adapter/schema version separate both result-cache
+and consolidation reuse and are recorded with run metadata. Provider-reported
+output usage includes reasoning tokens. An incomplete response at the token cap
+returns `PROVIDER_BUDGET_EXHAUSTED`; refusals return `PROVIDER_UNAVAILABLE`,
+retaining reported token usage and publishing no facts. OpenAI transport failures
+are not retried automatically; the existing one-retry malformed-JSON rule remains.
+This opt-in has no daily spending cap and is not approval for private-book use.
 
 The specification carries `lineage` (consolidation id; query-plan, consolidation,
 index and parser versions), `scope` (generation, parser revision, cutoff,
@@ -437,7 +452,11 @@ requested and resolved moment, context, creative mode), the `subject`,
 `generation` (style, prompt, negative prompt) and `verification` (adjudication
 state, facts removed, selection outcome). Canonical and disputed traits always
 carry `SourceSpan` evidence, which resolves through the evidence route under the
-same boundary; inferred traits carry their reason. The negative prompt lists
+same boundary; inferred traits carry their reason. Direct provider inferences
+retain their stored assumption as that reason and remain non-canonical. A group
+with several assumptions uses a bounded explanation that multiple provider
+assumptions underlie its values; full assumptions remain in the stored facts.
+Unexplained inferences are excluded. The negative prompt lists
 only values the text rules out at this moment (removed, negated or superseded),
 never a value that is merely unknown here, such as childhood hair for an adult
 portrait. In `interpretation` mode,
@@ -653,3 +672,18 @@ An interruption is retryable; `make dispatch` recovers unfinished deletions.
 Replaying the exact DELETE reads its current lifecycle status, including
 `completed`; the work itself remains `404` throughout.
 
+
+Internal consolidation uses query-scoped entity refs and visible aliases (Q08);
+public entity IDs and request/response schemas are unchanged. Ref normalization
+never bypasses the quoted evidence, owner or reading-boundary checks.
+
+Q10 checker status uses the existing values: `applied` requires complete valid
+verdict coverage and context; missing/duplicate/misquoted verdicts or truncated
+context produce `unavailable`. Trait `entailed` requires all surviving fact
+verdicts. Rejections can cite selected in-scope change passages, never future or
+other-document text. Public schemas are unchanged.
+
+Q13 selects finite text-provider limits by model, reasoning effort and stage;
+Luna reasoning no longer inherits Groq's output allowance. Runs retain actual
+limits and usage, and budget/timeout outcomes keep their existing safe codes.
+Explicit limits and effort separate reuse. Public schemas are unchanged.

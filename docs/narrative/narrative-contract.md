@@ -89,6 +89,12 @@ being revealed after it.
 | Inferred detail | Reasoned from admissible evidence with assumptions recorded |
 | Creative completion | Added for rendering; never attributed to the author |
 
+Reconstruction preserves the recorded assumption when presenting a direct
+provider inference; it never promotes that inference to canonical. Several
+assumptions grouped under one trait retain a bounded multiple-assumptions
+explanation, with individual assumptions still stored on the facts. An inference
+without an assumption is excluded rather than emitted without its required reason.
+
 A missing end event means “no end established,” not “permanent.” Canonical
 carry-forward requires eligible explicit evidence of the trait at the requested
 moment or an explicit persistence interval covering it. A scar acquired in war
@@ -387,3 +393,39 @@ linguistic support. Other language configurations and quality claims remain open
 A chapter-five childhood flashback is story-early but unavailable at a chapter-two
 reading boundary. An alias resolved in chapter five cannot label an earlier
 entity using that later dependency; retain admissible ambiguity instead.
+
+
+### Query-scoped entity references — Q08
+
+Consolidation receives a bounded registry of entities mentioned in the selected,
+cutoff-eligible passages, plus the requested subject and participants. Registry
+refs identify those entities for fact subjects, event participants and identity
+links. Visible unique name surfaces may resolve to the same stored identity;
+shared titles never resolve by likelihood. Uniqueness is checked across all
+cutoff-visible mentions, labels and aliases, including unselected passages.
+Unknown or ambiguous output names are rejected before publication. Display labels are cutoff-safe, even
+when a stored label was learned later. The registry is prioritized for requested
+entities and fits the remaining input allowance; omitted refs are not resolved.
+Normalization preserves the raw captured output and does not create identities
+or widen the selected reading boundary. Publication still requires exact source
+quotes, attribution and temporal evidence. Component entities (roof, room,
+compass) remain distinct; membership of a place cannot be invented from proximity.
+
+Q09 clarifies the combined extraction contract (`consolidate-v7`, schema v3):
+component material and condition are distinct; explicit component ownership may
+anchor an owner attribute, while nearby rooms do not become the same place.
+Facts link only to moments established by their quotes. Earlier acquired
+changes are left for conservative reconstruction, and a later direct statement
+gets its own evidence. Negated removals never become affirmed current clothing.
+Prompt examples are instructions, never admissible evidence. This keeps DEC-38's
+one-call consolidation; improved live-model quality requires measurement.
+
+Review guards in `consolidate-v8` retain Q09 extraction semantics and use the
+full cutoff-visible narrative to establish registry alias uniqueness. Inferred
+facts with missing or blank assumptions are rejected at publication.
+
+`consolidate-v9` resolves identity-link endpoints to stored IDs while checking
+explicit quoted endpoints against their resolved labels or the registry's
+unique visible name surfaces.
+Stored titles need not appear in a quote naming the same entity by a unique
+visible alias; registry refs themselves are never treated as quoted names.

@@ -39,6 +39,14 @@ selection must record data handling, retention, cost, and necessary user-facing
 disclosure before live use. Provider adapters have scoped credentials; the web
 client never receives provider secrets.
 
+The OpenAI text adapter (DEC-53) is opt-in for authorized synthetic evaluation;
+Groq remains the private-book default. It sends bounded, cutoff-filtered excerpts
+with `store=false`, no tools, no conversation identifiers and no whole-book
+upload. This flag is not Zero Data Retention: default abuse-monitoring retention
+may be up to 30 days and ZDR requires provider approval. Private-book use requires
+an explicit data-handling decision. Configuring an image key alone never selects
+the OpenAI text adapter. No daily text spending cap is implemented.
+
 Keep credentials in environment or secret storage, not documentation, committed
 configuration, URLs, screenshots, model prompts, or logs. Telemetry uses IDs,
 versions, safe error codes, durations, and usage totals. Source text and full

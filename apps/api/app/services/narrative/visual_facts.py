@@ -129,7 +129,7 @@ def publish_facts(db, derivation_id, entity_derivation_id, keyed, outputs) -> di
                 problem = "unattributed"
             elif any(f"not {label}" in q.casefold() for q in quotes):
                 problem = "wrong_owner"
-            elif item.support == "inferred" and not item.assumption:
+            elif item.support == "inferred" and not (item.assumption and item.assumption.strip()):
                 problem = "missing_assumption"
             elif item.kind == "scene" and not linked:
                 problem = "unscoped_scene"

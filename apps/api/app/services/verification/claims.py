@@ -7,8 +7,8 @@ fact belongs to the requested subject and its evidence names that subject, and
 a canonical fact is explicit, affirmed, fact or memory, asserted in its quotes
 and tied to the requested moment. A fact failing any check is removed with the
 reason; a trait with no surviving fact is removed. Model adjudication is
-optional and source-bound: it runs only on survivors, a verdict counts only
-with a quote from that claim's own evidence, and it can remove a claim but
+optional and source-bound: it runs only on survivors, entailment needs a quote from that claim's own evidence; rejection may also
+quote selected in-scope change evidence, and it can remove a claim but
 never approve or promote one.
 """
 
@@ -18,13 +18,15 @@ import uuid
 from dataclasses import dataclass, field
 
 from app.models.entities import EntityMention
-from app.models.events import EventEvidence
+from app.models.events import Event, EventEvidence
+from app.models.model_runs import Derivation
 from app.models.passages import Passage
 from app.models.visual_facts import FactEvent, FactEvidence, VisualFact
 from app.models.works import Document, Work
-from app.providers.adjudication import Adjudication, adjudication_request
+from app.providers.adjudication import INSTRUCTIONS, Adjudication, adjudication_request
 from app.providers.contracts import Limits, ProviderAdapter, SourceItem
 from app.providers.execution import execute, persist_run
+from app.providers.text_limits import query_limits
 from app.schemas.scope import SourceSpan
 from app.services.narrative.eligibility import latest
 from app.services.narrative.visual_facts import assertion_problem
@@ -117,7 +119,7 @@ def problem(source: Source, passages, mentioned, names, subject_ids, plan, canon
 
 
 def verify_state(db, plan, derivation_id: uuid.UUID, state: State, subject_ids, names: list[str],
-                 adjudicator: ProviderAdapter | None = None, limits: Limits = LIMITS) -> Verification:
+                 adjudicator: ProviderAdapter | None = None, limits: Limits | None = None) -> Verification:
     """Re-check every fact behind `state`'s traits; `names` are the subject's visible names (casefolded)."""
     result = Verification(state.event)
     fact_ids = {f for t in state.traits.values() for f in t.facts}
@@ -150,17 +152,28 @@ def verify_state(db, plan, derivation_id: uuid.UUID, state: State, subject_ids, 
                             for s in k.spans] for k in kept},
                 trait.reason)
     if adjudicator is not None:
-        adjudicate(db, plan, derivation_id, result, adjudicator, limits)
+        adjudicate(db, plan, derivation_id, result, adjudicator, limits or query_limits(
+            adjudicator, "adjudication", LIMITS))
     return result
 
 
 def adjudicate(db, plan, derivation_id, result: Verification, adapter: ProviderAdapter, limits: Limits) -> None:
     """Remove canonical claims a quoted verdict rejects; mark traits a quoted verdict entails."""
     refs, items, values = {}, [], {}
-    moment = describe(plan.moment) if plan.moment else plan.context
+    moment = describe(plan.moment) if plan.moment else None
+    event = db.get(Event, result.event) if result.event else None
+    event_quotes = []
+    if event is not None and event.derivation_id == derivation_id:
+        for evidence, passage in db.execute(select(EventEvidence, Passage).join(
+                Passage, Passage.id == EventEvidence.passage_id).where(EventEvidence.event_id == event.id)):
+            if passage.document_id == plan.document_id and passage.parser_revision == plan.parser_revision and (
+                    plan.cutoff is None or (passage.chapter_ordinal or 0) <= plan.cutoff):
+                event_quotes.append({"ref": f"p{passage.ordinal}",
+                                     "quote": passage.text[evidence.start:evidence.end]})
+    resolved_event = {"label": event.label if event_quotes else None, "quotes": event_quotes}
     for trait in result.traits.values():
-        if trait.status == "inferred":
-            continue
+        if trait.status != "canonical":
+            continue  # A source dispute is not a settled claim for the checker to arbitrate.
         for fact_id in trait.facts:
             fact = db.get(VisualFact, fact_id)
             quotes = [s.quote for s in trait.evidence[fact_id]]
@@ -168,11 +181,47 @@ def adjudicate(db, plan, derivation_id, result: Verification, adapter: ProviderA
             values[fact_id] = fact.value
             context = [db.get(Passage, uuid.UUID(pid)).text for pid in
                        dict.fromkeys(s.passage_id for s in trait.evidence[fact_id])]
-            items.append(SourceItem(ref=f"c{len(items)}", text=json.dumps(
-                {"subject": plan.subject.label, "moment": moment, "attribute": fact.attribute, "value": fact.value,
-                 "quotes": quotes, "context": context}, ensure_ascii=False)))
+            payload = json.dumps(
+                {"subject": plan.subject.label, "request": plan.query, "moment": moment, "scene": plan.context,
+                 "resolved_event": resolved_event, "attribute": fact.attribute, "value": fact.value,
+                 "quotes": quotes, "context": context}, ensure_ascii=False)
+            if len(payload) > 16_000:
+                result.adjudication = "unavailable"
+                return
+            items.append(SourceItem(ref=f"c{len(items)}", text=payload))
     if not items:
         return
+    # Share selected change/contradiction evidence once, not once per claim.
+    derivation = db.get(Derivation, derivation_id)
+    spans = (derivation.scope or {}).get("spans", [])
+    related, complete = [], True
+    passages = {str(p.id): p for p in db.scalars(select(Passage).where(
+        Passage.id.in_({uuid.UUID(s[0]) for s in spans})))}
+    first = json.loads(items[0].text)
+    others = sum(len(item.text) for item in items[1:])
+    for pid, start, end in sorted(spans, key=lambda s: passages[s[0]].ordinal):
+        passage = passages[pid]
+        if passage.document_id != plan.document_id or passage.parser_revision != plan.parser_revision or (
+                plan.cutoff is not None and (passage.chapter_ordinal or 0) > plan.cutoff):
+            complete = False
+            continue
+        end = len(passage.text) if end is None else end
+        if not 0 <= start < end <= len(passage.text):
+            complete = False
+            continue
+        item = {"ref": f"p{passage.ordinal}", "text": passage.text[start:end]}
+        candidate = {**first, "related_passages": [*related, item], "related_complete": False}
+        size = len(json.dumps(candidate, ensure_ascii=False))
+        if size > 16_000 or len(INSTRUCTIONS) + others + size > limits.max_input_chars:
+            complete = False
+        else:
+            related.append(item)
+    first.update(related_passages=related, related_complete=complete)
+    payload = json.dumps(first, ensure_ascii=False)
+    if len(payload) > 16_000:
+        result.adjudication = "unavailable"
+        return
+    items[0] = SourceItem(ref=items[0].ref, text=payload)
     run = execute(adapter, adjudication_request(items, limits), Adjudication)
     owner_id = db.scalar(select(Work.owner_id).join(Document, Document.work_id == Work.id)
                          .where(Document.id == plan.document_id))
@@ -181,27 +230,35 @@ def adjudicate(db, plan, derivation_id, result: Verification, adapter: ProviderA
     if run.output is None:
         result.adjudication = "unavailable"
         return
-    result.adjudication = "applied"
+    counts = {}
+    for verdict in run.output.verdicts:
+        counts[verdict.claim] = counts.get(verdict.claim, 0) + 1
+    covered, entailed = set(), set()
     for verdict in run.output.verdicts:
         trait, fact_id, quotes = refs.get(verdict.claim, (None, None, []))
-        if trait is None or fact_id not in trait.facts or not any(verdict.quote in q for q in quotes):
-            continue  # unquoted or mis-quoted verdicts count for nothing
+        admissible = quotes if verdict.verdict == "entailed" else [*quotes, *(p["text"] for p in related)]
+        if trait is None or fact_id not in trait.facts or counts[verdict.claim] != 1 or not any(
+                verdict.quote in q for q in admissible):
+            continue  # Unknown, duplicate or ungrounded verdicts do not count as coverage.
+        covered.add(verdict.claim)
         if verdict.verdict == "entailed":
-            trait.adjudication = "entailed"
+            entailed.add(fact_id)
         else:
             trait.facts.remove(fact_id)
             trait.evidence.pop(fact_id, None)
             result.removed[fact_id] = f"adjudicated_{verdict.verdict}"
+    result.adjudication = "applied" if complete and covered == set(refs) else "unavailable"
     for attribute, trait in list(result.traits.items()):
         if not trait.facts:
             del result.traits[attribute]
-        elif trait.status != "inferred":
+        elif trait.status == "canonical":
+            trait.adjudication = "entailed" if complete and set(trait.facts) <= entailed else "unchecked"
             trait.values = sorted({values[f] for f in trait.facts}, key=str.casefold)
             trait.status = "disputed" if len({v.casefold() for v in trait.values}) > 1 else "canonical"
 
 
 def prompt_problems(prompt: str, verification: Verification, excluded: list[str], locks: dict[str, str],
-                    creative: list[str]) -> list[str]:
+                    creative: list[str], *, entities=()) -> list[str]:
     """Checks on the final composed prompt; an empty list passes.
 
     Excluded or removed values may not appear unless a kept value contains them; disputed values may not
@@ -210,6 +267,7 @@ def prompt_problems(prompt: str, verification: Verification, excluded: list[str]
     """
     text = prompt.casefold()
     kept = [v.casefold() for t in verification.traits.values() if t.status != "disputed" for v in t.values]
+    kept += [label.casefold() for label in entities]
     problems = [f"excluded_value:{value}" for value in dict.fromkeys(excluded)
                 if value.casefold() in text and not any(value.casefold() in k for k in kept)]
     problems += [f"disputed_as_settled:{t.attribute}" for t in verification.traits.values()

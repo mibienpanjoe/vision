@@ -1,6 +1,7 @@
 # ADR-0003 — Local ingestion and minimal-disclosure query-time consolidation
 
-**Status:** accepted (DEC-37), implementation pending.
+**Status:** accepted (DEC-37), implemented for local use. [ADR-0004](0004-openai-text-evaluation.md)
+adds an opt-in synthetic OpenAI evaluation without changing the private-book default.
 **Recorded:** 2026-10-21; accepted by the maintainer 2026-10-21.
 **Source:** [local-first processing research](../research/local-first-processing.md)
 and its evaluation spike (section 10); DEC-36.

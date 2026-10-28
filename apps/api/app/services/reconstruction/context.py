@@ -30,7 +30,7 @@ def claims(db, derivation_id: uuid.UUID) -> tuple[list[Fact], Chronology, dict]:
                                         .where(VisualFact.derivation_id == derivation_id)):
         linked.setdefault(fact_id, set()).add(event_id)
     facts = [Fact(f.id, f.subject_id, f.attribute, f.value, f.kind, f.support, f.modality, f.polarity,
-                  frozenset(linked.get(f.id, ()))) for f in
+                  frozenset(linked.get(f.id, ())), f.assumption) for f in
              db.scalars(select(VisualFact).where(VisualFact.derivation_id == derivation_id))]
     statements = [Statement(r.source_id, r.relation, r.target_id) for r in
                   db.scalars(select(EventRelation).where(EventRelation.derivation_id == derivation_id))]

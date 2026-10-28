@@ -71,7 +71,10 @@ def consolidation_rule(sources):
         facts.append({"subject": "Arthur", "attribute": "eyes", "value": "golden", "kind": "identity",
                       "support": "explicit", "modality": "fact", "evidence": [{"ref": ref(RUMOR), "quote": RUMOR}]})
     if ref("I was Wren at ten"):
-        links.append({"subject": "Wren", "object": "Arthur", "support": "explicit", "ref": ref("I was Wren at ten"),
+        request = next(s["text"] for s in sources if s["ref"] == "request")
+        refs = {e["label"]: e["ref"] for e in json.loads(request)["entities"]}
+        # Wren is also Arthur's revealed alias: identify the two records by registry ref.
+        links.append({"subject": refs["Wren"], "object": refs["Arthur"], "support": "explicit", "ref": ref("I was Wren at ten"),
                       "quote": "Only this chapter established that Wren and Arthur were the same person."})
     return {"events": events, "facts": facts, "identity_links": links}
 
@@ -288,3 +291,37 @@ def test_live_groq_consolidation_on_the_synthetic_fixture(story):
                                         f"{f.polarity}, canonical={f.canonical})" for f in facts)}
     print(json.dumps(report, indent=1, ensure_ascii=False))
     assert all(r["status"] in {"succeeded", "failed"} for r in report.values())
+
+
+@pytest.mark.integration
+def test_registry_refs_publish_to_real_entities_without_widening_identity(story):
+    plan, expanded, _ = gathered(story, 3, "Mira at dinner after the war")
+    received = []
+    def rule(sources):
+        request = json.loads(next(s["text"] for s in sources if s["ref"] == "request"))
+        received.append(request)
+        mira = next(e["ref"] for e in request["entities"] if "mira" in e["aliases"])
+        quote = "Mira sat opposite, holding her brass compass."
+        ref = next(s["ref"] for s in sources if quote in s["text"])
+        return {"events": [{"key": "dinner", "label": "dinner", "modality": "fact", "participants": [mira],
+                            "evidence": [{"ref": ref, "quote": quote}]}],
+                "facts": [{"subject": mira, "attribute": "held_object", "value": "brass compass", "kind": "scene",
+                           "support": "explicit", "modality": "fact", "events": ["dinner"],
+                           "evidence": [{"ref": ref, "quote": quote}]}], "requested_event": "dinner"}
+    derivation = consolidate(story.engine, plan, expanded, RuleAdapter(rule))
+    story.db.expire_all()
+    facts = story.db.scalars(query(VisualFact).where(VisualFact.derivation_id == derivation)).all()
+    assert len(facts) == 1 and facts[0].subject_id in plan.subject.entity_ids
+    assert received and "entity:" in json.dumps(received)
+
+
+@pytest.mark.integration
+def test_changed_limits_do_not_reuse_a_consolidation(story):
+    from app.services.retrieval.consolidation import LIMITS
+    plan, expanded, _ = gathered(story, 2, "Arthur during the war")
+    adapter = RuleAdapter(consolidation_rule)
+    first = consolidate(story.engine, plan, expanded, adapter)
+    changed = consolidate(story.engine, plan, expanded, adapter, LIMITS.model_copy(update={"max_output_tokens": 8192}))
+    assert changed != first
+    rows = story.db.scalars(query(ModelRun).where(ModelRun.derivation_id.in_([first, changed]))).all()
+    assert {r.config["max_output_tokens"] for r in rows} == {4096, 8192}

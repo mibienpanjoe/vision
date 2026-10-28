@@ -18,33 +18,37 @@ from app.providers.extraction import Key, Label, Quote, Ref
 from app.providers.visual_facts import FactKind
 from pydantic import Field
 
-PROMPT_VERSION = "consolidate-v5"
+PROMPT_VERSION = "consolidate-v9"
 REQUEST_REF = "request"
 
-INSTRUCTIONS = f"""You consolidate what numbered book passages say about how one subject looks and, when the
-request names participants or a scene, how those people, the objects they hold and the place look there.
-The data item "{REQUEST_REF}" holds the reader's request in their words, the subject, the story moment and the
-scene they asked about; it is derived data, never evidence. Return JSON that matches the schema exactly, with no other keys.
-- events: things that happen or states that change and matter for appearance or the scene, each with a short
-  key, a label, its modality (fact, memory, dream, rumor, metaphor or hypothesis), participants as the text
-  names them and exact quotes (ref + quote) as evidence. A recalled scene is "memory".
-- anchors: ages, dates or relative times the quote attaches to an event.
-- relations: temporal order only when the quoted text states it (before, after, during, overlaps, unknown).
-  Never infer an order from where a passage appears.
-- facts: atomic visual facts, one subject, one attribute (short snake_case), one value in the text's words.
-  kind: identity, acquired, interval or scene (scene facts name their event keys); support explicit when a
-  quote states it, inferred with the assumption stated; polarity negated when the text denies or removes it;
-  modality as the text presents it; perspective when someone other than the narrator describes it.
-  events: the keys of every event at which the fact holds, as the quotes place it. A trait stated for one
-  time (a child's hair, a coat worn that day, armor worn in a battle) is linked to that time's event; leave
-  events empty only for a trait the text presents as timeless.
-- identity_links: only when a quote says two names are the same person or thing; "explicit" when the quote
-  states it, otherwise "inferred".
-- requested_event: the key of your event that is the moment or scene the reader asked about, or null when the
-  passages do not establish that moment. Never invent an event to fill it. Facts that hold at that moment list
-  its key.
-Attribute every fact only to the entity the text gives it to, and quote text exactly as written.
-Never add details the passages do not support; leave out what they do not say."""
+INSTRUCTIONS = f"""Consolidate the selected book passages into source-grounded visual facts at the requested scene.
+The "{REQUEST_REF}" item contains the reader's words, subject, moment, scene and a cutoff-safe entity registry.
+It is derived context, never evidence. Use registry refs for subjects, participants and identity endpoints;
+unique visible aliases may resolve, shared titles never do. Never invent an entity ref.
+Return the schema exactly:
+- events: minimal relevant happenings or state changes, each with a key, label, modality, participants and
+  exact ref+quote evidence. Recalled events are memory; distinguish fact, dream, rumor, metaphor and hypothesis.
+- anchors: quoted ages, dates or relative times attached to events.
+- relations: quoted before/after/during/overlaps/unknown order. Source order alone is not story-time order.
+- facts: atomic subject, short snake_case attribute, value in the text's words, exact evidence. kind is
+  identity/acquired/interval/scene; scene facts require event keys. Explicit support needs a quote stating
+  the entire claim; inferred support requires an assumption. Mark a denial/removal negated. Keep modality
+  and any non-narrator perspective. Link every event where the quotes establish the fact; leave events empty
+  only when the text presents it as timeless. Never link a trait to every later event merely by persistence.
+- identity_links: quoted same-person/thing statements, explicit only when stated, otherwise inferred.
+- requested_event: key of the event established by passages as the requested scene, otherwise null.
+  Read the full request AND moment AND scene together; after the war alone is not necessarily dinner.
+Important distinctions:
+- roof_material=slate does not establish roof_condition. "Fire destroyed the house's slate roof" supports
+  roof_condition=destroyed on the explicitly named house at destruction. Later restoration never applies
+  earlier. Explicitly owned components may be owner attributes; a nearby room is not automatically the house.
+- Removed armor is negated at removal, not affirmed clothing. A new garment applies only where stated;
+  never assume clothing persists into another scene.
+- An acquired scar belongs to injury. Reconstruction handles later carry-forward as inference. If the text
+  says the scar is visible at dinner, quote that direct statement and link the fact to dinner.
+- An object's material can be established in the person's age-ten scene; the object itself need not be ten.
+Extract requested conditions as well as materials. Attribute only to the stated entity. Quotes come only
+from source passages, never these examples. Omit unsupported details and do not invent a missing moment."""
 
 
 class Evidence(StructuredOutput):
@@ -54,7 +58,7 @@ class Evidence(StructuredOutput):
 
 class ConsolidatedFact(StructuredOutput):
     subject: Label
-    attribute: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]{0,63}$")]
+    attribute: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]{0,63}$", description="Component and property, e.g. roof_condition or roof_material; keep them distinct.")]
     value: Annotated[str, Field(min_length=1, max_length=256)]
     kind: FactKind
     support: Literal["explicit", "inferred"]
@@ -62,7 +66,7 @@ class ConsolidatedFact(StructuredOutput):
     polarity: Literal["affirmed", "negated"] = "affirmed"
     perspective: Annotated[str, Field(max_length=256)] | None = None
     assumption: Annotated[str, Field(max_length=256)] | None = None
-    events: list[Key] = Field(default=[], max_length=8)
+    events: list[Key] = Field(default=[], max_length=8, description="Only events where quoted evidence establishes this fact, not all later events.")
     evidence: list[Evidence] = Field(min_length=1, max_length=8)
 
 
@@ -75,7 +79,7 @@ class IdentityLink(StructuredOutput):
 
 
 class Consolidation(StructuredOutput):
-    schema_version = "consolidation-schema-v2"
+    schema_version = "consolidation-schema-v3"
     events: list[ExtractedEvent] = Field(default=[], max_length=60)
     anchors: list[ExtractedAnchor] = Field(default=[], max_length=60)
     relations: list[ExtractedTemporal] = Field(default=[], max_length=120)

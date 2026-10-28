@@ -16,19 +16,23 @@ from collections import Counter
 from datetime import UTC, datetime
 
 from app.models.entities import Entity, EntityRelation
+from app.models.generations import SourceGeneration
 from app.models.model_runs import Derivation
 from app.models.passages import Passage
 from app.providers.consolidation import (
+    INSTRUCTIONS,
     PROMPT_VERSION,
     Consolidation,
     consolidation_request,
 )
-from app.providers.contracts import Limits, ProviderAdapter, SourceItem
+from app.providers.contracts import Limits, ProviderAdapter, SourceItem, adapter_version
 from app.providers.execution import execute, persist_run
+from app.providers.text_limits import query_limits
 from app.services.narrative.derivations import claim, ground
-from app.services.narrative.eligibility import latest
+from app.services.narrative.eligibility import latest, visible_narrative
 from app.services.narrative.events import publish_events
 from app.services.narrative.visual_facts import publish_facts
+from app.services.retrieval.entity_registry import canonicalize, registry
 from app.services.retrieval.query_plan import describe
 from app.services.retrieval.rerank import Expanded
 from sqlalchemy import select
@@ -50,28 +54,31 @@ def scope_of(plan, expanded: Expanded) -> dict:
             "creative_mode": plan.creative_mode, "spans": sorted(spans, key=lambda s: (s[0], s[1]))}
 
 
-def request_item(plan) -> str:
+def request_item(plan, entities=()) -> str:
     # The reader's own words carry details the planner does not parse ("travelling home after the war").
     return json.dumps({"request": plan.query, "subject": plan.subject.label, "kind": plan.subject.kind,
-                       "participants": [p.label for p in plan.participants],
+                       "participants": [p.label for p in plan.participants], "entities": entities,
                        "moment": describe(plan.moment) if plan.moment else None, "scene": plan.context},
                       ensure_ascii=False)
 
 
-def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limits: Limits = LIMITS) -> uuid.UUID:
+def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limits: Limits | None = None) -> uuid.UUID:
+    limits = limits or query_limits(adapter, "consolidation", LIMITS)
     with Session(engine) as db:
         entities = latest(db, plan.generation_id, "entities")
         if entities is None:
             raise ValueError("consolidation requires a succeeded entity derivation")
         ids = [s.passage_id for s in expanded.selection.passages] + expanded.context
         passages = {p.id: p for p in db.scalars(select(Passage).where(Passage.id.in_(ids)))}
+        view = visible_narrative(db, db.get(SourceGeneration, plan.generation_id), plan.cutoff)
+        required = {e for subject in (plan.subject, *plan.participants) for e in subject.entity_ids}
         db.expunge_all()
     if any(p.document_id != plan.document_id or (plan.cutoff is not None and (p.chapter_ordinal or 0) > plan.cutoff)
            for p in passages.values()):
         raise ValueError("consolidation input must lie inside the plan's reading boundary")
-    scope = scope_of(plan, expanded)
+    scope = {**scope_of(plan, expanded), "limits": limits.model_dump()}
     digest = hashlib.sha256(json.dumps(scope, sort_keys=True).encode()).hexdigest()
-    version = f"{PROMPT_VERSION}/{Consolidation.schema_version}/{adapter.provider}/{adapter.model}"[:140] + f"/{digest[:16]}"
+    version = f"{PROMPT_VERSION}/{Consolidation.schema_version}/{adapter_version(adapter)}"[:140] + f"/{digest[:16]}"
     derivation_id, attempt, owner_id, _ = claim(engine, plan.generation_id, STAGE, version, entities.id,
                                                 {**scope, "digest": digest})
     if attempt is None:
@@ -81,8 +88,10 @@ def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limi
              for s in expanded.selection.passages}
     texts.update({pid: passages[pid].text for pid in expanded.context})
     group = sorted((passages[pid] for pid in texts), key=lambda p: p.ordinal)
+    room = max(0, limits.max_input_chars - len(INSTRUCTIONS) - sum(map(len, texts.values())) - len(request_item(plan)))
+    entity_entries, names = registry(view, set(ids), required, min(4_000, room))
     request = consolidation_request([SourceItem(ref=f"p{p.ordinal}", text=texts[p.id]) for p in group],
-                                    request_item(plan), limits)
+                                    request_item(plan, entity_entries), limits)
     results = [execute(adapter, request, Consolidation)]
     if results[0].record.outcome == "invalid_output":  # one malformed answer gets one more call, no more
         results.append(execute(adapter, request, Consolidation))
@@ -98,12 +107,15 @@ def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limi
             derivation.status = "cancelled" if result.record.outcome == "cancelled" else "failed"
             derivation.error_code = result.record.error_code
         else:
-            outputs = [(group, result.output, run.id)]
+            normalization_rejections = Counter()
+            output = canonicalize(result.output, names, normalization_rejections)
+            outputs = [(group, output, run.id)]
             keys: dict = {}
             rejected = Counter(publish_events(db, derivation_id, entities.id, outputs, keys))
+            rejected.update(normalization_rejections)
             keyed = [(key, event.id, event.label, event.modality, 0, 0) for key, event in keys.items() if event]
             rejected.update(publish_facts(db, derivation_id, entities.id, keyed, outputs))
-            rejected.update(publish_links(db, derivation_id, entities.id, group, result.output, run.id))
+            rejected.update(publish_links(db, derivation_id, entities.id, group, output, run.id, names))
             requested = keys.get(result.output.requested_event) if result.output.requested_event else None
             if result.output.requested_event and requested is None:
                 rejected["unknown_event"] += 1
@@ -115,7 +127,7 @@ def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limi
     return derivation_id
 
 
-def publish_links(db, derivation_id, entity_derivation_id, group, output, run_id) -> Counter:
+def publish_links(db, derivation_id, entity_derivation_id, group, output, run_id, names) -> Counter:
     """Quoted `same_as` links scoped to this consolidation; an unquoted identity is labelled inferred."""
     rejected: Counter[str] = Counter()
     labels = {e.label.casefold(): e.id for e in db.scalars(select(Entity).where(Entity.derivation_id == entity_derivation_id))}
@@ -129,8 +141,12 @@ def publish_links(db, derivation_id, entity_derivation_id, group, output, run_id
         elif subject is None or target is None or subject == target:
             rejected["unknown_entity"] += 1
         else:
-            stated = link.support == "explicit" and all(n.casefold() in link.quote.casefold()
-                                                        for n in (link.subject, link.object))
+            # Quotes use visible names; canonical stored labels can contain later titles.
+            stated = link.support == "explicit" and all(
+                endpoint.casefold() in link.quote.casefold() or
+                any(alias in link.quote.casefold() for alias, canonical in names.items()
+                    if canonical == endpoint and not alias.startswith("entity:"))
+                for endpoint in (link.subject, link.object))
             db.add(EntityRelation(derivation_id=derivation_id, subject_id=subject,
                                   relation="same_as" if stated else "same_as_inferred", object_id=target,
                                   passage_id=passage.id, start=span[0], end=span[1], model_run_id=run_id))

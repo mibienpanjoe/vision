@@ -434,15 +434,72 @@ harness against an unrelated listener or a build with a different proxy target.
 For the explicit live product gate, use
 `VISION_TEST_LIVE_WORKSPACE=1 make browser-session` (with the same port override
 when needed). It uses the production API and worker bootstraps, pinned local
-entity/coreference/embedding models and the configured Groq adapter, never the
+entity/coreference/embedding models and the configured text adapter, never the
 fixture adapters. Only the committed synthetic story is uploaded. This opt-in
-loads provider configuration from the private `.env`; Groq must be configured,
-and model snapshots must already be cached. `HF_HUB_OFFLINE=1` prevents implicit
+loads provider configuration from the private `.env`; the selected adapter's key
+must be configured (Groq by default), and model snapshots must already be cached.
+`HF_HUB_OFFLINE=1` prevents implicit
 model downloads; set `HF_HOME` if the snapshots use a separate cache directory.
 The test inspects the stored specification, source highlights and identical JSON
-export; the harness additionally asserts successful local/Groq run records,
+export; the harness additionally asserts successful local/selected-provider run records,
 persisted vectors and revisions before removing its disposable data. CI uses the
 deterministic workspace suite and does not require provider credentials.
+
+## OpenAI text evaluation — Q01
+
+DEC-53 authorizes a finite synthetic GPT-6 Luna evaluation with the existing
+private `OPENAI_API_KEY`; it does not change DEC-37's private-book provider policy.
+Groq remains the default. The opt-in process configuration is:
+
+```dotenv
+VISION_QUERY_PROVIDER=openai
+VISION_OPENAI_MODEL=gpt-6-luna
+VISION_OPENAI_REASONING=none
+```
+
+Both host and packaged API/worker processes accept these variables. The adapter
+uses `https://api.openai.com/v1/responses`, strict schema-constrained JSON, bounded
+output (including reasoning tokens), no tools or conversation history, and
+`store=false`. Effort supports `none`, `low`, `medium`, `high`, `xhigh`, `max`;
+changing it invalidates inference reuse. Unsupported model/effort combinations
+are safe provider failures, not a fallback to Groq. An interrupted or refused
+response never publishes facts; returned usage is retained where available.
+No automatic transport retry repeats a potentially charged request.
+
+These controls do not establish ZDR. OpenAI's default abuse-monitoring logs may
+retain content for up to 30 days; ZDR requires approval. See the
+[official data controls](https://developers.openai.com/api/docs/guides/your-data),
+[Luna model contract](https://developers.openai.com/api/docs/models/gpt-6-luna) and
+[structured output requirements](https://developers.openai.com/api/docs/guides/structured-outputs).
+The adapter makes defaulted domain fields mandatory only in its wire schema;
+local schema and source validation still decide what can be published.
+
+With cached local weights, run the isolated synthetic evaluation:
+
+```sh
+set -a; . ./.env; set +a
+VISION_QUERY_PROVIDER=openai VISION_OPENAI_MODEL=gpt-6-luna VISION_OPENAI_REASONING=none \
+VISION_LIVE_RECONSTRUCTION=1 HF_HUB_OFFLINE=1 VISION_RENDER_PROVIDER= \
+VISION_TEST_ADMIN_URL=$DATABASE_URL VISION_TEST_REDIS_URL=$REDIS_URL \
+uv run --project apps/api --locked pytest apps/api/tests/test_live_reconstruction.py -m integration -q -s
+```
+
+The 17-case evaluation is capped at 50 OpenAI transport attempts and writes a
+separate ignored `reconstruction-openai-gpt-6-luna-none-annotation-match-v4.json`
+in `.local/measurements`, preserving historical reports. Reports and traces record
+the OpenAI call allowance, attempted count and whether a further call was blocked; a
+blocked call fails the evaluation as incomplete even if no safety check failed.
+Groq reports its captured call count without advertising an OpenAI call cap. A companion `-trace.json`
+retains requests/responses and stage decisions for this pinned synthetic corpus
+only; production/private-book source logging stays disabled. It records quality, API latency and
+input/output tokens. The USD estimate uses uncached standard Luna rates
+($0.10 input/$0.50 output per million tokens), not an account invoice or a claim
+of free retries. It excludes images and taxes. Actual account eligibility and
+[current prices](https://developers.openai.com/api/docs/pricing) must be checked.
+There is no daily text budget or automatic model escalation in this increment.
+The live browser gate also accepts these process overrides; it uploads only the
+committed synthetic story, checks persisted OpenAI/local runs and verifies source
+highlighting and JSON export. Paid image evaluation remains separately gated.
 
 The web rewrite proxy has a bounded 300-second timeout. The framework's default
 30 seconds can close a cold local embedding query followed by consolidation
@@ -686,3 +743,27 @@ apply migrations, then start the matching images. Older candidate snapshots
 require version-specific offline recovery and usage reconciliation; upgrade an
 intact source and export a fresh snapshot/ledger for the supported release.
 
+
+
+### Luna reasoning allowances — Q13
+
+Luna `none` and Groq retain the original output/total/time bounds. Explicit Luna
+reasoning uses provider-specific bounded limits; this does not change the saved
+provider or effort, enable automatic escalation, or authorize private books.
+
+| Effort | Consolidation output / total / timeout | Adjudication output / total / timeout |
+|---|---|---|
+| `none` | 4,096 / 12,000 / 90 s | 2,048 / 8,000 / 60 s |
+| `low` | 8,192 / 24,000 / 120 s | 4,096 / 16,000 / 90 s |
+| `medium` and higher | 16,384 / 32,000 / 150 s | 8,192 / 24,000 / 90 s |
+
+Input-character and reading-boundary limits stay unchanged. Output includes
+internal reasoning, so a complete reasoning call can exceed the old Groq
+allowance; the Q12 medium measurement peaked at 5,995 output tokens. Higher
+efforts remain uncalibrated, with no quality claim. These finite allowances are
+not the model-native 128,000 ceiling used in isolated comparisons. Selected
+limits are recorded with runs and separate cache/derivation reuse. A larger
+allowance avoids truncation in more cases; it does not establish factual quality.
+
+The medium and higher stage timeouts total 240 seconds, leaving 60 seconds
+inside the browser proxy allowance for retrieval, persistence and response work.
