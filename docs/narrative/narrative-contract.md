@@ -423,3 +423,9 @@ one-call consolidation; improved live-model quality requires measurement.
 Review guards in `consolidate-v8` retain Q09 extraction semantics and use the
 full cutoff-visible narrative to establish registry alias uniqueness. Inferred
 facts with missing or blank assumptions are rejected at publication.
+
+`consolidate-v9` resolves identity-link endpoints to stored IDs while checking
+explicit quoted endpoints against their resolved labels or the registry's
+unique visible name surfaces.
+Stored titles need not appear in a quote naming the same entity by a unique
+visible alias; registry refs themselves are never treated as quoted names.

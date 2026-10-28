@@ -25,7 +25,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from tests.conftest import ORIGIN, STORY
 from tests.reconstruction_eval import DATA, SCORER_VERSION, evaluate, query, summary
-from tests.reconstruction_trace import CallBudget, CaptureAdapter
+from tests.reconstruction_trace import CallBudget, CaptureAdapter, call_metadata
 
 pytestmark = [pytest.mark.integration, pytest.mark.skipif(
     os.environ.get("VISION_LIVE_RECONSTRUCTION") != "1", reason="Set VISION_LIVE_RECONSTRUCTION=1 for the live run")]
@@ -51,8 +51,7 @@ def test_live_reconstruction_of_every_annotated_case(database, monkeypatch, tmp_
         trace.parent.mkdir(parents=True, exist_ok=True)
         trace.write_text(json.dumps({"scorer_version": SCORER_VERSION, "source_sha256": DATA["source_sha256"],
                                      "cases": results, "all_calls": capture.calls, "all_stages": stage_trace,
-                                     "passage_chapters": passage_chapters, "provider_call_cap": budget.limit,
-                                     "provider_call_count": budget.used, "call_cap_reached": budget.exhausted}, indent=1, ensure_ascii=False))
+                                     "passage_chapters": passage_chapters, **call_metadata(capture, budget)}, indent=1, ensure_ascii=False))
     request.addfinalizer(save_trace)  # Retain charged attempts even if a case raises before its result is scored.
     verify = specification.verify_state
     def traced_verify(*args, **kwargs):
@@ -161,8 +160,7 @@ def test_live_reconstruction_of_every_annotated_case(database, monkeypatch, tmp_
     output_tokens = sum(c[3] or 0 for cost in costs for c in cost["calls"])
     report = {"scorer_version": SCORER_VERSION, "provider": adapter.provider, "model": adapter.model,
               "configuration": getattr(adapter, "configuration", {}),
-              "provider_call_cap": budget.limit, "provider_call_count": budget.used,
-              "call_cap_reached": budget.exhausted,
+              **call_metadata(capture, budget),
               "ingestion_s": ingestion_s, "summary": totals, "tokens": tokens,
               "input_tokens": input_tokens, "output_tokens": output_tokens,
               "seconds": sum(c["seconds"] for c in costs), "costs": costs, "reports": reports}

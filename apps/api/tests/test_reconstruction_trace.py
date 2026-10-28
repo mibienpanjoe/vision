@@ -35,3 +35,16 @@ def test_call_budget_flags_a_blocked_attempt_but_not_an_exactly_filled_allowance
     with pytest.raises(ProviderUnavailable):
         budget.take()
     assert budget.used == 1 and budget.exhausted
+
+
+def test_call_metadata_counts_groq_without_advertising_an_openai_cap():
+    from types import SimpleNamespace
+
+    from tests.reconstruction_trace import CallBudget, call_metadata
+    budget = CallBudget(50)
+    capture = SimpleNamespace(provider="groq", calls=[{}, {}])
+    assert call_metadata(capture, budget) == {"provider_call_count": 2}
+    capture.provider = "openai"
+    budget.take()
+    assert call_metadata(capture, budget) == {"provider_call_count": 1,
+                                            "provider_call_cap": 50, "call_cap_reached": False}

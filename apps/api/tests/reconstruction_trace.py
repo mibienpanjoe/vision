@@ -54,3 +54,10 @@ class ReplayAdapter:
                 raise error()
             raise ValueError("Captured unexpected failure; inspect the synthetic run")
         return ProviderResult.model_validate(entry["response"])
+
+
+def call_metadata(capture, budget):
+    if capture.provider == "openai":
+        return {"provider_call_count": budget.used, "provider_call_cap": budget.limit,
+                "call_cap_reached": budget.exhausted}
+    return {"provider_call_count": len(capture.calls)}

@@ -115,7 +115,7 @@ def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limi
             rejected.update(normalization_rejections)
             keyed = [(key, event.id, event.label, event.modality, 0, 0) for key, event in keys.items() if event]
             rejected.update(publish_facts(db, derivation_id, entities.id, keyed, outputs))
-            rejected.update(publish_links(db, derivation_id, entities.id, group, output, run.id))
+            rejected.update(publish_links(db, derivation_id, entities.id, group, output, run.id, names))
             requested = keys.get(result.output.requested_event) if result.output.requested_event else None
             if result.output.requested_event and requested is None:
                 rejected["unknown_event"] += 1
@@ -127,7 +127,7 @@ def consolidate(engine, plan, expanded: Expanded, adapter: ProviderAdapter, limi
     return derivation_id
 
 
-def publish_links(db, derivation_id, entity_derivation_id, group, output, run_id) -> Counter:
+def publish_links(db, derivation_id, entity_derivation_id, group, output, run_id, names) -> Counter:
     """Quoted `same_as` links scoped to this consolidation; an unquoted identity is labelled inferred."""
     rejected: Counter[str] = Counter()
     labels = {e.label.casefold(): e.id for e in db.scalars(select(Entity).where(Entity.derivation_id == entity_derivation_id))}
@@ -141,8 +141,12 @@ def publish_links(db, derivation_id, entity_derivation_id, group, output, run_id
         elif subject is None or target is None or subject == target:
             rejected["unknown_entity"] += 1
         else:
-            stated = link.support == "explicit" and all(n.casefold() in link.quote.casefold()
-                                                        for n in (link.subject, link.object))
+            # Quotes use visible names; canonical stored labels can contain later titles.
+            stated = link.support == "explicit" and all(
+                endpoint.casefold() in link.quote.casefold() or
+                any(alias in link.quote.casefold() for alias, canonical in names.items()
+                    if canonical == endpoint and not alias.startswith("entity:"))
+                for endpoint in (link.subject, link.object))
             db.add(EntityRelation(derivation_id=derivation_id, subject_id=subject,
                                   relation="same_as" if stated else "same_as_inferred", object_id=target,
                                   passage_id=passage.id, start=span[0], end=span[1], model_run_id=run_id))

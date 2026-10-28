@@ -73,3 +73,20 @@ def test_alias_uniqueness_uses_unselected_but_cutoff_visible_mentions():
     resolved = canonicalize(output.model_copy(update={"identity_links": [link.model_copy(
         update={"subject": "entity:0"})]}), names)
     assert resolved.identity_links[0].subject == "Alex"
+
+
+def test_quoted_unique_aliases_keep_identity_links_explicit_with_titled_labels():
+    from app.services.retrieval.consolidation import publish_links
+    a, b = UUID(int=1), UUID(int=2)
+    quote = "Mira and Brann were the same person."
+    names = {"entity:0": "Captain Mira", "entity:1": "Captain Brann",
+             "mira": "Captain Mira", "brann": "Captain Brann"}
+    output = Consolidation.model_validate({"identity_links": [{"subject": "entity:0", "object": "Brann",
+        "support": "explicit", "ref": "p0", "quote": quote}]})
+    stored = []
+    db = SimpleNamespace(scalars=lambda _: [SimpleNamespace(id=a, label="Captain Mira"),
+                                            SimpleNamespace(id=b, label="Captain Brann")], add=stored.append)
+    rejected = publish_links(db, a, b, [SimpleNamespace(id=a, ordinal=0, text=quote)],
+                             canonicalize(output, names), a, names)
+    assert not rejected and stored[0].relation == "same_as"
+    assert (stored[0].subject_id, stored[0].object_id) == (a, b)
