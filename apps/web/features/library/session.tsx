@@ -12,15 +12,15 @@ export function SignIn({ onSignedIn }: { onSignedIn: (actor: PrincipalView) => v
     const form = new FormData(event.currentTarget);
     setBusy(true); setError("");
     try {
-      onSignedIn(await api<PrincipalView>("/auth/login", json({ username: form.get("username"), password: form.get("password") })));
+      onSignedIn(await api<PrincipalView>("/auth/login", json({ username: String(form.get("username") ?? "").trim(), password: form.get("password") })));
     } catch (error) { setError(message(error)); }
     finally { setBusy(false); }
   }
   return <div className="sign-in-layout"><section className="panel sign-in" aria-labelledby="sign-in-title">
-    <h2 id="sign-in-title">Sign in to your library</h2>
+    <h1 id="sign-in-title">Sign in to your library</h1>
     <p className="muted-copy">Your books and discoveries stay in your private workspace.</p>
     <form onSubmit={submit} className="form-stack">
-      <label>Username<input name="username" autoComplete="username" required minLength={3} maxLength={32} /></label>
+      <label>Username<input name="username" autoComplete="username" autoCapitalize="none" spellCheck={false} required minLength={3} maxLength={32} /></label>
       <label>Password<input name="password" type="password" autoComplete="current-password" required minLength={12} maxLength={128} /></label>
       <button type="submit" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
       {error && <p role="alert">{error}</p>}

@@ -47,7 +47,10 @@ main:focus { outline: none; }
 .illustration .illustration-dark, .dark .illustration .illustration-light { display: none; }
 .dark .illustration .illustration-dark { display: block; }
 .library-art { width: 17rem; margin-block: -1.5rem; }
-.workspace:has(.sign-in-layout) .library-art { display: none; }
+.workspace:has(.sign-in-layout) .library-heading { display: none; }
+.workspace:has(.sign-in-layout) .site-header { min-height: 5rem; }
+.workspace:has(.sign-in-layout) main { display: flex; flex-direction: column; justify-content: center; padding-block: 1.5rem; }
+.sign-in h1 { font-size: clamp(1.5rem, 3vw, 2rem); }
 .sign-in-layout { display: grid; grid-template-columns: minmax(0, 30rem) minmax(0, 1fr); align-items: center; gap: 3rem; }
 .sign-in-art { justify-self: center; width: min(100%, 24rem); }
 .sign-in-art img { aspect-ratio: 1; object-fit: cover; }

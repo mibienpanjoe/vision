@@ -6,7 +6,11 @@ proxy. [Visual identity](../design/visual-identity.md) owns presentation;
 
 ## Library and uploads — T34
 
-The library begins with a sign-in form for a locally provisioned account. The
+The library begins with a sign-in form for a locally provisioned account.
+The signed-out view puts that form ahead of the library introduction so the
+complete panel fits a laptop viewport with larger text. Sign-in trims surrounding
+username whitespace from pasted credentials and preserves password characters
+exactly. The
 session remains in its HttpOnly cookie; credentials and source text are never
 saved in browser storage. Signing out or an expired-session response clears the
 visible library. A failed library read has a reload action instead of presenting
