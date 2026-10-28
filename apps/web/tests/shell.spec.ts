@@ -9,12 +9,12 @@ test("library shell opens dark by default and persists an explicit theme", async
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Sign in to your library", exact: true, level: 1 })).toBeVisible();
   await expect(page.locator("html")).toHaveClass("dark");
-  const theme = page.getByRole("combobox", { name: "Color theme" });
+  const theme = page.getByRole("button", { name: "Switch to light mode", exact: true });
   await expect(theme).toBeEnabled();
-  await theme.selectOption("light");
+  await theme.click();
   await expect(page.locator("html")).toHaveClass("light");
   await page.reload();
-  await expect(theme).toHaveValue("light");
+  await expect(page.getByRole("button", { name: "Switch to dark mode", exact: true })).toBeEnabled();
   await expect(page.locator("html")).toHaveClass("light");
   await expect(page.getByRole("heading", { name: "Sign in to your library" })).toBeVisible();
 });
@@ -43,12 +43,11 @@ test("fonts and approved icons are served locally in both themes", async ({ page
   for (const path of ["/favicon.ico", "/apple-icon.png", "/manifest.webmanifest", "/brand/icon-192.png", "/brand/icon-512.png", "/notices/inter-OFL.txt"]) {
     expect((await request.get(path)).status(), path).toBe(200);
   }
-  const theme = page.getByRole("combobox", { name: "Color theme" });
-  await theme.selectOption("system");
-  await page.emulateMedia({ colorScheme: "light" });
+  const theme = page.getByRole("button", { name: "Switch to light mode", exact: true });
+  await theme.click();
   await expect(page.locator("html")).toHaveClass("light");
   await page.screenshot({ path: "../../.local/vision-shell-light.png", fullPage: true });
-  await page.emulateMedia({ colorScheme: "dark" });
+  await page.getByRole("button", { name: "Switch to dark mode", exact: true }).click();
   await expect(page.locator("html")).toHaveClass("dark");
   await page.screenshot({ path: "../../.local/vision-shell-dark.png", fullPage: true });
   await page.setViewportSize({ width: 320, height: 720 });
@@ -76,4 +75,19 @@ test("sign-in trims copied username whitespace and preserves the password", asyn
   await page.getByLabel("Password", { exact: true }).fill(" synthetic passphrase ");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Upload a book", exact: true })).toBeVisible();
+});
+
+test("theme uses an icon button that toggles by keyboard and keeps the choice", async ({ page }) => {
+  await page.goto("/");
+  const light = page.getByRole("button", { name: "Switch to light mode", exact: true });
+  await expect(light).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Color theme" })).toHaveCount(0);
+  await light.focus();
+  await page.keyboard.press("Space");
+  await expect(page.locator("html")).toHaveClass("light");
+  await page.reload();
+  const dark = page.getByRole("button", { name: "Switch to dark mode", exact: true });
+  await expect(dark).toBeVisible();
+  await dark.click();
+  await expect(page.locator("html")).toHaveClass("dark");
 });

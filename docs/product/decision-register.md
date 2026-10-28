@@ -69,7 +69,9 @@ copied, so D4 has no imported-component license selection in this increment.
 The [workspace contract](workspace.md) owns these controls. The signed-out
 layout prioritizes the complete sign-in form; browser submission strips only
 surrounding username whitespace and preserves passwords exactly. The API login
-validation and session policy are unchanged. Narrative retry remains
+validation and session policy are unchanged. The header now uses the
+maintainer-requested sun/moon button for manual light/dark switching, preserving
+the existing saved theme preference. Narrative retry remains
 PROP-06; parsing retry does not claim to retry a failed narrative job.
 T35's chapter catalog is an owned, paginated current-generation read exposing
 numbers and IDs without narrative titles. This implements DEC-10's reading boundary

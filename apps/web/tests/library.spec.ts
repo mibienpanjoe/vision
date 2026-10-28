@@ -31,7 +31,7 @@ test.describe("real library", () => {
     await page.reload();
     await expect(book).toBeVisible();
     for (const theme of ["light", "dark"]) {
-      await page.getByRole("combobox", { name: "Color theme" }).selectOption(theme);
+      await page.getByRole("button", { name: `Switch to ${theme} mode`, exact: true }).click();
       for (const width of [320, 768, 1024, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

@@ -33,7 +33,12 @@ button, select, input, textarea { font: inherit; }
 .skip-link:focus { clip-path: none; width: auto; height: auto; overflow: visible; padding: .75rem 1rem; }
 .site-header { min-height: 7rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-block: 1rem; border-bottom: 1px solid var(--border); }
 .brand { display: flex; align-items: center; gap: .75rem; text-decoration: none; font: 600 1.75rem "Source Serif 4", Georgia, serif; }
-.theme-control { display: flex; align-items: center; gap: .75rem; color: var(--muted-foreground); font-size: .875rem; }
+.theme-control { position: relative; display: inline-grid; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: 50%; color: var(--foreground); background: transparent; }
+.theme-control:hover { background: var(--muted); filter: none; }
+.theme-control:active { transform: scale(.96); }
+.theme-control svg { position: absolute; transition: opacity .2s cubic-bezier(.2, 0, 0, 1), transform .2s cubic-bezier(.2, 0, 0, 1), filter .2s cubic-bezier(.2, 0, 0, 1); }
+.theme-control .theme-sun, .dark .theme-control .theme-moon { opacity: 0; transform: scale(.25); filter: blur(4px); }
+.theme-control .theme-moon, .dark .theme-control .theme-sun { opacity: 1; transform: scale(1); filter: blur(0); }
 select { max-width: 100%; border: 1px solid var(--input); border-radius: var(--radius); padding: .5rem .75rem; background: var(--background); color: var(--foreground); }
 select:hover { background: var(--muted); }
 main { flex: 1; padding-block: 4rem; }
@@ -162,7 +167,6 @@ footer { display: flex; justify-content: space-between; gap: 1rem; padding-block
 }
 @media (max-width: 36rem) {
   .workspace { width: calc(100% - 2rem); }
-  .theme-control > span { display: none; }
   .site-header { min-height: 6rem; }
   .panel { padding: min(1.5rem, 4vw); }
   main { padding-block: 2.5rem; }

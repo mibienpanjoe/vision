@@ -4,6 +4,9 @@ The browser consumes the owned API contracts through the same-origin `/api/v1`
 proxy. [Visual identity](../design/visual-identity.md) owns presentation;
 [API contracts](../api/api-contract.md) own authorization and mutations.
 
+The header theme control is a sun/moon icon button that switches light and dark
+appearance, names its action for assistive technology and retains the choice.
+
 ## Library and uploads — T34
 
 The library begins with a sign-in form for a locally provisioned account.

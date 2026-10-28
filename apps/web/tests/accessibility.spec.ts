@@ -23,7 +23,7 @@ test("populated workspace retains labels, contrast, keyboard access and layout a
   await profile.getByRole("button", { name: /Arthur · attire:/ }).click();
   await expect(profile.getByRole("region", { name: "Source reader" }).locator('mark[data-selected="true"]')).toBeVisible();
   for (const theme of ["light", "dark"]) {
-    await page.getByRole("combobox", { name: "Color theme", exact: true }).selectOption(theme);
+    await page.getByRole("button", { name: `Switch to ${theme} mode`, exact: true }).click();
     const contrast = await page.evaluate(() => {
       function rgb(color: string) { return (color.match(/[\d.]+/g) ?? []).map(Number); }
       function luminance(color: number[]) {
