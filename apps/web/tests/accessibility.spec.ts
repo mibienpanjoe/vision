@@ -67,6 +67,7 @@ test("populated workspace retains labels, contrast, keyboard access and layout a
     await page.addStyleTag({ content: "html { font-size: 200%; }" });
     const overflow = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>("body *")].filter(element => element.getBoundingClientRect().right > innerWidth + 1).map(element => `${element.tagName}.${element.className}`).slice(0, 20));
     expect(overflow, `${theme} 200% text`).toEqual([]);
+    await page.getByRole("group", { name: "Workspace view", exact: true }).getByRole("button", { name: "Evidence", exact: true }).click();
     const reader = profile.getByRole("region", { name: "Source reader" });
     await reader.scrollIntoViewIfNeeded();
     expect(await reader.locator(".source-excerpt").evaluate(element => element.getBoundingClientRect().width)).toBeGreaterThan(180);

@@ -1,12 +1,13 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { Illustration } from "@/components/illustration";
 import { api, message, type ChapterPage, type EntityDetail, type EntityPage, type EntitySummary, type SourceSpan } from "@/lib/api";
 import { ReconstructionWorkspace } from "@/features/visualization/workspace";
 import { SourceReader } from "@/features/reader/source-reader";
 
-export function Entities({ workId, source, cutoff, onSelect }: { workId: string; source: ChapterPage; cutoff: string | null; onSelect?: (entity: EntitySummary) => void }) {
+export function Entities({ workId, source, cutoff, onSelect, inspectorTarget }: { workId: string; source: ChapterPage; cutoff: string | null; onSelect?: (entity: EntitySummary) => void; inspectorTarget?: HTMLElement | null }) {
   const content = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState<EntityPage | null>(null);
   const [selected, setSelected] = useState("");
@@ -39,6 +40,28 @@ export function Entities({ workId, source, cutoff, onSelect }: { workId: string;
   const items = page?.items.filter(entity => (kind === "all" || entity.kind === kind) &&
     [entity.label, ...entity.aliases.map(alias => alias.label)].some(label => label.toLocaleLowerCase().includes(filter.toLocaleLowerCase()))) ?? [];
   items.sort((a, b) => b.mention_count - a.mention_count || a.label.localeCompare(b.label));
+  const inspector = (
+<div className="entity-content" ref={content}>
+
+          {selected && !detail && !error && <p role="status">Loading entity…</p>}
+          {detail && !onSelect && <ReconstructionWorkspace key={detail.entity.id} workId={workId} entity={detail.entity} cutoff={cutoff} generationId={source.generation_id} boundaryLabel={cutoff ? `Through chapter ${source.items.find(chapter => chapter.id === cutoff)?.ordinal}` : "Whole book"} />}
+          {detail && <section className="panel" aria-label="Entity details">
+            <h3>{detail.entity.label}</h3><p className="muted-copy">{detail.entity.kind} · {detail.entity.mention_count} eligible mentions</p>
+            {detail.entity.aliases.length > 0 && <ul className="alias-list">{detail.entity.aliases.map((alias, index) => <li key={index}>{alias.label} · {alias.status === "supported" ? "supported alias" : "candidate alias — identity unresolved"}</li>)}</ul>}
+            <details id="entity-evidence"><summary>Source mentions</summary>
+              {detail.mentions.map((mention, index) => <div className="mention" key={index}>
+                <blockquote>{mention.span.quote}</blockquote>
+                <button className="secondary" onClick={() => setSourceSpan(mention.span)}>Read passage {index + 1}</button>
+                {mention.entity_id === null && <div><p>Identity unresolved. Choose a person explicitly:</p><div className="actions">
+                  {mention.candidate_ids.map(id => <button key={id} className="secondary" onClick={() => choose(id)}>Choose {page?.items.find(entity => entity.id === id)?.label ?? "entity"}</button>)}
+                </div></div>}
+              </div>)}
+              {detail.mentions_truncated && <p>Showing the first 200 mentions.</p>}
+            </details>
+          </section>}
+          {detail && sourceSpan && <SourceReader workId={workId} parserRevision={source.parser_revision} cutoff={cutoff} span={sourceSpan} />}
+        </div>
+  );
   return <section className="explorer" aria-labelledby="explorer-title">
     <h2 id="explorer-title">People, places and objects</h2>
     {error && <p role="alert">{error} <button className="secondary" onClick={() => window.location.reload()}>Reload book</button></p>}
@@ -54,26 +77,7 @@ export function Entities({ workId, source, cutoff, onSelect }: { workId: string;
         <ul>{items.slice(0, visibleCount).map(entity => <li key={entity.id}><button className="entity-option" aria-pressed={selected === entity.id} onClick={() => choose(entity.id)}>{entity.label}</button><span>{entity.kind} · {entity.mention_count} {entity.mention_count === 1 ? "mention" : "mentions"}</span></li>)}</ul>
         {items.length > visibleCount && <button className="secondary" onClick={() => setVisibleCount(count => count + 50)}>Show more results</button>}
       </div></div>
-        <div className="entity-content" ref={content}>
-          {!selected && <div className="panel explorer-start"><h3>What would you like to explore?</h3><p>Choose a person, place or object to see its source passages and create a visual.</p></div>}
-          {selected && !detail && !error && <p role="status">Loading entity…</p>}
-          {detail && !onSelect && <ReconstructionWorkspace key={detail.entity.id} workId={workId} entity={detail.entity} cutoff={cutoff} generationId={source.generation_id} boundaryLabel={cutoff ? `Through chapter ${source.items.find(chapter => chapter.id === cutoff)?.ordinal}` : "Whole book"} />}
-          {detail && <section className="panel" aria-label="Entity details">
-            <h3>{detail.entity.label}</h3><p className="muted-copy">{detail.entity.kind} · {detail.entity.mention_count} eligible mentions</p>
-            {detail.entity.aliases.length > 0 && <ul className="alias-list">{detail.entity.aliases.map((alias, index) => <li key={index}>{alias.label} · {alias.status === "supported" ? "supported alias" : "candidate alias — identity unresolved"}</li>)}</ul>}
-            <details id="entity-evidence"><summary>Source mentions</summary>
-              {detail.mentions.map((mention, index) => <div className="mention" key={index}>
-                <blockquote>{mention.span.quote}</blockquote>
-                <button className="secondary" onClick={() => setSourceSpan(mention.span)}>Read passage {index + 1}</button>
-                {mention.entity_id === null && <div><p>Identity unresolved. Choose a person explicitly:</p><div className="actions">
-                  {mention.candidate_ids.map(id => <button key={id} className="secondary" onClick={() => choose(id)}>Choose {page.items.find(entity => entity.id === id)?.label ?? "entity"}</button>)}
-                </div></div>}
-              </div>)}
-              {detail.mentions_truncated && <p>Showing the first 200 mentions.</p>}
-            </details>
-          </section>}
-          {detail && sourceSpan && <SourceReader workId={workId} parserRevision={source.parser_revision} cutoff={cutoff} span={sourceSpan} />}
-        </div>
+        {inspectorTarget ? createPortal(inspector, inspectorTarget) : inspector}
       </div>
     </>}
   </section>;

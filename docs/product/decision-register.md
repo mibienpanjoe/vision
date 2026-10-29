@@ -218,3 +218,9 @@ scope selection. Browsing entities and detailed moment/style settings are option
 Clarification choices update the description to remove the rejected alternative
 while preserving the backend conflict and spoiler checks. Existing books precede
 upload, and unsupported chapter boundaries are explained explicitly.
+
+The overview-defined desktop workspace is implemented as three distinct areas:
+left world/scene-time navigation and history, central request and visual/JSON
+canvas, and right evidence/attributes inspector. On narrow screens, explicit
+Browse/Visual/Evidence view controls replace simultaneous panels. These share
+the existing scoped request/result state; no timeline or source claim is invented.

@@ -147,3 +147,11 @@ browsing is optional; selecting one opens the same reconstruction workflow.
 Moment, scene, mode and style are optional More options, not prerequisites.
 The library puts existing books before upload, and source warnings use readable
 limitations rather than internal parser codes.
+
+Desktop workspace layout follows overview section 10: world navigation and saved
+views on the left, request and visualization canvas in the centre, and source
+evidence/attributes in the right inspector. Existing scoped controls feed these
+areas without duplicating request state. Tablet uses two columns and narrower
+layouts use Browse, Visual and Evidence view controls to show one area at a time.
+Scenes and story time remain supported request/context phrases under DEC-38,
+rather than an invented whole-book timeline.

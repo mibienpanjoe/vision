@@ -1,11 +1,12 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { useRef, useState, type FormEvent } from "react";
 import { api, json, message, type EntitySummary, type VisualizationCreated, type VisualizationRequest } from "@/lib/api";
 
-export function Composer({ workId, entity, cutoff, result, onResult, onBusy }: {
+export function Composer({ workId, entity, cutoff, result, onResult, onBusy, contextTarget }: {
   workId: string; entity?: EntitySummary; cutoff: string | null; result: VisualizationCreated | null; onResult: (result: VisualizationCreated | null) => void;
-  onBusy: (busy: boolean) => void;
+  onBusy: (busy: boolean) => void; contextTarget?: HTMLElement | null;
 }) {
   const [subject, setSubject] = useState<{ id: string | null; label: string }>({ id: entity?.id ?? null, label: entity?.label ?? "" });
   const [query, setQuery] = useState("");
@@ -30,6 +31,8 @@ export function Composer({ workId, entity, cutoff, result, onResult, onBusy }: {
     } catch (error) { setError(message(error)); }
     finally { setBusy(false); onBusy(false); }
   }
+  const contextFields = <div className="form-stack"><label>Story moment<input disabled={busy} value={moment} onChange={event => setMoment(event.target.value)} maxLength={256} placeholder="After the war, at age ten…" /></label>
+        <label>Scene context<input disabled={busy} value={context} onChange={event => setContext(event.target.value)} maxLength={256} placeholder="At home, during the family dinner…" /></label></div>;
   return <section className="panel context-panel" aria-labelledby="context-title">
     <h2 id="context-title">Create a visual specification</h2>
     {subject.label && <p>Subject: <strong>{subject.label}</strong></p>}
@@ -38,8 +41,7 @@ export function Composer({ workId, entity, cutoff, result, onResult, onBusy }: {
       <fieldset disabled={busy}>
         <div className="form-field"><label htmlFor="visual-query">Describe the view</label><textarea id="visual-query" value={query} onChange={event => setQuery(event.target.value)} maxLength={1000} rows={3} required={!subject.id} placeholder={subject.label ? `Describe ${subject.label}, a scene, or a moment in the story…` : "Describe a person, place or scene from this book…"} /></div>
         <details className="composer-options"><summary>More options</summary>
-        <label>Story moment<input value={moment} onChange={event => setMoment(event.target.value)} maxLength={256} placeholder="After the war, at age ten…" /></label>
-        <label>Scene context<input value={context} onChange={event => setContext(event.target.value)} maxLength={256} placeholder="At home, during the family dinner…" /></label>
+        {contextTarget ? createPortal(contextFields, contextTarget) : contextFields}
         <div><label htmlFor="creative-mode">Creative mode</label><select id="creative-mode" value={mode} onChange={event => setMode(event.target.value as "canon_first" | "interpretation")}>
           <option value="canon_first">Canon first</option><option value="interpretation">Interpretation</option>
         </select></div>

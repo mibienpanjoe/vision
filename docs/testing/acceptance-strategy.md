@@ -701,3 +701,9 @@ exact source highlight, and worker-generated image with download. It uses the
 real API/database/broker/worker with controlled text and image adapters. Entity
 browsing remains a separately tested optional path; closing it retains the main
 request workspace. This does not establish live-provider quality.
+
+Workspace acceptance checks assert desktop navigation/canvas/inspector ordering,
+profile evidence in the inspector, image/JSON output in the central workspace,
+and mobile switching between Browse, Visual and Evidence. Selecting an entity
+on mobile returns to the request. Source-reader large-text checks first enter
+the Evidence view, preserving contrast, overflow and exact-highlight assertions.
