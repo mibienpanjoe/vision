@@ -26,6 +26,11 @@ test("real upload produces scoped entities; late aliases and stale detail disapp
   await expect(page.getByRole("button", { name: "Arthur", exact: true })).toHaveCount(0);
   await boundary.selectOption({ label: "Whole book" });
   await page.getByRole("button", { name: "Arthur", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "Describe the view", exact: true })).toBeInViewport({ ratio: 1 });
+  await expect(page.locator("#entity-evidence")).not.toHaveAttribute("open", "");
+  const list = page.getByRole("region", { name: "Browse entities", exact: true });
+  const bounded = await list.evaluate(element => element.getBoundingClientRect().height <= innerHeight * .65 + 1);
+  expect(bounded).toBe(true);
   const details = page.getByRole("region", { name: "Entity details" });
   await expect(details).toContainText("Wren · supported alias");
   await page.getByLabel("Story moment", { exact: true }).fill("after the war");
