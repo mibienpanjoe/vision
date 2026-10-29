@@ -207,3 +207,8 @@ Unexplained inferences cannot remove established facts or establish scene
 membership. Reasoning stage timeouts reserve browser proxy overhead, and a live
 evaluation that blocks a call at its finite allowance is explicitly incomplete.
 These guards do not change the accepted provider defaults or public API.
+
+The maintainer-requested file-first upload makes title and format optional
+overrides. Local bounded metadata extraction supplies display titles and source
+format; original bytes stay immutable and existing explicit upload requests
+remain compatible. The ingestion contract owns fallback and validation rules.

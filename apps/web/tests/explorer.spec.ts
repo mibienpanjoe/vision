@@ -15,7 +15,6 @@ test.beforeEach(async ({ page }) => {
 test("real upload produces scoped entities; late aliases and stale detail disappear on cutoff change", async ({ page }) => {
   test.setTimeout(60000);
   await page.getByRole("textbox", { name: "Book title", exact: true }).fill("The annotated world");
-  await page.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
   await page.getByLabel("Source file").setInputFiles({ name: "story.md", mimeType: "text/markdown", buffer: readFileSync("../api/tests/fixtures/narrative/story.md") });
   await page.getByRole("button", { name: "Upload book", exact: true }).click();
   const book = page.getByRole("article", { name: "The annotated world" });

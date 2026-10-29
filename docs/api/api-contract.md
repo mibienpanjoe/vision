@@ -246,7 +246,7 @@ long-running ingestion stages, failures/cancellation and broader recovery.
 
 | Endpoint | Implemented behavior |
 |---|---|
-| `POST /v1/works` | Authenticated multipart `title`, `format` (`txt`/`md`/`pdf`/`epub`), and one `file`; required `Idempotency-Key`; `202` with work and ingestion reference |
+| `POST /v1/works` | Authenticated multipart with one `file`; optional `title` and `format` (`txt`/`md`/`pdf`/`epub`) override automatic metadata; required `Idempotency-Key`; `202` with work and ingestion reference |
 | `GET /v1/works` | Owner-scoped UUID-ascending keyset page; `limit` 1–100 (default 20), optional UUID `after`; `items` and nullable `next_cursor` |
 | `GET /v1/works/{id}` | Owned work metadata, its first immutable document revision and `current_parser_revision` (null until a generation is published) |
 | `GET /v1/works/{id}/chapters` | Current published source generation's chapter numbers and IDs, without titles; ordinal-ascending page, `after` >= 0 (default 0), `limit` 1–100 (default 100); `next_after` or null; source/generation/parser lineage retained |
@@ -265,8 +265,10 @@ unknown/duplicate fields and extra files fail safely. Errors use the common
 safe envelope: invalid content/metadata `422`, malformed multipart `400`, size
 `413`, media type `415`, transfer timeout `408`, unavailable storage `503`.
 
-Creation keys are scoped to authenticated owner and work creation. Exact title,
-format and original SHA-256 define request identity; replay returns the same
+Creation keys are scoped to authenticated owner and work creation. Supplied
+metadata and original SHA-256 define request identity; automatic-title requests
+also include the cleaned filename used for fallback. Existing explicit title/format
+request identities stay compatible; replay returns the same
 work/document/job, while changed input gives `409`. Keys currently persist with
 the work without expiry. A lost acknowledgement can return `503` after SQL
 committed: replay recovers the persisted reference without deleting its source.

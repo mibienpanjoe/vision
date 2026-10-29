@@ -17,7 +17,6 @@ test.describe("real library", () => {
     await expect(page.getByText("Upload your first book to begin.")).toBeVisible();
     const title = "Élodie 🦊 " + "A long private book title ".repeat(8);
     await page.getByRole("textbox", { name: "Book title", exact: true }).fill(title);
-    await page.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
     const source = readFileSync("../api/tests/fixtures/narrative/story.md");
     await page.getByLabel("Source file").setInputFiles({ name: "story.md", mimeType: "text/markdown", buffer: source });
     const accepted = page.waitForResponse(response => response.url().endsWith("/api/v1/works") && response.request().method() === "POST");
@@ -79,7 +78,6 @@ test.describe("real library", () => {
     const book = page.getByRole("article", { name: "Cancel and retry" });
     await expect(book.locator(".readiness > div").nth(0)).toContainText("Complete", { timeout: 30000 });
     await page.getByRole("textbox", { name: "Book title", exact: true }).fill("Malformed PDF");
-    await page.getByRole("combobox", { name: "Format", exact: true }).selectOption("pdf");
     await page.getByLabel("Source file").setInputFiles({ name: "broken.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.7\nmalformed") });
     await page.getByRole("button", { name: "Upload book", exact: true }).click();
     const failed = page.getByRole("article", { name: "Malformed PDF" });
@@ -142,4 +140,24 @@ test("private library asks the reader to sign in", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Sign in to your library" })).toBeVisible();
   await expect(page.getByLabel("Username")).toBeVisible();
   await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute("type", "password");
+});
+
+test("file-only upload detects its title and format through the real API", async ({ page }) => {
+  test.skip(process.env.VISION_TEST_LIBRARY !== "1", "Requires isolated library fixtures");
+  await page.goto("/");
+  await page.getByLabel("Username", { exact: true }).fill("transport_reader");
+  await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Upload a book", exact: true })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Format", exact: true })).toHaveCount(0);
+  await page.getByLabel("Source file").setInputFiles({ name: "download.md", mimeType: "text/plain",
+    buffer: Buffer.from("# An Automatically Named Book\n\nA short synthetic chapter.") });
+  const accepted = page.waitForResponse(response => response.url().endsWith("/api/v1/works") && response.request().method() === "POST");
+  await page.getByRole("button", { name: "Upload book", exact: true }).click();
+  const response = await accepted;
+  expect(response.status()).toBe(202);
+  const record = await response.json();
+  expect(record.work.title).toBe("An Automatically Named Book");
+  expect(record.work.format).toBe("md");
+  await expect(page.getByRole("article", { name: "An Automatically Named Book", exact: true })).toBeVisible();
 });

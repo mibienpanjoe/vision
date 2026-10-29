@@ -2307,26 +2307,38 @@
       "additionalProperties": false,
       "properties": {
         "format": {
-          "enum": [
-            "txt",
-            "md",
-            "pdf",
-            "epub"
+          "anyOf": [
+            {
+              "enum": [
+                "txt",
+                "md",
+                "pdf",
+                "epub"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ],
-          "title": "Format",
-          "type": "string"
+          "default": null,
+          "title": "Format"
         },
         "title": {
-          "maxLength": 256,
-          "minLength": 1,
-          "title": "Title",
-          "type": "string"
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
         }
       },
-      "required": [
-        "title",
-        "format"
-      ],
       "title": "UploadMetadata",
       "type": "object"
     },

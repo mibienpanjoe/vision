@@ -15,7 +15,6 @@ test("Unicode source spans stay exact and hostile-looking markup stays text", as
   test.setTimeout(60000);
   const prefix = 'é🦊é <img src=x onerror="alert(1)"> ';
   await page.getByRole("textbox", { name: "Book title", exact: true }).fill("Unicode source reader");
-  await page.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
   await page.getByLabel("Source file").setInputFiles({ name: "unicode.md", mimeType: "text/markdown", buffer: Buffer.from(`# Chapter 1\n\n${prefix}Élodie met Arthur.\n`) });
   await page.getByRole("button", { name: "Upload book", exact: true }).click();
   const book = page.getByRole("article", { name: "Unicode source reader" });
@@ -37,7 +36,6 @@ test("Unicode source spans stay exact and hostile-looking markup stays text", as
 test("attribute and passage selections agree; real scope denial clears the excerpt", async ({ page }) => {
   test.setTimeout(60000);
   await page.getByRole("textbox", { name: "Book title", exact: true }).fill("Attribute source reader");
-  await page.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
   await page.getByLabel("Source file").setInputFiles({ name: "story.md", mimeType: "text/markdown", buffer: readFileSync("../api/tests/fixtures/narrative/story.md") });
   await page.getByRole("button", { name: "Upload book", exact: true }).click();
   const book = page.getByRole("article", { name: "Attribute source reader" });

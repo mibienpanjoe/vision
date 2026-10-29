@@ -23,7 +23,8 @@ saved in browser storage. Signing out or an expired-session response clears the
 visible library. A failed library read has a reload action instead of presenting
 an empty library as a successful result.
 
-The upload form accepts the declared format, title and original file. It shows
+The upload form starts with the original file. Format and title are detected
+automatically; the reader can optionally supply a different title. It shows
 transfer in progress without inventing a percentage. After the API confirms
 storage, the book appears in the library. An uncertain upload can be resubmitted
 with the same key and payload; editing the form begins a new request. Pagination

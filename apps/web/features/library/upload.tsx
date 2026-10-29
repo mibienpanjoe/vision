@@ -11,7 +11,11 @@ export function Upload({ onUploaded, onUnauthorized, disabled }: { onUploaded: (
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    if (!pending.current) pending.current = { key: crypto.randomUUID(), body: new FormData(form) };
+    if (!pending.current) {
+      const body = new FormData(form);
+      if (!String(body.get("title") ?? "").trim()) body.delete("title");
+      pending.current = { key: crypto.randomUUID(), body };
+    }
     setBusy(true); setError("");
     try {
       const result = await api<UploadAccepted>("/works", { method: "POST", headers: { "Idempotency-Key": pending.current.key }, body: pending.current.body });
@@ -24,9 +28,8 @@ export function Upload({ onUploaded, onUnauthorized, disabled }: { onUploaded: (
       <p className="muted-copy">TXT, Markdown, PDF or EPUB · up to 8 MiB.<br />PDFs need a text layer; scanned pages are unsupported.</p></div>
     <form onSubmit={submit} onChange={() => { pending.current = null; setError(""); }} className="form-stack">
       <fieldset disabled={busy || disabled}>
-        <label>Book title<input name="title" required maxLength={256} /></label>
-        <div className="form-row"><label>Format<select name="format" defaultValue="txt"><option value="txt">Plain text</option><option value="md">Markdown</option><option value="pdf">PDF</option><option value="epub">EPUB</option></select></label>
-          <label>Source file<input name="file" type="file" accept=".txt,.md,.pdf,.epub" required /></label></div>
+        <label>Source file<input name="file" type="file" accept=".txt,.md,.pdf,.epub" required /></label>
+        <label>Book title<input name="title" placeholder="Detected automatically" maxLength={256} /></label>
       </fieldset>
       <div><button disabled={busy || disabled} type="submit">{busy ? "Uploading…" : "Upload book"}</button></div>
       {busy && <p role="status">Transferring your book. Processing begins after it is stored.</p>}

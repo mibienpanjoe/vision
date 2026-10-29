@@ -9,7 +9,6 @@ test("reconstruction outcomes, profile, source and exported JSON use the real st
   await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByRole("textbox", { name: "Book title", exact: true }).fill("Reconstruction workspace");
-  await page.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
   await page.getByLabel("Source file").setInputFiles({ name: "story.md", mimeType: "text/markdown", buffer: readFileSync("../api/tests/fixtures/narrative/story.md") });
   await page.getByRole("button", { name: "Upload book", exact: true }).click();
   const book = page.getByRole("article", { name: "Reconstruction workspace" });
@@ -82,7 +81,6 @@ test("a selection that overflowed the context budget is stated on the profile", 
   await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByRole("textbox", { name: "Book title", exact: true }).fill("Budget notice");
-  await page.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
   await page.getByLabel("Source file").setInputFiles({ name: "story.md", mimeType: "text/markdown", buffer: readFileSync("../api/tests/fixtures/narrative/story.md") });
   await page.getByRole("button", { name: "Upload book", exact: true }).click();
   const book = page.getByRole("article", { name: "Budget notice" });

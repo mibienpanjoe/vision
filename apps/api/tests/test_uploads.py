@@ -263,3 +263,28 @@ def test_ingestion_publication_intent_survives_real_broker_outage(readers, datab
     assert dispatch_ingestions(database) == 1
     job = alice.get(f"/v1/works/{accepted['work']['id']}/ingestions/{accepted['job']['id']}").json()
     assert not job["dispatch_pending"] and job["status"] == "queued"
+
+
+def test_file_only_upload_detects_book_metadata_and_replays(readers):
+    from tests.epub_builder import build, chapters
+    alice, _ = readers
+    data = build()
+    def send(key="automatic-book", title=None):
+        return alice.post("/v1/works", data={} if title is None else {"title": title},
+            files={"file": ("download.bin", data, "application/octet-stream")},
+            headers={**ORIGIN, "Idempotency-Key": key})
+    first = send()
+    assert first.status_code == 202, first.text
+    assert (first.json()["work"]["title"], first.json()["work"]["format"]) == (chapters()[0][0], "epub")
+    replay = send()
+    assert replay.status_code == 202 and replay.json()["work"]["id"] == first.json()["work"]["id"]
+    assert send(title="Different edition").status_code == 409
+    override = send(key="automatic-override", title="Different edition")
+    assert override.status_code == 202 and override.json()["work"]["title"] == "Different edition"
+    assert alice.get(f'/v1/works/{first.json()["work"]["id"]}/original').content == data
+
+    def text_file(filename):
+        return alice.post("/v1/works", files={"file": (filename, b"A short book.")},
+            headers={**ORIGIN, "Idempotency-Key": "automatic-text-format"})
+    assert text_file("Book.md").status_code == 202
+    assert text_file("Book.txt").status_code == 409

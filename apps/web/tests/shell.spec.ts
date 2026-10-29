@@ -119,3 +119,24 @@ test("sign out belongs to the header and clears the library session", async ({ p
   await expect(page.getByRole("heading", { name: "Sign in to your library", exact: true })).toBeVisible();
   await expect(page.getByRole("banner").getByRole("button", { name: "Sign out", exact: true })).toHaveCount(0);
 });
+
+test("upload needs only a file and preserves automatic book metadata", async ({ page }) => {
+  const actor = { id: "00000000-0000-0000-0000-000000000001", username: "reader" };
+  const work = { id: "00000000-0000-0000-0000-000000000002", title: "Embedded title", format: "epub", byte_count: 100 };
+  await page.route("**/api/v1/auth/me", route => route.fulfill({ json: actor }));
+  await page.route("**/api/v1/works", async route => {
+    if (route.request().method() === "POST") {
+      const body = route.request().postDataBuffer()!.toString();
+      expect(body).toContain('name="file"');
+      expect(body).not.toContain('name="format"');
+      expect(body).not.toContain('name="title"');
+      await route.fulfill({ status: 202, json: { work, job: { status: "queued" } } });
+    } else await route.fulfill({ json: { items: [], next_cursor: null } });
+  });
+  await page.route("**/api/v1/works/*/generations*", route => route.fulfill({ json: { items: [] } }));
+  await page.goto("/");
+  await expect(page.getByRole("combobox", { name: "Format", exact: true })).toHaveCount(0);
+  await page.getByLabel("Source file").setInputFiles({ name: "download.epub", mimeType: "application/epub+zip", buffer: Buffer.from("synthetic transport") });
+  await page.getByRole("button", { name: "Upload book", exact: true }).click();
+  await expect(page.getByRole("article", { name: "Embedded title", exact: true })).toBeVisible();
+});

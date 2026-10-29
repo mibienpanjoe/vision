@@ -46,7 +46,6 @@ test("hostile titles and source markup render as inert text", async () => {
   page.on("dialog", dialog => { throw new Error(`unexpected dialog ${dialog.message()}`); });
   await page.goto("/");
   await page.getByRole("textbox", { name: "Book title", exact: true }).fill(TITLE);
-  await page.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
   await page.getByLabel("Source file").setInputFiles({ name: "../../hostile.md", mimeType: "text/html", buffer: Buffer.from(SOURCE) });
   const accepted = page.waitForResponse(response => response.url().endsWith("/api/v1/works") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Upload book", exact: true }).click();
@@ -102,7 +101,6 @@ test("signing out in one tab leaves the other tab's controls unable to act", asy
   await second.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(second.getByLabel("Username")).toBeVisible();
   await first.getByRole("textbox", { name: "Book title", exact: true }).fill("Stale upload");
-  await first.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
   await first.getByLabel("Source file").setInputFiles({ name: "story.md", mimeType: "text/markdown", buffer: readFileSync("../api/tests/fixtures/narrative/story.md") });
   const refused = first.waitForResponse(response => response.url().endsWith("/api/v1/works") && response.request().method() === "POST");
   await first.getByRole("button", { name: "Upload book", exact: true }).click();

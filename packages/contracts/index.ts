@@ -238,8 +238,8 @@ export type Outcome2 = "insufficient_evidence";
 export type SchemaVersion2 = "1.0";
 export type Outcome3 = "failed";
 export type SchemaVersion3 = "1.0";
-export type Format1 = "txt" | "md" | "pdf" | "epub";
-export type Title1 = string;
+export type Format1 = ("txt" | "md" | "pdf" | "epub") | null;
+export type Title1 = string | null;
 export type CreatedAt2 = string;
 export type Id11 = string;
 /**
@@ -669,8 +669,8 @@ export interface UploadAccepted {
   work: WorkView;
 }
 export interface UploadMetadata {
-  format: Format1;
-  title: Title1;
+  format?: Format1;
+  title?: Title1;
 }
 export interface VisualizationView {
   created_at: CreatedAt2;

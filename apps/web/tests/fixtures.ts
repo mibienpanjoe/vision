@@ -11,7 +11,6 @@ export async function signIn(page: Page) {
 
 export async function uploadCorpus(page: Page, title: string) {
   await page.getByRole("textbox", { name: "Book title", exact: true }).fill(title);
-  await page.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
   await page.getByLabel("Source file").setInputFiles({ name: "story.md", mimeType: "text/markdown", buffer: readFileSync("../api/tests/fixtures/narrative/story.md") });
   const accepted = page.waitForResponse(response => response.url().endsWith("/api/v1/works") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Upload book", exact: true }).click();
