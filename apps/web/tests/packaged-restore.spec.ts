@@ -19,6 +19,7 @@ test("restored library and entity explorer render surviving data and omit the de
   await book.getByRole("link", { name: "Open book" }).click();
   await expect(page.getByRole("heading", { name: "Packaged", exact: true })).toBeVisible();
   await page.getByRole("combobox", { name: "Reading boundary", exact: true }).selectOption({ label: "Whole book" });
+  if (!await page.locator(".browse-options").evaluate(element => element.hasAttribute("open"))) await page.getByText("Browse people, places and objects", { exact: true }).click();
   await page.getByRole("button", { name: "Arthur", exact: true }).click();
   await expect(page.getByRole("region", { name: "Entity details" })).toContainText("Arthur");
   const evidence = page.waitForResponse(response => response.url().endsWith("/evidence"));

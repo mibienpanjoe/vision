@@ -27,7 +27,9 @@ test("live provider renders a stored specification and a locked creative refinem
   await signIn(page);
   const workId = await uploadCorpus(page, "Live render");
   await chooseArthur(page);
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("after the war");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Scene context", { exact: true }).fill("at home");
   const created = page.waitForResponse(r => /\/visualizations$/.test(r.url()) && r.request().method() === "POST");
   await page.getByRole("button", { name: "Create visual specification", exact: true }).click();

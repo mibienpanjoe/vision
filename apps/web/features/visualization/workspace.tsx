@@ -9,7 +9,7 @@ import { Refinement } from "./refinement";
 import { RenderHistory } from "./render-history";
 
 export function ReconstructionWorkspace({ workId, entity, cutoff, boundaryLabel, generationId }: {
-  workId: string; entity: EntitySummary; cutoff: string | null; boundaryLabel: string; generationId: string;
+  workId: string; entity?: EntitySummary; cutoff: string | null; boundaryLabel: string; generationId: string;
 }) {
   const [result, setResult] = useState<VisualizationCreated | null>(null);
   const [view, setView] = useState<VisualizationView | null>(null);

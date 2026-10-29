@@ -188,3 +188,15 @@ button.source-highlight:hover { text-decoration: underline; filter: none; }
 .explorer-start { min-height: 16rem; display: flex; flex-direction: column; justify-content: center; }
 .explorer-start p { color: var(--muted-foreground); max-width: 30rem; }
 @media (max-width: 56rem) { .explorer-columns { grid-template-columns: minmax(0, 1fr); } .explorer-aside { position: static; } .entity-list { max-height: 20rem; } }
+
+.site-header { min-height: 5rem; }
+main { padding-block: 1.5rem; }
+.library-heading { margin-bottom: 1.25rem; }
+.library-hero { display: block; }
+.book-list { margin-top: 0; margin-bottom: 2rem; }
+.boundary-panel { margin-bottom: 1.25rem; }
+.browse-options { margin-top: 1.5rem; }
+.browse-options > summary, .composer-options > summary { cursor: pointer; padding-block: .75rem; }
+.composer-options[open] { display: grid; gap: 1rem; }
+
+.context-panel > h2 { font-family: Inter, system-ui, sans-serif; font-size: 1.25rem; font-weight: 600; letter-spacing: normal; margin-bottom: .75rem; }

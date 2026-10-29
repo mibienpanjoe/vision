@@ -21,6 +21,7 @@ test("Unicode source spans stay exact and hostile-looking markup stays text", as
   await expect(book.locator(".readiness > div").nth(2)).toContainText("Ready", { timeout: 30000 });
   await book.getByRole("link", { name: "Open book" }).click();
   await page.getByRole("combobox", { name: "Reading boundary", exact: true }).selectOption({ label: "Through chapter 1" });
+  await page.getByText("Browse people, places and objects", { exact: true }).click();
   await page.getByRole("button", { name: "Élodie", exact: true }).click();
   const response = page.waitForResponse(r => r.url().endsWith("/evidence"));
   await page.getByText("Source mentions", { exact: true }).click();
@@ -43,8 +44,11 @@ test("attribute and passage selections agree; real scope denial clears the excer
   await expect(book.locator(".readiness > div").nth(2)).toContainText("Ready", { timeout: 30000 });
   await book.getByRole("link", { name: "Open book" }).click();
   await page.getByRole("combobox", { name: "Reading boundary", exact: true }).selectOption({ label: "Through chapter 3" });
+  if (!await page.locator(".browse-options").evaluate(element => element.hasAttribute("open"))) await page.getByText("Browse people, places and objects", { exact: true }).click();
   await page.getByRole("button", { name: "Arthur", exact: true }).click();
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("after the war");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Scene context", { exact: true }).fill("at home");
   await page.getByRole("button", { name: "Create visual specification", exact: true }).click();
   const inspector = page.getByRole("region", { name: "Attribute evidence" });

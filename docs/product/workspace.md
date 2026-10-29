@@ -140,3 +140,10 @@ selection action. Ranking does not validate extraction labels or merge identitie
 After entity selection, the request and saved-result workspace appears first
 and moves into view. Source mentions are an expandable secondary section;
 JSON export and optional rendering remain actions on the saved result.
+
+The book workspace follows the describe-or-select contract: after an explicit
+reading boundary, the natural-language request is available immediately. Entity
+browsing is optional; selecting one opens the same reconstruction workflow.
+Moment, scene, mode and style are optional More options, not prerequisites.
+The library puts existing books before upload, and source warnings use readable
+limitations rather than internal parser codes.

@@ -7,7 +7,9 @@ test("two tabs reject stale refinement, retain locked canon and revisit immutabl
   await signIn(page);
   const workId = await uploadCorpus(page, "Refinement history");
   await chooseArthur(page);
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("after the war");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Scene context", { exact: true }).fill("at home");
   const response = page.waitForResponse(r => /\/visualizations$/.test(r.url()) && r.request().method() === "POST");
   await page.getByRole("button", { name: "Create visual specification", exact: true }).click();

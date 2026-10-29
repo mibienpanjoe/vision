@@ -64,7 +64,7 @@ export function JobStatus({ workId, onUnauthorized }: { workId: string; onUnauth
     {job?.dispatch_pending && <p className="muted-copy">Saved. Waiting for dispatch to the worker.</p>}
     {job?.error_code && <p>Parsing error: <code>{job.error_code}</code></p>}
     {generation?.narrative_error && <p>Extraction error: <code>{generation.narrative_error}</code></p>}
-    {generation?.warnings.map(warning => <p key={warning}>Source warning: <code>{warning}</code></p>)}
+    {generation?.warnings.map(warning => <p key={warning}>{({ chapter_structure_unavailable: "Chapter breaks were not detected; chapter-level spoiler limits are unavailable.", non_text_content_skipped: "Images and other non-text content were skipped." } as Record<string, string>)[warning] ?? "Some source content could not be read."}</p>)}
     <div className="actions">
       {job && ["queued", "running"].includes(job.status) && <button className="secondary" disabled={busy || blocked || job.cancel_requested} onClick={() => void mutate("cancel")}>Cancel parsing</button>}
       {job && ["failed", "cancelled"].includes(job.status) && job.attempts < 3 && <button className="secondary" disabled={busy || blocked} onClick={() => void mutate("retry")}>Retry parsing</button>}

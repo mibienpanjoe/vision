@@ -10,7 +10,9 @@ test(`real local models and ${provider} produce a stored profile with exact evid
   const workId = await uploadCorpus(page, "Live product gate");
   await chooseArthur(page);
   await page.getByLabel("Describe the view", { exact: true }).fill("Arthur at dinner after the war");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("after the war");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Scene context", { exact: true }).fill("at dinner");
   const response = page.waitForResponse(r => /\/visualizations$/.test(r.url()) && r.request().method() === "POST", { timeout: 300000 });
   await page.getByRole("button", { name: "Create visual specification", exact: true }).click();

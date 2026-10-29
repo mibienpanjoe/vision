@@ -212,3 +212,9 @@ The maintainer-requested file-first upload makes title and format optional
 overrides. Local bounded metadata extraction supplies display titles and source
 format; original bytes stay immutable and existing explicit upload requests
 remain compatible. The ingestion contract owns fallback and validation rules.
+
+The documented describe-or-select workflow is exposed directly after reading
+scope selection. Browsing entities and detailed moment/style settings are optional.
+Clarification choices update the description to remove the rejected alternative
+while preserving the backend conflict and spoiler checks. Existing books precede
+upload, and unsupported chapter boundaries are explained explicitly.

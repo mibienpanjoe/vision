@@ -693,3 +693,11 @@ in an annotation although the quote names only a room; and journey/unknown-attir
 cases submit the same broad profile query with different expected outcomes.
 A profile can legitimately resolve with attire unknown and an inferred scar.
 Outcome agreement therefore also needs those scope qualifications.
+
+The description-first browser scenario additionally follows the complete reader
+flow without opening entity browsing: upload, readiness, explicit reading scope,
+natural-language request, context clarification, persisted JSON export equality,
+exact source highlight, and worker-generated image with download. It uses the
+real API/database/broker/worker with controlled text and image adapters. Entity
+browsing remains a separately tested optional path; closing it retains the main
+request workspace. This does not establish live-provider quality.

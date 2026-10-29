@@ -16,6 +16,7 @@ test("reconstruction outcomes, profile, source and exported JSON use the real st
   await book.getByRole("link", { name: "Open book" }).click();
   const boundary = page.getByRole("combobox", { name: "Reading boundary", exact: true });
   await boundary.selectOption({ label: "Through chapter 3" });
+  if (!await page.locator(".browse-options").evaluate(element => element.hasAttribute("open"))) await page.getByText("Browse people, places and objects", { exact: true }).click();
   await page.getByRole("button", { name: "Arthur", exact: true }).click();
   const create = page.getByRole("button", { name: "Create visual specification", exact: true });
   await create.click();
@@ -23,7 +24,9 @@ test("reconstruction outcomes, profile, source and exported JSON use the real st
   await page.getByRole("button", { name: "Use moment: dinner", exact: true }).click();
   await expect(page.getByLabel("Story moment", { exact: true })).toHaveValue("dinner");
   await page.getByLabel("Describe the view", { exact: true }).fill("Arthur at home after the war");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("after the war");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Scene context", { exact: true }).fill("at home");
   let response = page.waitForResponse(r => /\/visualizations$/.test(r.url()) && r.request().method() === "POST");
   await create.click();
@@ -39,12 +42,16 @@ test("reconstruction outcomes, profile, source and exported JSON use the real st
   const path = await (await download).path();
   expect(JSON.parse(readFileSync(path!, "utf8"))).toEqual(canonical.result.data);
   await page.getByLabel("Describe the view", { exact: true }).fill("");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("travelling home");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Scene context", { exact: true }).fill("");
   await create.click();
   await expect(profile).toContainText("Inferred");
   await page.getByLabel("Describe the view", { exact: true }).fill("Arthur at home after the war");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("after the war");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Scene context", { exact: true }).fill("at home");
   await page.getByRole("combobox", { name: "Creative mode", exact: true }).selectOption("interpretation");
   await page.getByLabel("Visual style", { exact: true }).fill("sepia ink wash");
@@ -57,17 +64,22 @@ test("reconstruction outcomes, profile, source and exported JSON use the real st
   await expect(profile).toContainText("sepia ink wash");
   await page.screenshot({ path: "../../.local/reconstruction-profile.png", fullPage: true });
   await boundary.selectOption({ label: "Through chapter 4" });
+  if (!await page.locator(".browse-options").evaluate(element => element.hasAttribute("open"))) await page.getByText("Browse people, places and objects", { exact: true }).click();
   await page.getByRole("button", { name: "Arthur", exact: true }).click();
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("after the war");
   await create.click();
   await expect(profile).toContainText("Disputed");
   await boundary.selectOption({ label: "Through chapter 2" });
+  if (!await page.locator(".browse-options").evaluate(element => element.hasAttribute("open"))) await page.getByText("Browse people, places and objects", { exact: true }).click();
   await page.getByRole("button", { name: "Arthur", exact: true }).click();
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("in spring");
   await create.click();
   await expect(page.getByText("The source does not establish this request.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Export JSON", exact: true })).toHaveCount(0);
   await page.getByLabel("Describe the view", { exact: true }).fill("Arthur unavailable provider");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("during the war");
   await create.click();
   await expect(page.getByRole("alert").filter({ hasText: "PROVIDER_RATE_LIMITED" })).toBeVisible();
@@ -87,7 +99,9 @@ test("a selection that overflowed the context budget is stated on the profile", 
   await expect(book.locator(".readiness > div").nth(2)).toContainText("Ready", { timeout: 30000 });
   await book.getByRole("link", { name: "Open book" }).click();
   await page.getByRole("combobox", { name: "Reading boundary", exact: true }).selectOption({ label: "Through chapter 3" });
+  if (!await page.locator(".browse-options").evaluate(element => element.hasAttribute("open"))) await page.getByText("Browse people, places and objects", { exact: true }).click();
   await page.getByRole("button", { name: "Arthur", exact: true }).click();
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("dinner");
   // UI-only: the real stored result is relabelled; the server-side label is proven in test_fusion/test_retrieval_budgets.
   await page.route(/\/visualizations$/, async route => {
@@ -99,4 +113,46 @@ test("a selection that overflowed the context budget is stated on the profile", 
   await page.getByRole("button", { name: "Create visual specification", exact: true }).click();
   const profile = page.getByRole("region", { name: "Visual specification", exact: true });
   await expect(profile.getByRole("status").filter({ hasText: "did not fit the context budget" })).toBeVisible();
+});
+
+test("documented flow accepts a description without browsing entities", async ({ page }) => {
+  test.setTimeout(90000);
+  await page.goto("/");
+  await page.getByLabel("Username").fill("transport_reader");
+  await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByLabel("Book title", { exact: true }).fill("Direct request flow");
+  await page.getByLabel("Source file").setInputFiles({ name: "story.md", mimeType: "text/markdown", buffer: readFileSync("../api/tests/fixtures/narrative/story.md") });
+  await page.getByRole("button", { name: "Upload book", exact: true }).click();
+  const book = page.getByRole("article", { name: "Direct request flow", exact: true });
+  await expect(book.locator(".readiness > div").nth(2)).toContainText("Ready", { timeout: 30000 });
+  await book.getByRole("link", { name: "Open book" }).click();
+  await page.getByRole("combobox", { name: "Reading boundary", exact: true }).selectOption({ label: "Through chapter 3" });
+  await expect(page.locator(".browse-options")).not.toHaveAttribute("open", "");
+  await page.getByRole("textbox", { name: "Describe the view", exact: true }).fill("Arthur at dinner at home after the war");
+  const response = page.waitForResponse(r => r.url().endsWith("/visualizations") && r.request().method() === "POST");
+  await page.getByRole("button", { name: "Create visual specification", exact: true }).click();
+  let record = await (await response).json();
+  for (let attempt = 0; record.result.outcome === "needs_context" && attempt < 3; attempt++) {
+    const choices = record.result.choices;
+    const choice = choices.find((item: { label: string }) => /dinner/i.test(item.label)) ?? choices[0];
+    await page.getByRole("button", { name: `Use ${choice.field ?? "choice"}: ${choice.label}`, exact: true }).click();
+    const clarified = page.waitForResponse(r => r.url().endsWith("/visualizations") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Create visual specification", exact: true }).click();
+    record = await (await clarified).json();
+  }
+  expect(record.result.outcome).toBe("resolved");
+  await expect(page.getByRole("button", { name: "Export JSON", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Render revision 1", exact: true })).toBeVisible();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export JSON", exact: true }).click();
+  const exported = await download;
+  expect(exported.suggestedFilename()).toMatch(/\.json$/);
+  expect(JSON.parse(readFileSync((await exported.path())!, "utf8"))).toEqual(record.result.data);
+  const profile = page.getByRole("region", { name: "Visual specification", exact: true });
+  await profile.getByRole("button", { name: /Arthur · attire:/ }).click();
+  await expect(profile.getByRole("region", { name: "Source reader" }).locator('mark[data-selected="true"]')).toBeVisible();
+  await page.getByRole("button", { name: "Render revision 1", exact: true }).click();
+  await expect(page.getByRole("img", { name: "Generated image of revision 1", exact: true })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole("link", { name: "Download image", exact: true })).toBeVisible();
 });

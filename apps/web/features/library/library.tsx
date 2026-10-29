@@ -50,7 +50,6 @@ function PrivateLibrary({ actor, signedOut }: { actor: PrincipalView; signedOut:
 
   return <>
     {error && <p role="alert">{error} <button className="secondary" onClick={() => window.location.reload()}>Reload library</button></p>}
-      <Upload disabled={busy} onUnauthorized={signedOut} onUploaded={({ work }) => setWorks(previous => [work, ...previous.filter(item => item.id !== work.id)])} />
       <section aria-labelledby="books-title" className="book-list">
         <h2 id="books-title">Your books</h2>
         {busy && <p role="status">Loading books…</p>}
@@ -62,5 +61,6 @@ function PrivateLibrary({ actor, signedOut }: { actor: PrincipalView; signedOut:
         </article>)}
         {cursor && <button className="secondary" onClick={() => void more()} disabled={busy}>Load more books</button>}
       </section>
+      <Upload disabled={busy} onUnauthorized={signedOut} onUploaded={({ work }) => setWorks(previous => [work, ...previous.filter(item => item.id !== work.id)])} />
   </>;
 }

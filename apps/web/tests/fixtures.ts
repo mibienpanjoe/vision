@@ -23,5 +23,6 @@ export async function uploadCorpus(page: Page, title: string) {
 
 export async function chooseArthur(page: Page, chapter = 3) {
   await page.getByRole("combobox", { name: "Reading boundary", exact: true }).selectOption({ label: `Through chapter ${chapter}` });
+  if (!await page.locator(".browse-options").evaluate(element => element.hasAttribute("open"))) await page.getByText("Browse people, places and objects", { exact: true }).click();
   await page.getByRole("button", { name: "Arthur", exact: true }).click();
 }

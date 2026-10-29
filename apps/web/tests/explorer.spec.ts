@@ -25,18 +25,25 @@ test("real upload produces scoped entities; late aliases and stale detail disapp
   await expect(boundary).toHaveValue("");
   await expect(page.getByRole("button", { name: "Arthur", exact: true })).toHaveCount(0);
   await boundary.selectOption({ label: "Whole book" });
+  if (!await page.locator(".browse-options").evaluate(element => element.hasAttribute("open"))) await page.getByText("Browse people, places and objects", { exact: true }).click();
   await page.getByRole("button", { name: "Arthur", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Describe the view", exact: true })).toBeInViewport({ ratio: 1 });
   await expect(page.locator("#entity-evidence")).not.toHaveAttribute("open", "");
   const list = page.getByRole("region", { name: "Browse entities", exact: true });
   const bounded = await list.evaluate(element => element.getBoundingClientRect().height <= innerHeight * .65 + 1);
   expect(bounded).toBe(true);
+  await page.getByText("Browse people, places and objects", { exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "Describe the view", exact: true })).toBeVisible();
+  await page.getByText("Browse people, places and objects", { exact: true }).click();
   const details = page.getByRole("region", { name: "Entity details" });
   await expect(details).toContainText("Wren · supported alias");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("after the war");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Scene context", { exact: true }).fill("at home");
   await boundary.selectOption({ label: "Through chapter 2" });
   await expect(details).toHaveCount(0);
+  if (!await page.locator(".browse-options").evaluate(element => element.hasAttribute("open"))) await page.getByText("Browse people, places and objects", { exact: true }).click();
   await page.getByRole("button", { name: "Arthur", exact: true }).click();
   await expect(details).not.toContainText("Wren · supported alias");
   await expect(page.getByLabel("Story moment", { exact: true })).toHaveValue("");
@@ -44,6 +51,7 @@ test("real upload produces scoped entities; late aliases and stale detail disapp
   await page.getByLabel("Find an entity").fill("captain");
   await expect(page.getByRole("button", { name: "Mira", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Brann", exact: true })).toBeVisible();
+  if (!await page.locator(".browse-options").evaluate(element => element.hasAttribute("open"))) await page.getByText("Browse people, places and objects", { exact: true }).click();
   await page.getByRole("button", { name: "Mira", exact: true }).click();
   await expect(details).toContainText("Identity unresolved");
   await details.getByText("Source mentions", { exact: true }).click();
@@ -58,8 +66,11 @@ test("real upload produces scoped entities; late aliases and stale detail disapp
 test("chosen entity, moment, context and cutoff reach the stored request", async ({ page }) => {
   await page.getByRole("article", { name: "The annotated world" }).getByRole("link", { name: "Open book" }).click();
   await page.getByRole("combobox", { name: "Reading boundary", exact: true }).selectOption({ label: "Through chapter 3" });
+  if (!await page.locator(".browse-options").evaluate(element => element.hasAttribute("open"))) await page.getByText("Browse people, places and objects", { exact: true }).click();
   await page.getByRole("button", { name: "Arthur", exact: true }).click();
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("after the war");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Scene context", { exact: true }).fill("at home");
   const response = page.waitForResponse(r => /\/visualizations$/.test(r.url()) && r.request().method() === "POST");
   await page.getByRole("button", { name: "Create visual specification", exact: true }).click();

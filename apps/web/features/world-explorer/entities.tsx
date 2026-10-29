@@ -2,16 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Illustration } from "@/components/illustration";
-import { api, message, type ChapterPage, type EntityDetail, type EntityPage, type SourceSpan } from "@/lib/api";
+import { api, message, type ChapterPage, type EntityDetail, type EntityPage, type EntitySummary, type SourceSpan } from "@/lib/api";
 import { ReconstructionWorkspace } from "@/features/visualization/workspace";
 import { SourceReader } from "@/features/reader/source-reader";
 
-export function Entities({ workId, source, cutoff }: { workId: string; source: ChapterPage; cutoff: string | null }) {
+export function Entities({ workId, source, cutoff, onSelect }: { workId: string; source: ChapterPage; cutoff: string | null; onSelect?: (entity: EntitySummary) => void }) {
   const content = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState<EntityPage | null>(null);
   const [selected, setSelected] = useState("");
   const [detail, setDetail] = useState<EntityDetail | null>(null);
-  useEffect(() => { if (detail) content.current?.scrollIntoView({ block: "start", behavior: "auto" }); }, [detail]);
+  useEffect(() => { if (detail && !onSelect) content.current?.scrollIntoView({ block: "start", behavior: "auto" }); }, [detail, onSelect]);
   const [visibleCount, setVisibleCount] = useState(50);
   const [filter, setFilter] = useState("");
   const [kind, setKind] = useState("all");
@@ -35,7 +35,7 @@ export function Entities({ workId, source, cutoff }: { workId: string; source: C
     }).catch(error => { if (active) setError(message(error)); });
     return () => { active = false; };
   }, [selected, workId, source.generation_id, suffix]);
-  function choose(id: string) { if (id !== selected) { setDetail(null); setSourceSpan(null); setError(""); setSelected(id); } }
+  function choose(id: string) { if (id !== selected) { const entity = page?.items.find(item => item.id === id); if (entity) onSelect?.(entity); setDetail(null); setSourceSpan(null); setError(""); setSelected(id); } }
   const items = page?.items.filter(entity => (kind === "all" || entity.kind === kind) &&
     [entity.label, ...entity.aliases.map(alias => alias.label)].some(label => label.toLocaleLowerCase().includes(filter.toLocaleLowerCase()))) ?? [];
   items.sort((a, b) => b.mention_count - a.mention_count || a.label.localeCompare(b.label));
@@ -57,7 +57,7 @@ export function Entities({ workId, source, cutoff }: { workId: string; source: C
         <div className="entity-content" ref={content}>
           {!selected && <div className="panel explorer-start"><h3>What would you like to explore?</h3><p>Choose a person, place or object to see its source passages and create a visual.</p></div>}
           {selected && !detail && !error && <p role="status">Loading entity…</p>}
-          {detail && <ReconstructionWorkspace key={detail.entity.id} workId={workId} entity={detail.entity} cutoff={cutoff} generationId={source.generation_id} boundaryLabel={cutoff ? `Through chapter ${source.items.find(chapter => chapter.id === cutoff)?.ordinal}` : "Whole book"} />}
+          {detail && !onSelect && <ReconstructionWorkspace key={detail.entity.id} workId={workId} entity={detail.entity} cutoff={cutoff} generationId={source.generation_id} boundaryLabel={cutoff ? `Through chapter ${source.items.find(chapter => chapter.id === cutoff)?.ordinal}` : "Whole book"} />}
           {detail && <section className="panel" aria-label="Entity details">
             <h3>{detail.entity.label}</h3><p className="muted-copy">{detail.entity.kind} · {detail.entity.mention_count} eligible mentions</p>
             {detail.entity.aliases.length > 0 && <ul className="alias-list">{detail.entity.aliases.map((alias, index) => <li key={index}>{alias.label} · {alias.status === "supported" ? "supported alias" : "candidate alias — identity unresolved"}</li>)}</ul>}

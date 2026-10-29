@@ -15,7 +15,9 @@ test("populated workspace retains labels, contrast, keyboard access and layout a
   await page.keyboard.press("Enter");
   await expect(page.locator("main")).toBeFocused();
   await chooseArthur(page);
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("after the war");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Scene context", { exact: true }).fill("at home");
   await page.getByRole("button", { name: "Create visual specification", exact: true }).click();
   const profile = page.getByRole("region", { name: "Visual specification", exact: true });

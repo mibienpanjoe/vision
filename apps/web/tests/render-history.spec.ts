@@ -7,7 +7,9 @@ test("a real worker's render is private, downloadable and reopens its exact spec
   await signIn(page);
   await uploadCorpus(page, "Render history");
   await chooseArthur(page);
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Story moment", { exact: true }).fill("after the war");
+  if (!await page.getByLabel("Story moment", { exact: true }).isVisible()) await page.getByText("More options", { exact: true }).click();
   await page.getByLabel("Scene context", { exact: true }).fill("at home");
   await page.getByRole("button", { name: "Create visual specification", exact: true }).click();
   const renders = page.getByRole("region", { name: "Rendered images" });
