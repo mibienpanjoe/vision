@@ -130,3 +130,13 @@ tab cannot save again until the reader reloads the current revision; that action
 loads its locks/mode and retains the draft style for review. Uncertain network
 outcomes retain their exact key/payload/revision for replay. A source or processing
 change requires a new reconstruction instead of silently restyling stale inputs.
+
+The entity explorer ranks cutoff-visible results by mention count, keeps the
+result list in a bounded scrolling panel and initially displays 50 matches.
+Search and kind filters cover the full returned set; Show more reveals further
+results without hiding rare entities. The adjacent empty state explains the
+selection action. Ranking does not validate extraction labels or merge identities.
+
+After entity selection, the request and saved-result workspace appears first
+and moves into view. Source mentions are an expandable secondary section;
+JSON export and optional rendering remain actions on the saved result.

@@ -35,7 +35,7 @@ export function Composer({ workId, entity, cutoff, result, onResult, onBusy }: {
     <p className="muted-copy">Describe when and where in the story. The source must support the chosen moment within your reading boundary.</p>
     <form className="form-stack" onSubmit={submit} onChange={changed}>
       <fieldset disabled={busy}>
-        <div className="form-field"><label htmlFor="visual-query">Describe the view</label><textarea id="visual-query" value={query} onChange={event => setQuery(event.target.value)} maxLength={1000} rows={3} placeholder="Arthur at home after the war…" /></div>
+        <div className="form-field"><label htmlFor="visual-query">Describe the view</label><textarea id="visual-query" value={query} onChange={event => setQuery(event.target.value)} maxLength={1000} rows={3} placeholder={`Describe ${subject.label}, a scene, or a moment in the story…`} /></div>
         <label>Story moment<input value={moment} onChange={event => setMoment(event.target.value)} maxLength={256} placeholder="After the war, at age ten…" /></label>
         <label>Scene context<input value={context} onChange={event => setContext(event.target.value)} maxLength={256} placeholder="At home, during the family dinner…" /></label>
         <div><label htmlFor="creative-mode">Creative mode</label><select id="creative-mode" value={mode} onChange={event => setMode(event.target.value as "canon_first" | "interpretation")}>

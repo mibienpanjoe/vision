@@ -22,6 +22,7 @@ test("restored library and entity explorer render surviving data and omit the de
   await page.getByRole("button", { name: "Arthur", exact: true }).click();
   await expect(page.getByRole("region", { name: "Entity details" })).toContainText("Arthur");
   const evidence = page.waitForResponse(response => response.url().endsWith("/evidence"));
+  await page.getByText("Source mentions", { exact: true }).click();
   await page.getByRole("button", { name: "Read passage 1", exact: true }).click();
   const resolved = await evidence;
   expect(resolved.status()).toBe(200);

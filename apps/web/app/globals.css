@@ -117,7 +117,7 @@ button.secondary:hover { background: var(--muted); filter: none; }
 .explorer-filters select { margin-top: .5rem; width: 100%; }
 .explorer-columns { display: grid; grid-template-columns: minmax(12rem, 1fr) minmax(0, 2.5fr); gap: 1.5rem; align-items: start; }
 .entity-list ul { list-style: none; padding: 0; margin: 0; }
-.entity-list li + li { margin-top: 1.25rem; }
+.entity-list li + li { margin-top: .5rem; }
 .entity-list span { display: block; font-size: .8125rem; color: var(--muted-foreground); margin-top: .25rem; }
 .entity-option { background: var(--background); color: var(--foreground); border-color: var(--input); width: 100%; text-align: left; overflow-wrap: anywhere; }
 .entity-option[aria-pressed=true] { background: var(--accent); color: var(--accent-foreground); border-color: var(--ring); }
@@ -177,3 +177,14 @@ button.source-highlight:hover { text-decoration: underline; filter: none; }
   .empty-art { width: 4.5rem; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+
+.explorer-aside { position: sticky; top: 1rem; align-self: start; }
+.entity-list { max-height: min(65svh, 42rem); overflow-y: auto; overscroll-behavior: contain; padding: .75rem; scrollbar-gutter: stable; }
+.entity-count { color: var(--muted-foreground); font-size: .8125rem; padding: .25rem .5rem .75rem; }
+.entity-list .entity-option { padding: .5rem .625rem; border-color: transparent; background: transparent; }
+.entity-list .entity-option:hover { background: var(--muted); }
+.entity-list .entity-option[aria-pressed=true] { background: var(--accent); border-color: var(--ring); }
+.entity-list li > span { padding-inline: .625rem; margin: 0 0 .5rem; }
+.explorer-start { min-height: 16rem; display: flex; flex-direction: column; justify-content: center; }
+.explorer-start p { color: var(--muted-foreground); max-width: 30rem; }
+@media (max-width: 56rem) { .explorer-columns { grid-template-columns: minmax(0, 1fr); } .explorer-aside { position: static; } .entity-list { max-height: 20rem; } }

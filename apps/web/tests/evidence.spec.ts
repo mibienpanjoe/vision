@@ -23,6 +23,7 @@ test("Unicode source spans stay exact and hostile-looking markup stays text", as
   await page.getByRole("combobox", { name: "Reading boundary", exact: true }).selectOption({ label: "Through chapter 1" });
   await page.getByRole("button", { name: "Élodie", exact: true }).click();
   const response = page.waitForResponse(r => r.url().endsWith("/evidence"));
+  await page.getByText("Source mentions", { exact: true }).click();
   await page.getByRole("button", { name: "Read passage 1", exact: true }).click();
   const view = await (await response).json();
   expect(view.span.start).toBe(Array.from(prefix).length);

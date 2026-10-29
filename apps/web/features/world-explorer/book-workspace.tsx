@@ -31,7 +31,7 @@ export function BookWorkspace({ workId }: { workId: string }) {
     <a className="back-link" href="/">← Your library</a>
     {error && <p role="alert">{error} <a href="/">Return to your library</a> or <button className="secondary" onClick={() => window.location.reload()}>Reload book</button></p>}
     {!work && !error && <p role="status">Opening your book…</p>}
-    {work && <><div className="library-heading"><p className="eyebrow">Explore the text</p><h1 className="book-title">{work.title}</h1></div>
+    {work && <><div className="library-heading"><h1 className="book-title">{work.title}</h1></div>
       {chapters && !error && <>
         <section className="panel boundary-panel" aria-label="Reading scope">
           <label htmlFor="reading-boundary">Reading boundary</label>
@@ -40,7 +40,7 @@ export function BookWorkspace({ workId }: { workId: string }) {
             {chapters.items.map(chapter => <option key={chapter.id} value={chapter.id}>Through chapter {chapter.ordinal}</option>)}
           </select>
           {chapters.next_after && <button className="secondary" disabled={busy} onClick={() => void moreChapters()}>Load more chapters</button>}
-          <p className="muted-copy">Only text within this boundary may support a result. Story time is chosen separately.</p>
+          <p className="muted-copy">Results use only the chapters you allow.</p>
         </section>
         {boundary && <Entities key={`${chapters.generation_id}/${boundary}`} workId={workId} source={chapters} cutoff={boundary === "whole_book" ? null : boundary} />}
       </>}

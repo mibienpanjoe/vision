@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Illustration } from "@/components/illustration";
 import { api, message, type ChapterPage, type EntityDetail, type EntityPage, type SourceSpan } from "@/lib/api";
 import { ReconstructionWorkspace } from "@/features/visualization/workspace";
 import { SourceReader } from "@/features/reader/source-reader";
 
 export function Entities({ workId, source, cutoff }: { workId: string; source: ChapterPage; cutoff: string | null }) {
+  const content = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState<EntityPage | null>(null);
   const [selected, setSelected] = useState("");
   const [detail, setDetail] = useState<EntityDetail | null>(null);
+  useEffect(() => { if (detail) content.current?.scrollIntoView({ block: "start", behavior: "auto" }); }, [detail]);
+  const [visibleCount, setVisibleCount] = useState(50);
   const [filter, setFilter] = useState("");
   const [kind, setKind] = useState("all");
   const [error, setError] = useState("");
@@ -35,25 +38,30 @@ export function Entities({ workId, source, cutoff }: { workId: string; source: C
   function choose(id: string) { if (id !== selected) { setDetail(null); setSourceSpan(null); setError(""); setSelected(id); } }
   const items = page?.items.filter(entity => (kind === "all" || entity.kind === kind) &&
     [entity.label, ...entity.aliases.map(alias => alias.label)].some(label => label.toLocaleLowerCase().includes(filter.toLocaleLowerCase()))) ?? [];
+  items.sort((a, b) => b.mention_count - a.mention_count || a.label.localeCompare(b.label));
   return <section className="explorer" aria-labelledby="explorer-title">
     <h2 id="explorer-title">People, places and objects</h2>
     {error && <p role="alert">{error} <button className="secondary" onClick={() => window.location.reload()}>Reload book</button></p>}
     {!page && !error && <p role="status">Loading eligible entities…</p>}
     {page && <>
-      <div className="explorer-filters"><label>Find an entity<input type="search" value={filter} onChange={event => setFilter(event.target.value)} /></label>
-        <div><label htmlFor="entity-kind">Kind</label><select id="entity-kind" value={kind} onChange={event => setKind(event.target.value)}>
+      <div className="explorer-filters"><label>Find an entity<input type="search" value={filter} onChange={event => { setFilter(event.target.value); setVisibleCount(50); }} /></label>
+        <div><label htmlFor="entity-kind">Kind</label><select id="entity-kind" value={kind} onChange={event => { setKind(event.target.value); setVisibleCount(50); }}>
           <option value="all">All kinds</option><option value="character">Characters</option><option value="place">Places</option><option value="object">Objects</option><option value="organization">Organizations</option>
         </select></div></div>
-      <div className="explorer-columns"><div className="explorer-aside"><div className="panel entity-list">
+      <div className="explorer-columns"><div className="explorer-aside"><div className="panel entity-list" role="region" aria-label="Browse entities" tabIndex={0}>
+        <p className="entity-count">{items.length} results · most mentioned first</p>
         {!items.length && <div className="empty-state"><Illustration name="empty" className="empty-art" /><p>No matching entities within this reading boundary.</p></div>}
-        <ul>{items.map(entity => <li key={entity.id}><button className="entity-option" aria-pressed={selected === entity.id} onClick={() => choose(entity.id)}>{entity.label}</button><span>{entity.kind} · {entity.mention_count} mentions</span></li>)}</ul>
-      </div><Illustration name="workspace" className="explorer-art" /></div>
-        <div className="entity-content">
+        <ul>{items.slice(0, visibleCount).map(entity => <li key={entity.id}><button className="entity-option" aria-pressed={selected === entity.id} onClick={() => choose(entity.id)}>{entity.label}</button><span>{entity.kind} · {entity.mention_count} {entity.mention_count === 1 ? "mention" : "mentions"}</span></li>)}</ul>
+        {items.length > visibleCount && <button className="secondary" onClick={() => setVisibleCount(count => count + 50)}>Show more results</button>}
+      </div></div>
+        <div className="entity-content" ref={content}>
+          {!selected && <div className="panel explorer-start"><h3>What would you like to explore?</h3><p>Choose a person, place or object to see its source passages and create a visual.</p></div>}
           {selected && !detail && !error && <p role="status">Loading entity…</p>}
+          {detail && <ReconstructionWorkspace key={detail.entity.id} workId={workId} entity={detail.entity} cutoff={cutoff} generationId={source.generation_id} boundaryLabel={cutoff ? `Through chapter ${source.items.find(chapter => chapter.id === cutoff)?.ordinal}` : "Whole book"} />}
           {detail && <section className="panel" aria-label="Entity details">
             <h3>{detail.entity.label}</h3><p className="muted-copy">{detail.entity.kind} · {detail.entity.mention_count} eligible mentions</p>
             {detail.entity.aliases.length > 0 && <ul className="alias-list">{detail.entity.aliases.map((alias, index) => <li key={index}>{alias.label} · {alias.status === "supported" ? "supported alias" : "candidate alias — identity unresolved"}</li>)}</ul>}
-            <div id="entity-evidence"><h4>Source mentions</h4>
+            <details id="entity-evidence"><summary>Source mentions</summary>
               {detail.mentions.map((mention, index) => <div className="mention" key={index}>
                 <blockquote>{mention.span.quote}</blockquote>
                 <button className="secondary" onClick={() => setSourceSpan(mention.span)}>Read passage {index + 1}</button>
@@ -62,10 +70,9 @@ export function Entities({ workId, source, cutoff }: { workId: string; source: C
                 </div></div>}
               </div>)}
               {detail.mentions_truncated && <p>Showing the first 200 mentions.</p>}
-            </div>
+            </details>
           </section>}
           {detail && sourceSpan && <SourceReader workId={workId} parserRevision={source.parser_revision} cutoff={cutoff} span={sourceSpan} />}
-          {detail && <ReconstructionWorkspace key={detail.entity.id} workId={workId} entity={detail.entity} cutoff={cutoff} generationId={source.generation_id} boundaryLabel={cutoff ? `Through chapter ${source.items.find(chapter => chapter.id === cutoff)?.ordinal}` : "Whole book"} />}
         </div>
       </div>
     </>}

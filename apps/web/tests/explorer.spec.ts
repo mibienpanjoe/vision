@@ -41,6 +41,7 @@ test("real upload produces scoped entities; late aliases and stale detail disapp
   await expect(page.getByRole("button", { name: "Brann", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Mira", exact: true }).click();
   await expect(details).toContainText("Identity unresolved");
+  await details.getByText("Source mentions", { exact: true }).click();
   await expect(details.getByRole("button", { name: "Choose Brann" })).toBeVisible();
   await details.getByRole("button", { name: "Choose Brann" }).click();
   await expect(details.getByRole("heading", { name: "Brann", exact: true })).toBeVisible();

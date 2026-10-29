@@ -1,6 +1,7 @@
 """Owner-scoped, reading-boundary-filtered entity browse views."""
 
 import uuid
+from collections import Counter, defaultdict
 
 from app.core.errors import PublicError
 from app.core.security import owned_object
@@ -70,17 +71,21 @@ def span(document, view, record) -> SourceSpan:
                       end=record.end, quote=view.passages[record.passage_id][1][record.start:record.end])
 
 
-def summary(document, view, entity_id) -> EntitySummary:
+def summary(document, view, entity_id, counts=None, aliases=None) -> EntitySummary:
     entity = view.entities[entity_id]
     return EntitySummary(id=entity.id, kind=entity.kind, label=view.labels[entity_id],
                          aliases=[AliasView(label=a.label, status=a.status, span=span(document, view, a))
-                                  for a in view.aliases if a.entity_id == entity_id],
-                         mention_count=sum(entity_id in view.candidates[m.id] for m in view.mentions))
+                                  for a in (view.aliases if aliases is None else aliases[entity_id]) if a.entity_id == entity_id],
+                         mention_count=counts[entity_id] if counts is not None else sum(entity_id in view.candidates[m.id] for m in view.mentions))
 
 
 def list_entities(db, actor, work_id: uuid.UUID, chapter_id: uuid.UUID | None) -> EntityPage:
     document, view, scope = scoped(db, actor, work_id, chapter_id)
-    items = sorted((summary(document, view, e) for e in view.entities), key=lambda s: (s.label.casefold(), str(s.id)))
+    counts = Counter(e for m in view.mentions for e in view.candidates[m.id])
+    aliases = defaultdict(list)
+    for alias in view.aliases:
+        aliases[alias.entity_id].append(alias)
+    items = sorted((summary(document, view, e, counts, aliases) for e in view.entities), key=lambda s: (s.label.casefold(), str(s.id)))
     return EntityPage(scope=scope, items=items)
 
 
