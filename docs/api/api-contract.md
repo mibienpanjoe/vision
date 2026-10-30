@@ -708,3 +708,16 @@ A missing `VISION_WORKSPACE_SECRET` (at least 32 random characters, private loca
 configuration) yields `503 WORKSPACE_NOT_CONFIGURED`. This remains loopback HTTP
 under DEC-25. Browser tab initialization is serialized by the Q33 consumer;
 request keys alone do not identify two unrelated browser contexts as one owner.
+
+### Trusted local access recovery — Q32a
+
+`POST /v1/auth/workspace/recover` requires Origin, a 43-character `Recovery-Key`
+and an `Idempotency-Key` (32–128 URL-safe characters), with no body or owner input.
+Only the local operator can issue a recovery code for a selected existing owner.
+It expires after 15 minutes; its hash is stored. The first redemption binds its
+request key; the exact same redemption can replay a lost response, while another
+key fails with `401 WORKSPACE_ACCESS_REQUIRED`. Recovery issues the same owner's
+90-day HttpOnly cookie and does not change books, history or render allowance.
+A valid different workspace cookie receives `409 WORKSPACE_CONFLICT` and remains
+untouched. Invalid/expired access can recover; normal visitors cannot claim a
+legacy owner. The operator workflow and private backup proof are Q32b.

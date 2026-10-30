@@ -226,3 +226,8 @@ workspace sessions, five-minute creation replay and a private server signing
 secret. It never promotes an anonymous visitor to an existing owner; expired
 access requires trusted local recovery. Frontend/session upgrade proof remains
 Q32/Q33, separately from PostgreSQL capability and migration checks.
+
+Q32a adds trusted local recovery for DEC-55: 15-minute hashed codes, single
+redemption request with replay, same durable owner/allowance and no public owner
+lookup. A different valid workspace cannot be overwritten. Recovery is an
+exceptional operator path; normal use still has no credential fields.

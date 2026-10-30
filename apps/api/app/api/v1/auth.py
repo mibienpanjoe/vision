@@ -81,3 +81,16 @@ async def workspace(request: Request, response: Response,
     if await request.body() or request.query_params:
         raise PublicError(422, "INVALID_REQUEST", "Workspace initialization takes no account input.")
     return await run_in_threadpool(bootstrap, db, request, response, key)
+
+
+@router.post("/workspace/recover", response_model=PrincipalView)
+async def recover_workspace(request: Request, response: Response,
+              recovery_key: Annotated[str, Header(alias="Recovery-Key", min_length=43, max_length=43, pattern=r"^[A-Za-z0-9_-]+$")],
+              key: Annotated[str, Header(alias="Idempotency-Key", min_length=32, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")],
+              db: Annotated[Session, Depends(database_session)]):
+    from app.services.workspace_sessions import recover
+
+    require_origin(request)
+    if await request.body() or request.query_params:
+        raise PublicError(422, "INVALID_REQUEST", "Recovery takes no account input.")
+    return await run_in_threadpool(recover, db, request, response, recovery_key, key)

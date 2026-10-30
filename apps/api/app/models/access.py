@@ -32,3 +32,11 @@ class WorkspaceBootstrap(Base):
     key_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
     owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("principals.id"), index=True)
     replay_until: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class WorkspaceRecovery(Base):
+    __tablename__ = "workspace_recoveries"
+    key_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("principals.id"), index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_key_hash: Mapped[str | None] = mapped_column(String(64))

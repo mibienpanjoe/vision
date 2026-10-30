@@ -61,3 +61,52 @@ def bootstrap(db, request, response, key):
     db.commit()
     response.set_cookie(COOKIE_NAME, token, httponly=True, samesite="strict", secure=False, max_age=LIFETIME, path="/")
     return result
+
+
+def issue_recovery(db, owner_id):
+    """Local operator only; never exposed as an unauthenticated account lookup."""
+    import secrets
+
+    from app.models.access import WorkspaceRecovery
+    from sqlalchemy import delete
+
+    if db.get(Principal, owner_id) is None:
+        raise missing_access()
+    token = secrets.token_urlsafe(32)
+    db.execute(delete(WorkspaceRecovery).where(WorkspaceRecovery.owner_id == owner_id))
+    db.add(WorkspaceRecovery(key_hash=token_hash(token), owner_id=owner_id,
+                             expires_at=datetime.now(UTC) + timedelta(minutes=15)))
+    db.commit()
+    return token
+
+
+def recover(db, request, response, recovery_key, key):
+    from app.models.access import WorkspaceRecovery
+
+    secret = os.environ.get("VISION_WORKSPACE_SECRET", "")
+    if len(secret) < 32:
+        raise PublicError(503, "WORKSPACE_NOT_CONFIGURED", "Private workspace access is not configured.", True)
+    now = datetime.now(UTC)
+    receipt = db.scalar(select(WorkspaceRecovery).where(WorkspaceRecovery.key_hash == token_hash(recovery_key)).with_for_update())
+    if receipt is None or receipt.expires_at <= now:
+        raise missing_access()
+    cookie = request.cookies.get(COOKIE_NAME, "")
+    active = db.get(LoginSession, token_hash(cookie)) if cookie else None
+    if active is not None and active.expires_at > now and active.owner_id != receipt.owner_id:
+        raise PublicError(409, "WORKSPACE_CONFLICT", "Another private workspace is already open in this browser.")
+    digest = token_hash(key)
+    if receipt.used_key_hash is not None and receipt.used_key_hash != digest:
+        raise missing_access()
+    token = base64.urlsafe_b64encode(hmac.digest(secret.encode(), b"vision-recovery-v1:" + recovery_key.encode() + key.encode(), "sha256")).decode().rstrip("=")
+    session = db.get(LoginSession, token_hash(token))
+    if receipt.used_key_hash is not None and session is None:
+        raise missing_access()
+    if session is None:
+        db.add(LoginSession(token_hash=token_hash(token), owner_id=receipt.owner_id,
+                            expires_at=now + timedelta(seconds=LIFETIME)))
+    receipt.used_key_hash = digest
+    principal = db.get(Principal, receipt.owner_id)
+    result = PrincipalView(id=principal.id, username=principal.username)
+    db.commit()
+    response.set_cookie(COOKIE_NAME, token, httponly=True, samesite="strict", secure=False, max_age=LIFETIME, path="/")
+    return result
