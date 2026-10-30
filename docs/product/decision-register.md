@@ -220,3 +220,9 @@ Q29 consumes DEC-38/55 with versioned quoted identity links, bounded relevant-na
 continuity and identity-group registry refs. It preserves cutoff and attribution
 gates; synthetic producer/negative-control proof is separate from Q30's private
 book re-derivation and holdout checks. No provider or disclosure policy changes.
+
+Q31 implements DEC-55's backend bootstrap with 90-day renewable HttpOnly local
+workspace sessions, five-minute creation replay and a private server signing
+secret. It never promotes an anonymous visitor to an existing owner; expired
+access requires trusted local recovery. Frontend/session upgrade proof remains
+Q32/Q33, separately from PostgreSQL capability and migration checks.

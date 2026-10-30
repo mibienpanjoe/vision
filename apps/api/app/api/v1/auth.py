@@ -15,9 +15,10 @@ from app.core.security import (
 )
 from app.models.access import LoginSession, Principal
 from app.schemas.access import LoginRequest, PrincipalView
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Header, Request, Response
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 router = APIRouter(prefix="/v1/auth", tags=["identity"], route_class=BoundedJsonRoute)
 
@@ -68,3 +69,15 @@ def logout(request: Request, response: Response,
                                           LoginSession.owner_id == actor.owner_id))
     db.commit()
     response.delete_cookie(COOKIE_NAME, path="/", httponly=True, samesite="strict")
+
+
+@router.post("/workspace", response_model=PrincipalView)
+async def workspace(request: Request, response: Response,
+              key: Annotated[str, Header(alias="Idempotency-Key", min_length=32, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")],
+              db: Annotated[Session, Depends(database_session)]):
+    from app.services.workspace_sessions import bootstrap
+
+    require_origin(request)
+    if await request.body() or request.query_params:
+        raise PublicError(422, "INVALID_REQUEST", "Workspace initialization takes no account input.")
+    return await run_in_threadpool(bootstrap, db, request, response, key)

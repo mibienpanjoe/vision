@@ -687,3 +687,24 @@ Q13 selects finite text-provider limits by model, reasoning effort and stage;
 Luna reasoning no longer inherits Groq's output allowance. Runs retain actual
 limits and usage, and budget/timeout outcomes keep their existing safe codes.
 Explicit limits and effort separate reuse. Public schemas are unchanged.
+
+## Private workspace bootstrap — Q31
+
+`POST /v1/auth/workspace` requires an allowed Origin and a fresh random
+`Idempotency-Key` (32–128 URL-safe characters), no owner/account input. A valid
+existing HttpOnly session resumes the same principal, including existing book
+ownership and consumed render allowance. Without a cookie it creates a distinct
+private workspace. An invalid or expired cookie fails with
+`401 WORKSPACE_ACCESS_REQUIRED`; it never claims another workspace or silently
+assigns a replacement owner. Legacy login endpoints remain compatible.
+
+The persistent SameSite=Strict HttpOnly cookie lasts 90 days and successful
+bootstrap renews it. Passwords are disabled for new anonymous principals. First
+creation replays for five minutes using a hashed initialization receipt and a
+server-HMAC capability; only its hash is stored in login_sessions. Concurrent
+requests using the same key create one principal/session. The caller keeps the
+initialization key only in memory; normal access stays exclusively in the cookie.
+A missing `VISION_WORKSPACE_SECRET` (at least 32 random characters, private local
+configuration) yields `503 WORKSPACE_NOT_CONFIGURED`. This remains loopback HTTP
+under DEC-25. Browser tab initialization is serialized by the Q33 consumer;
+request keys alone do not identify two unrelated browser contexts as one owner.
