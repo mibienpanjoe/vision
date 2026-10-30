@@ -231,3 +231,10 @@ Q32a adds trusted local recovery for DEC-55: 15-minute hashed codes, single
 redemption request with replay, same durable owner/allowance and no public owner
 lookup. A different valid workspace cannot be overwritten. Recovery is an
 exceptional operator path; normal use still has no credential fields.
+
+Q32b provides the trusted operator snapshot/upgrade tool and stable secret setup.
+Its source-schema override is restricted by the declared forward migration path;
+ordinary backup/restore still require their release's schema. A disposable
+restore of the actual private book preserved 4,661 passages, original hash,
+legacy citation, owner and allowance, with another workspace denied access.
+Primary-runtime migration/cutover is separately recorded when performed.

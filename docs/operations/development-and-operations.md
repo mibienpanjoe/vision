@@ -767,3 +767,35 @@ allowance avoids truncation in more cases; it does not establish factual quality
 
 The medium and higher stage timeouts total 240 seconds, leaving 60 seconds
 inside the browser proxy allowance for retrieval, persistence and response work.
+
+## Existing workspace upgrade and access recovery — Q32
+
+Keep the current private database and originals. `make setup` supplies a stable
+private `VISION_WORKSPACE_SECRET` without replacing an existing valid value;
+packaged API/worker services receive it from the private environment. New
+workspace cookies remain local HttpOnly capabilities, not browser-storage tokens.
+
+For a trusted local operator upgrading an existing owner, stop the worker first
+(the snapshot refuses an active worker lease), then run from the checkout:
+
+```sh
+PYTHONPATH=apps/api uv run --project apps/api --locked python scripts/migrate_workspace.py \
+  --username EXISTING_LOCAL_USERNAME \
+  --snapshot .local/workspace-upgrade-snapshot \
+  --recovery-file .local/workspace-recovery.url
+```
+
+Both paths must be new. The tool makes a consistent PostgreSQL/object snapshot
+before Alembic upgrade, checks the selected owner's book identities and consumed
+allowance, and writes a 15-minute recovery URL to a mode-0600 file. It never
+prints the code. Preserve the snapshot if migration fails; an automatic restore
+must not overwrite newer data. The saved manifest records its actual pre-upgrade
+schema: restore it under that release into a new target, then upgrade that target.
+Existing valid browser access resumes the same owner automatically. The recovery
+URL is for missing/expired access or the same workspace; it cannot replace a
+different valid workspace. Do not share or commit the recovery file. The normal
+flow has no username/password/account selector.
+
+Q32's disposable upgrade checks compare original bytes, exact Unicode citations,
+book/generation identity and durable render allowance. A private-workspace restore
+is a separate isolated proof, not permission to clear the user's runtime data.

@@ -191,7 +191,7 @@ def export_deletions(engine, path):
     private_write(path, json.dumps(data).encode())
 
 
-def backup(engine, directory):
+def backup(engine, directory, *, source_schema=None):
     directory.mkdir(mode=0o700)  # Never overwrite an existing snapshot, including an interrupted one.
     objects = []
     with engine.connect() as connection, connection.begin():
@@ -209,7 +209,7 @@ def backup(engine, directory):
         if connection.scalar(text("SELECT count(*) FROM work_deletions WHERE status='purging'")):
             raise SnapshotError("Complete interrupted deletion before taking a backup.")
         schema = connection.scalar(text("SELECT version_num FROM alembic_version"))
-        if schema != schema_head():
+        if schema != (source_schema or schema_head()):
             raise SnapshotError("Source schema does not match this release.")
         snapshot = connection.scalar(text("SELECT pg_export_snapshot()"))
         # https://www.postgresql.org/docs/17/app-pgdump.html (--snapshot, custom format)
