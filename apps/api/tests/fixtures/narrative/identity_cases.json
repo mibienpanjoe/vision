@@ -1,0 +1,87 @@
+{
+  "version": "1.0.0",
+  "provenance": "Original synthetic identity diagnostics, written for Q28. No private-book excerpts or names.",
+  "cases": [
+    {
+      "id": "full_name_and_surname",
+      "chapters": ["Lena Vale, called Vale in the village, wore a blue wool coat. Vale waited."],
+      "spans": [["Lena Vale", "character"], ["Vale", "character"]],
+      "pairs": [["Lena Vale", "Vale", "same"]],
+      "known_gaps": []
+    },
+    {
+      "id": "explicit_nickname_reveal",
+      "chapters": ["Nera and Finch were the same person. Nera wore a red coat; Finch smiled."],
+      "spans": [["Nera", "character"], ["Finch", "character"]],
+      "pairs": [["Nera", "Finch", "same"]],
+      "known_gaps": []
+    },
+    {
+      "id": "also_known_as_nickname",
+      "chapters": ["Nera, also known as Finch, wore a green cloak. Finch waited."],
+      "spans": [["Nera", "character"], ["Finch", "character"]],
+      "pairs": [["Nera", "Finch", "same"]],
+      "known_gaps": ["pair:0"]
+    },
+    {
+      "id": "different_people_shared_surname",
+      "chapters": ["Lena Vale and Oren Vale were different people. Vale was their shared surname."],
+      "spans": [["Lena Vale", "character"], ["Oren Vale", "character"], ["Vale", "character"]],
+      "pairs": [["Lena Vale", "Oren Vale", "separate"]],
+      "known_gaps": ["pair:0"]
+    },
+    {
+      "id": "cross_chapter_reveal",
+      "chapters": ["Elian wore a red coat.", "Fox carried a brass compass.", "Elian and Fox were the same person."],
+      "spans": [["Elian", "character"], ["Fox", "character"]],
+      "pairs": [["Elian", "Fox", "same"]],
+      "before_reveal": {"through": 2, "pairs": [["Elian", "Fox", "separate"]]},
+      "known_gaps": []
+    },
+    {
+      "id": "shared_title_is_not_identity",
+      "chapters": ["Captain Mira and Captain Brann were different people. The captain waited."],
+      "spans": [["Captain Mira", "character"], ["Captain Brann", "character"], ["The captain", "character"]],
+      "pairs": [["Captain Mira", "Captain Brann", "separate"]],
+      "ambiguous_query": "captain",
+      "ambiguous_count": 2,
+      "known_gaps": []
+    },
+    {
+      "id": "title_and_personal_name",
+      "chapters": ["Captain Mira was addressed as Mira. Mira carried a brass compass."],
+      "spans": [["Captain Mira", "character"], ["Mira", "character"]],
+      "pairs": [["Captain Mira", "Mira", "same"]],
+      "known_gaps": []
+    },
+    {
+      "id": "similar_names_different_people",
+      "chapters": ["Nera Vale and Neri Vail were different people. Nera Vale wore blue; Neri Vail wore red."],
+      "spans": [["Nera Vale", "character"], ["Neri Vail", "character"]],
+      "pairs": [["Nera Vale", "Neri Vail", "separate"]],
+      "known_gaps": []
+    },
+    {
+      "id": "wrong_recognizer_type",
+      "chapters": ["Sora adjusted her blue coat and smiled."],
+      "spans": [["Sora", "organization"]],
+      "pairs": [],
+      "expected_kinds": {"Sora": "character"},
+      "known_gaps": ["kind:Sora"]
+    },
+    {
+      "id": "possessive_is_not_reveal",
+      "chapters": ["Nera was Finch's friend. Finch wore a red coat."],
+      "spans": [["Nera", "character"], ["Finch", "character"]],
+      "pairs": [["Nera", "Finch", "separate"]],
+      "known_gaps": []
+    },
+    {
+      "id": "no_identity_evidence",
+      "chapters": ["Nera wore a green cloak. Finch wore a green cloak too."],
+      "spans": [["Nera", "character"], ["Finch", "character"]],
+      "pairs": [["Nera", "Finch", "separate"]],
+      "known_gaps": []
+    }
+  ]
+}

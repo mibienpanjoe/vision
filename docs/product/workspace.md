@@ -68,8 +68,7 @@ proposals; this contract does not claim those resources already exist.
 An opt-in `/preview/conversation` entry point demonstrates the interaction using
 only the synthetic story. `make conversation-preview-check` builds separately
 under `.next-preview` and runs its Chromium checks; start that preview with
-`VISION_CONVERSATION_PREVIEW=1 pnpm --dir apps/web start` on an available local
-port. Without that runtime flag the route returns 404. The normal library is
+`VISION_CONVERSATION_PREVIEW=1 pnpm --dir apps/web exec next start --hostname 127.0.0.1 --port 13001`. Without that runtime flag the route returns 404. The normal library is
 unchanged. Preview controls choose explicit sample outcomes; attachments supply
 only a display filename and are never uploaded or parsed. Responses, image
 placeholders and sessionStorage history are simulated, not real extraction,

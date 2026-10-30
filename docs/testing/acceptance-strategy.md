@@ -103,6 +103,32 @@ existing disclosure authorization and remaining finite allowance, otherwise mark
 the live gate incomplete. Concrete session-expiry tests follow the documented
 policy when selected; no lifetime is assumed by this contract.
 
+## Identity failure baseline — Q28
+
+The 2026-10-30 read-only audit of the current private generation reproduced
+duplicate names across entity types and fragmented full-name/short-name groups.
+No stored alias or `same_as` relationship joined them. Owner-scoped query planning
+therefore returned identity choices, while selecting one fragment restricted
+entity-linked retrieval and could leave it with no unique lookup names.
+Private spans, selected evidence, derivation/model identities and annotations
+remain in ignored local evidence; none are synthetic fixture content.
+
+| Stage | Observed failure class and limit |
+|---|---|
+| Local producer/publication | Persisted mentions point to split or mistyped identities. Bounded earlier-name context and type-sensitive publication are independently reproduced with controlled outputs in PostgreSQL; this does not attribute every observed private-book error to one rule. |
+| Candidate retrieval | Selected identity fragments yield different passage sets. The audit runs entity/appearance/lexical selection and inspects stored historical selection spans; it does not replay semantic ranks or claim complete relevant-source recall. |
+| Stored consolidation | Two persisted text-provider calls succeeded. One stored no appearance facts despite receiving source items. This is an empty extraction result, not proof that the whole book contains no visual evidence. Name-plus-appearance-cue matches are candidates, often about another holder. |
+| Attribution verification | The other stored consolidation yields seven candidate traits on replay, all rejected as unattributed by deterministic gates. Exact passage inspection finds a character-name mention assigned to a different full-name identity than the selected short-name fragment. Keep the gate; repair the identity evidence upstream. |
+| Provider availability | Neither stored call failed at the provider. No new text/image calls or adjudication were made; replaying current gates against stored data is not a fresh live-provider or browser acceptance run. |
+
+The [original synthetic fixture](../../apps/api/tests/fixtures/narrative/identity_cases.json)
+has eleven positive/negative cases with independent desired outcomes and named
+known gaps. `test_local_entities.py` and `test_query_resolution.py` exercise exact
+quotes, supported aliases, surname/title controls, later reveals, wrong types,
+bounded name continuity and actual PostgreSQL publication/owned planning. Desired
+outcomes remain the repair oracle; reproducing a known failure closes Q28's
+diagnostic task, not the identity-quality gates for later delivery.
+
 ## Evidence levels
 
 - **Documentation checks:** relative links/anchors, JSON syntax, fences, IDs,

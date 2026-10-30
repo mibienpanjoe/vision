@@ -47,6 +47,31 @@ unavailable or timeout (a routed gateway can pick a weak or overloaded model);
 every call is recorded. A failed derivation can be retried; a succeeded one is
 returned unchanged.
 
+### Identity diagnostic baseline — Q28
+
+The [synthetic identity cases](../../apps/api/tests/fixtures/narrative/identity_cases.json)
+separate desired identity relationships from the current `rules-v2` observations.
+Controlled recognizer spans exercise the real local rules and subject lookup;
+they do not measure GLiNER/fastcoref accuracy. Known disagreements are explicit
+diagnostic gaps: an “also known as” nickname remains split, two different people
+with a shared surname can be folded together, and a person tagged organization
+can retain that wrong type. A passing baseline test reproduces these defects;
+it does not accept them as product behavior or establish zero false merges.
+
+The earlier-entity listing has an 8,000-character prefix budget. A later name can
+fall outside it and be redeclared under a different type. Publication's existing
+`(kind, case-folded label)` identity key preserves both rows. The PostgreSQL
+diagnostic reproduces the resulting duplicate choices, loss of unique lookup
+names and disjoint entity-linked passage sets. This is distinct from a genuine
+shared-title ambiguity. The fixtures also retain positive full-name/title/reveal
+cases and negative possessive, similar-name and unsupported-identity controls.
+
+Q28 records a failure baseline only. Repair requires evidence-backed production
+and versioned reprocessing; do not hide a split identity by bypassing attribution
+checks, merging on name similarity or rewriting existing source spans. The
+[acceptance strategy](../testing/acceptance-strategy.md#identity-failure-baseline--q28)
+distinguishes private-book observations from simulated reproduction.
+
 ## Two independent axes of time
 
 Source position identifies where information is revealed. Story time identifies

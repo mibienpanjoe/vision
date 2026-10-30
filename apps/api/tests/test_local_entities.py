@@ -15,6 +15,73 @@ from tests.narrative_eval import evaluate
 from tests.test_entity_extraction import generation  # noqa: F401
 
 
+@pytest.mark.parametrize("case", json.loads((Path(__file__).parent / "fixtures/narrative/identity_cases.json").read_text())["cases"], ids=lambda case: case["id"])
+def test_identity_diagnostic_baseline_records_known_gaps_without_calling_them_repairs(case):
+    from tests.reconstruction_trace import identity_diagnostic
+
+    trace = identity_diagnostic(case, recognizer(case["spans"]))
+    assert trace["gaps"] == case["known_gaps"]
+    for item in trace["output"]["mentions"] + trace["output"]["aliases"] + trace["output"]["relations"]:
+        text = trace["sources"][item["ref"]]
+        assert text[item["start"]:item["start"] + len(item["quote"])] == item["quote"]
+
+
+def test_bounded_known_listing_can_drop_a_late_character_before_a_wrong_type_batch():
+    from types import SimpleNamespace
+
+    from app.services.narrative.entities import known_listing
+
+    entries = [SimpleNamespace(kind="character", label=f"Citizen {number:03} of the Northern Valley") for number in range(160)]
+    entries.append(SimpleNamespace(kind="character", label="Sora"))
+    known = json.loads(known_listing([SimpleNamespace(entities=entries)]))
+    assert known and len(known) < len(entries)
+    assert not any(item["label"] == "Sora" for item in known)
+    output = run(["Sora adjusted her blue coat."], [("Sora", "organization")], known=known)
+    assert [(entity["label"], entity["kind"]) for entity in output["entities"]] == [("Sora", "organization")]
+
+
+@pytest.mark.integration
+def test_publication_reproduces_cross_batch_type_fragmentation_with_controlled_outputs(database, generation):  # noqa: F811
+    from app.core.security import ActorScope
+    from app.models.access import Principal
+    from app.models.generations import SourceGeneration
+    from app.models.works import Document
+    from app.providers.deterministic import RuleAdapter
+    from app.providers.extraction import KNOWN_REF
+    from app.schemas.retrieval import VisualizationRequest
+    from app.services.narrative.eligibility import visible_narrative
+    from app.services.retrieval.entity_lookup import SubjectLookup
+    from app.services.retrieval.lexical import entity_linked
+    from app.services.retrieval.query_plan import NeedsContext, plan_query
+
+    def drift(sources):
+        # Simulate redeclaration after bounded earlier-entity context omits a name.
+        source = next(s for s in sources if s["ref"] != KNOWN_REF and "Arthur" in s["text"])
+        kind = "character" if "At ten, Arthur" in source["text"] else "organization"
+        return {"entities": [{"key": "arthur", "kind": kind, "label": "Arthur"}],
+                "mentions": [{"ref": source["ref"], "quote": "Arthur", "entity": "arthur"}]}
+
+    derivation_id = derive_entities(database, generation, RuleAdapter(drift))
+    with Session(database) as db:
+        entities = list(db.scalars(select(Entity).where(Entity.derivation_id == derivation_id)))
+        assert {(e.label, e.kind) for e in entities} == {("Arthur", "character"), ("Arthur", "organization")}
+        owner = db.scalar(select(Principal).where(Principal.username == "entity_owner"))
+        source_generation = db.get(SourceGeneration, generation)
+        document = db.get(Document, source_generation.document_id)
+        outcome = plan_query(db, ActorScope(owner.id, owner.username), document.work_id, VisualizationRequest(query="Arthur"))
+        assert isinstance(outcome, NeedsContext)
+        assert {choice.label for choice in outcome.choices} == {"Arthur (character)", "Arthur (organization)"}
+        view = visible_narrative(db, source_generation, None)
+        lookup = SubjectLookup(view)
+        passages = []
+        for entity in entities:
+            plan = plan_query(db, ActorScope(owner.id, owner.username), document.work_id,
+                              VisualizationRequest(entity_id=entity.id))
+            assert lookup.names(plan.subject) == []  # The same spelling now names both identities.
+            passages.append({candidate.passage_id for candidate in entity_linked(db, plan, view)})
+        assert all(passages) and passages[0].isdisjoint(passages[1])
+
+
 def recognizer(spans):
     """Fake span model: every listed surface wherever it occurs, longest first, without overlaps."""
     def recognize(texts):

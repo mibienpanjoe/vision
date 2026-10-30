@@ -208,3 +208,10 @@ Unexplained inferences cannot remove established facts or establish scene
 membership. Reasoning stage timeouts reserve browser proxy overhead, and a live
 evaluation that blocks a call at its finite allowance is explicitly incomplete.
 These guards do not change the accepted provider defaults or public API.
+
+Q27 supplies a controlled, opt-in conversation preview for DEC-55; it does not
+implement durable anonymous access or live conversation resources. Q28 records
+identity failures under the existing rules without changing identity, grounding,
+provider or disclosure policy. Its known-gap tests reproduce defects; the
+[identity baseline](../narrative/narrative-contract.md#identity-diagnostic-baseline--q28)
+and acceptance strategy govern the distinction from the later repair gates.
