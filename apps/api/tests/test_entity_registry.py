@@ -90,3 +90,19 @@ def test_quoted_unique_aliases_keep_identity_links_explicit_with_titled_labels()
                              canonicalize(output, names), a, names)
     assert not rejected and stored[0].relation == "same_as"
     assert (stored[0].subject_id, stored[0].object_id) == (a, b)
+
+
+def test_quoted_identity_group_has_one_registry_reference_with_both_names():
+    a, b = UUID(int=1), UUID(int=2)
+    view = Narrative({"p": (1, "Nera and Finch were the same person.")},
+                     entities={a: SimpleNamespace(label="Nera", kind="character"),
+                               b: SimpleNamespace(label="Finch", kind="character")},
+                     labels={a: "Nera", b: "Finch"},
+                     mentions=[SimpleNamespace(id="a", passage_id="p", start=0, end=4),
+                               SimpleNamespace(id="b", passage_id="p", start=9, end=14)],
+                     candidates={"a": {a}, "b": {b}},
+                     relations=[SimpleNamespace(subject_id=a, object_id=b, relation="same_as")])
+    entries, names = registry(view, {"p"}, {a, b})
+    assert len(entries) == 1
+    assert set(entries[0]["aliases"]) == {"nera", "finch"}
+    assert names["nera"] == names["finch"] == names[entries[0]["ref"]]

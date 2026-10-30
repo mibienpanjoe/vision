@@ -50,7 +50,7 @@ returned unchanged.
 ### Identity diagnostic baseline — Q28
 
 The [synthetic identity cases](../../apps/api/tests/fixtures/narrative/identity_cases.json)
-separate desired identity relationships from the current `rules-v2` observations.
+separate desired identity relationships from the historical `rules-v2` observations.
 Controlled recognizer spans exercise the real local rules and subject lookup;
 they do not measure GLiNER/fastcoref accuracy. Known disagreements are explicit
 diagnostic gaps: an “also known as” nickname remains split, two different people
@@ -454,3 +454,23 @@ explicit quoted endpoints against their resolved labels or the registry's
 unique visible name surfaces.
 Stored titles need not appear in a quote naming the same entity by a unique
 visible alias; registry refs themselves are never treated as quoted names.
+
+
+### Grounded identity production — Q29
+
+`entities-v3` / local `rules-v3` keeps distinct full-name declarations instead of
+folding everyone with a shared surname into one entity. Explicit “known as”,
+“called”, “addressed as” and same-person statements retain exact quoted identity
+links. A unique literal first/surname variant can link through the full-name
+citation; competing full names and explicit different-person wording prevent
+that link. These links remain separate versioned records, so the source cutoff
+still controls when they are visible. A title alone remains ambiguous.
+
+The bounded earlier-entity listing prioritizes exact names found in the current
+batch without changing their stable k:n keys. Exact known names retain their
+established type; a narrow literal human-description rule can correct a wrong
+local category. Coreference adds personal references, not arbitrary unrecognized
+phrases. Registry refs collapse only evidence-linked identity groups and retain
+all uniquely attributable names. Original derivations/passages remain unchanged.
+The Q28 synthetic desired outcomes now pass; this is not universal local-model
+quality or private-book reprocessing acceptance (Q30).

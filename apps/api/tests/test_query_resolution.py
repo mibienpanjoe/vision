@@ -45,8 +45,8 @@ def test_synthetic_shared_titles_remain_ambiguous_and_wrong_kinds_are_not_hidden
     assert {subject.label for subject in found} == {"Captain Mira", "Captain Brann"}
     wrong = next(case for case in cases if case["id"] == "wrong_recognizer_type")
     trace = identity_diagnostic(wrong, recognizer(wrong["spans"]))
-    assert trace["gaps"] == ["kind:Sora"]
-    assert {subject.kind for match in trace["lookup"].find("Sora") for subject in match.subjects} == {"organization"}
+    assert trace["gaps"] == []
+    assert {subject.kind for match in trace["lookup"].find("Sora") for subject in match.subjects} == {"character"}
 
 
 def test_request_shape_requires_a_subject_and_rejects_unknown_fields():

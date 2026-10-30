@@ -215,3 +215,8 @@ identity failures under the existing rules without changing identity, grounding,
 provider or disclosure policy. Its known-gap tests reproduce defects; the
 [identity baseline](../narrative/narrative-contract.md#identity-diagnostic-baseline--q28)
 and acceptance strategy govern the distinction from the later repair gates.
+
+Q29 consumes DEC-38/55 with versioned quoted identity links, bounded relevant-name
+continuity and identity-group registry refs. It preserves cutoff and attribution
+gates; synthetic producer/negative-control proof is separate from Q30's private
+book re-derivation and holdout checks. No provider or disclosure policy changes.

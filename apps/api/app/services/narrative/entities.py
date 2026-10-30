@@ -29,10 +29,14 @@ STAGE = "entities"
 KNOWN_BUDGET = 8_000
 
 
-def known_listing(previous) -> str:
+def known_listing(previous, text="") -> str:
     """Earlier groups' declared entities as `k:n` keys, in output order, within the budget."""
     listing, size = [], 2
-    for n, item in enumerate(e for output in previous for e in output.entities):
+    entries = list(enumerate(e for output in previous for e in output.entities))
+    if text:
+        import re
+        entries.sort(key=lambda entry: not re.search(r"(?<!\w)" + re.escape(entry[1].label) + r"(?!\w)", text, re.I))
+    for n, item in entries:
         entry = json.dumps({"key": f"k:{n}", "kind": item.kind, "label": item.label}, ensure_ascii=False)
         if size + len(entry) + 1 > KNOWN_BUDGET:
             break
@@ -45,7 +49,7 @@ def derive_entities(engine, generation_id: uuid.UUID, adapter: ProviderAdapter, 
                     cancelled: Callable[[], bool] = lambda: False) -> uuid.UUID:
     def build(group, previous):
         return entity_request([SourceItem(ref=f"p{p.ordinal}", text=p.text) for p in group],
-                              known_listing(previous) if previous else "", limits)
+                              known_listing(previous, "\n".join(p.text for p in group)) if previous else "", limits)
 
     return run_derivation(engine, generation_id, STAGE, adapter, EntityExtraction, PROMPT_VERSION, limits,
                           build, publish, limits.max_input_chars - len(INSTRUCTIONS) - KNOWN_BUDGET,
@@ -124,4 +128,35 @@ def publish(db, derivation_id, outputs) -> dict:
                 db.add(EntityRelation(derivation_id=derivation_id, subject_id=local[item.subject].id,
                                       relation=item.relation, object_id=local[item.object].id,
                                       passage_id=passage.id, start=span[0], end=span[1], model_run_id=run_id))
+    link_name_variants(db, derivation_id, entities.values(), staged)
     return {reason: count for reason, count in rejected.items() if count}
+
+
+def link_name_variants(db, derivation_id, entities, staged):
+    """Keep named rows immutable; a full-name citation links an unambiguous component."""
+    import re
+
+    people = [e for e in entities if e.kind == "character" and e.label[:1].isupper()]
+    components = {}
+    for person in people:
+        words = person.label.casefold().split()
+        if len(words) > 1:
+            for word in (words[0], words[-1]):
+                components.setdefault(word, set()).add(person.id)
+    for short in people:
+        matches = components.get(short.label.casefold(), set())
+        if len(matches) != 1:
+            continue
+        full_id = next(iter(matches))
+        for _, _, run_id, local, mentions in staged:
+            grounded = next(((p, a, b) for p, (a, b), resolved, _ in mentions
+                             if resolved in local and local[resolved].id == full_id
+                             and short.label.casefold() in p.text[a:b].casefold()
+                             and not re.search(r"\b(different people|another|unrelated|not the same)\b", p.text, re.I)), None)
+            if grounded:
+                passage, start, end = grounded
+                db.add(EntityRelation(derivation_id=derivation_id, subject_id=short.id, relation="same_as",
+                                      object_id=full_id, passage_id=passage.id, start=start, end=end, model_run_id=run_id))
+                db.add(EntityAlias(entity_id=full_id, label=short.label, status="supported",
+                                   passage_id=passage.id, start=start, end=end, model_run_id=run_id))
+                break

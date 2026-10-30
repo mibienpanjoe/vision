@@ -20,7 +20,7 @@ def test_identity_diagnostic_baseline_records_known_gaps_without_calling_them_re
     from tests.reconstruction_trace import identity_diagnostic
 
     trace = identity_diagnostic(case, recognizer(case["spans"]))
-    assert trace["gaps"] == case["known_gaps"]
+    assert trace["gaps"] == []
     for item in trace["output"]["mentions"] + trace["output"]["aliases"] + trace["output"]["relations"]:
         text = trace["sources"][item["ref"]]
         assert text[item["start"]:item["start"] + len(item["quote"])] == item["quote"]
@@ -37,7 +37,9 @@ def test_bounded_known_listing_can_drop_a_late_character_before_a_wrong_type_bat
     assert known and len(known) < len(entries)
     assert not any(item["label"] == "Sora" for item in known)
     output = run(["Sora adjusted her blue coat."], [("Sora", "organization")], known=known)
-    assert [(entity["label"], entity["kind"]) for entity in output["entities"]] == [("Sora", "organization")]
+    assert [(entity["label"], entity["kind"]) for entity in output["entities"]] == [("Sora", "character")]
+    relevant = json.loads(known_listing([SimpleNamespace(entities=entries)], "Sora arrived."))
+    assert relevant[0] == {"key": "k:160", "kind": "character", "label": "Sora"}
 
 
 @pytest.mark.integration
@@ -122,17 +124,17 @@ def labels(output):
     return sorted(e["label"] for e in output["entities"])
 
 
-def test_full_names_fold_into_surnames_and_labels_never_split_a_name():
+def test_shared_surnames_do_not_merge_distinct_full_names():
     output = run(["Henry Jekyll met Jekyll's butler. Harry Jekyll smiled. Hyde left; Hyde returned.",
                   "Sir Danvers Carew walked. Danvers Carew fell. Carew died. Danvers was mourned."],
                  [("Henry Jekyll", "character"), ("Jekyll", "character"), ("Harry Jekyll", "character"),
                   ("Hyde", "organization"), ("Danvers Carew", "character"), ("Carew", "place"),
                   ("Danvers", "character")])
     keys = {m["quote"]: m["entity"] for m in output["mentions"]}
-    assert keys["Henry Jekyll"] == keys["Jekyll"] == keys["Harry Jekyll"]
-    assert keys["Danvers Carew"] == keys["Carew"] == keys["Danvers"]
+    assert len({keys["Henry Jekyll"], keys["Jekyll"], keys["Harry Jekyll"]}) == 3
+    assert keys["Danvers Carew"] != keys["Carew"] != keys["Danvers"]
     assert len({m["entity"] for m in output["mentions"] if m["quote"] == "Hyde"}) == 1
-    assert len(output["entities"]) == 3
+    assert len(output["entities"]) == 7
 
 
 def test_titles_alone_stay_ambiguous_and_stop_words_are_dropped():
@@ -180,8 +182,8 @@ def test_later_chapters_reuse_earlier_keys_by_folded_label():
     known = [{"key": "k:0", "kind": "character", "label": "Henry Jekyll"},
              {"key": "k:1", "kind": "place", "label": "the house by the ash tree"}]
     output = run(["Jekyll entered the house."], [("Jekyll", "character"), ("the house", "place")], known=known)
-    assert output["entities"] == []
-    assert [m["entity"] for m in output["mentions"]] == ["k:0", "k:1"]
+    assert [(e["label"], e["kind"]) for e in output["entities"]] == [("Jekyll", "character")]
+    assert [m["entity"] for m in output["mentions"]] == ["e0", "k:1"]
 
 
 def test_appearance_cues_cover_the_annotated_visual_evidence():
