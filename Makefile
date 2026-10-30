@@ -1,4 +1,4 @@
-.PHONY: setup services migrate api worker dispatch web dev stop browsers lint unit contracts web-check docs check integration browser-session reconcile-sources images package-check
+.PHONY: setup services migrate api worker dispatch web dev stop browsers lint unit contracts web-check conversation-preview-check docs check integration browser-session reconcile-sources images package-check
 setup:
 	python3 scripts/local.py setup
 services:
@@ -33,6 +33,9 @@ web-check:
 	pnpm --dir apps/web build
 	pnpm --dir apps/web typecheck
 	pnpm --dir apps/web test tests/shell.spec.ts --workers=1
+conversation-preview-check:
+	VISION_CONVERSATION_PREVIEW=1 pnpm --dir apps/web build
+	VISION_CONVERSATION_PREVIEW=1 pnpm --dir apps/web test tests/conversation-prototype.spec.ts --workers=1
 docs:
 	python3 scripts/check_docs.py
 check: lint unit contracts web-check docs

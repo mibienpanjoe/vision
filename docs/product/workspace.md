@@ -63,6 +63,25 @@ an image. Public hosting, cross-device access and direct prompt editing remain
 outside this increment. Concrete endpoints and session lifetime are implementation
 proposals; this contract does not claim those resources already exist.
 
+### Controlled preview — Q27
+
+An opt-in `/preview/conversation` entry point demonstrates the interaction using
+only the synthetic story. `make conversation-preview-check` builds separately
+under `.next-preview` and runs its Chromium checks; start that preview with
+`VISION_CONVERSATION_PREVIEW=1 pnpm --dir apps/web start` on an available local
+port. Without that runtime flag the route returns 404. The normal library is
+unchanged. Preview controls choose explicit sample outcomes; attachments supply
+only a display filename and are never uploaded or parsed. Responses, image
+placeholders and sessionStorage history are simulated, not real extraction,
+durable workspace access, paid generation or cross-tab concurrency proof.
+
+The preview exercises moment selection, source focus restoration, copy, immutable
+sample versions/export, earlier-image association, preparation retry/replacement,
+ambiguity, missing evidence, unavailable service, stale version and uncertain
+image outcomes. Unknown image acceptance survives reload without another send.
+Actual storage failure leaves the in-memory draft usable. Real resources and
+provider-quality acceptance remain later implementation work.
+
 ## Library and uploads — T34
 
 The library begins with a sign-in form for a locally provisioned account. The

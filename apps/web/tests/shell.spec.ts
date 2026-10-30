@@ -4,6 +4,10 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/v1/auth/me", route => route.fulfill({ status: 401, json: { error: { code: "AUTHENTICATION_REQUIRED", message: "Sign in required." } } }));
 });
 
+test("controlled conversation preview is unavailable without explicit opt-in", async ({ request }) => {
+  expect((await request.get("/preview/conversation")).status()).toBe(404);
+});
+
 test("library shell opens dark by default and persists an explicit theme", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await page.goto("/");
