@@ -66,6 +66,43 @@ own executable checks below.
 | Prompt injection and hostile upload | REQ-19, REQ-22 | No tool/credential access or unbounded parser work |
 | Optional render | REQ-20 | Real image/specification linkage and visible provider failure/retry outcome |
 
+## Conversational acceptance cases — Q26
+
+**Status:** planned checks for DEC-55, not passing runtime evidence. The
+[conversation contract](../product/workspace.md#conversation-experience--q26)
+owns the interaction. A controlled clickable preview proves interactions only;
+delivery also requires real API, persistence, worker and browser outcomes.
+
+Use the existing annotated synthetic story for the grounded example: attach it
+and ask for Arthur before the war. A supported prompt may describe his blue wool
+coat, chestnut hair and unmarked left cheek at ten. It must omit an asserted eye
+color, adult scar, steel armor, wings and Brann's sword. Show exact supporting
+spans. A home-dinner option, when supported, uses the linen shirt and visible scar
+without combining adult appearance with childhood hair or resolving conflicting
+eye records. If a character-only base cannot safely combine traits, offer the
+supported alternatives rather than inventing a composite. These are expected
+outcomes, not a claim that current extraction achieves them.
+
+| Journey | Required observable and persisted proof |
+|---|---|
+| First visit and attach + ask | No credential/entity/chapter fields before submission; automatic metadata. A request during preparation persists and resumes once; failed preparation keeps the question with retry/replace. |
+| Fragmented identity regression | Reproduce reported private-book duplicate-name/type and insufficient-reference cases read-only. Trace exact source → extraction → aliases → retrieval → consolidation → gates; retain private excerpts only under `.local/`. Equivalent evidenced names yield the same subject/reference set after versioned reprocessing. |
+| Identity controls | Synthetic nicknames/full names/titles and cross-chapter reveals require quoted links. Shared titles and similar names never merge by similarity alone; “captain” asks Mira or Brann. Separate unresolved identity, no appearance evidence and provider failure. Compare a separate annotated holdout under the configured live text provider. |
+| Prompt and moment changes | Copy equals the active stored prompt text alone; JSON export equals its exact specification. A one-click moment change retains the prior prompt while pending, publishes verified revision + receipt atomically and rejects stale/forged actions. |
+| Context and revision safety | “Make it charcoal”, “keep the clothes” and “use the earlier appearance” retain the resolved subject and appropriate context after reload. Test two tabs, lost responses, replay and late old results; inspect stored revision and unchanged prior canonical claims. |
+| Source inspection | Open exact-span drawer, verify Unicode highlight against the original passage, then close with focus/scroll restored. No chat message is added. Old citations survive versioned reprocessing. |
+| Explicit image and uncertainty | Only Generate image starts a reservation; inspect exact prompt revision, persisted receipt, private pixels and download. Editing a prompt preserves the old image association. Unknown acceptance never causes another automatic paid send; finite allowance survives session recovery. |
+| Return, privacy and recovery | Reopen browser/restart services and inspect saved book/thread/context/card/images. A separate workspace cannot read them or claim legacy books. Temporary bootstrap/storage failure preserves drafts. Test deletion/backup/restore with disposable copies, preserving the user's current book. |
+| Layout and reading | Inspect populated, long-text, empty, pending and failed states at 1366×768, 1440×900, 390×844 and 320px; test 200% text, keyboard, light/dark and reduced motion. No horizontal overflow, focus loss, disabled draft typing or forced scroll on status updates. |
+
+Record actual provider/model, source/derivation revision, actor/workspace,
+call/token/latency budgets and observed omissions for live cases. Re-test the
+reported user surface; fixture success and valid JSON cannot close that gate.
+No additional paid image request is implied by these cases. Run only within
+existing disclosure authorization and remaining finite allowance, otherwise mark
+the live gate incomplete. Concrete session-expiry tests follow the documented
+policy when selected; no lifetime is assumed by this contract.
+
 ## Evidence levels
 
 - **Documentation checks:** relative links/anchors, JSON syntax, fences, IDs,
