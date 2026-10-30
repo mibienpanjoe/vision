@@ -30,7 +30,10 @@ test("a real worker's render is private, downloadable and reopens its exact spec
   await anonymous.close();
 
   await page.getByLabel("Refinement style", { exact: true }).fill("charcoal");
+  const saved = page.waitForResponse(r => r.url().endsWith("/refinements") && r.request().method() === "POST");
   await page.getByRole("button", { name: "Save new revision", exact: true }).click();
+  const response = await saved;
+  expect(response.status(), await response.text()).toBe(200);
   const profile = page.getByRole("region", { name: "Visual specification", exact: true });
   await expect(profile).toContainText("revision 2");
   await expect(first).toContainText("Older specification; the current revision is 2");

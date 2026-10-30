@@ -1,3 +1,4 @@
+import { signIn } from "./fixtures";
 import { expect, test } from "@playwright/test";
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
 
@@ -6,11 +7,7 @@ test.describe("real library", () => {
   test.describe.configure({ mode: "serial" });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto("/");
-    await page.getByLabel("Username").fill("transport_reader");
-    await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
-    await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await expect(page.getByText("Signed in as")).toBeVisible();
+    await signIn(page);
   });
 
   test("upload survives reload and parsing is distinct from extraction and indexing", async ({ page }) => {
@@ -39,11 +36,7 @@ test.describe("real library", () => {
       }
       await page.screenshot({ path: `../../.local/library-${theme}.png`, fullPage: true });
     }
-    await page.getByRole("button", { name: "Sign out", exact: true }).click();
-    await expect(book).toHaveCount(0);
-    await page.getByLabel("Username").fill("other_reader");
-    await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
-    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await signIn(page, "other_reader");
     await expect(page.getByText("Upload your first book to begin.")).toBeVisible();
     const endpoint = `/api/v1/works/${result.work.id}/ingestions/${result.job.id}`;
     expect((await page.request.get(endpoint)).status()).toBe(404);
@@ -136,10 +129,10 @@ test.describe("real library", () => {
   });
 });
 
-test("private library asks the reader to sign in", async ({ page }) => {
-  await page.route("**/api/v1/auth/me", route => route.fulfill({ status: 401, json: { error: { code: "AUTHENTICATION_REQUIRED", message: "Sign in required." } } }));
+test("expired workspace access offers recovery without credential fields", async ({ page }) => {
+  await page.route("**/api/v1/auth/workspace", route => route.fulfill({ status: 401, json: { error: { code: "WORKSPACE_ACCESS_REQUIRED", message: "This workspace needs local access recovery." } } }));
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Sign in to your library" })).toBeVisible();
-  await expect(page.getByLabel("Username")).toBeVisible();
-  await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute("type", "password");
+  await expect(page.locator("main").getByRole("alert")).toContainText("local access recovery");
+  await expect(page.getByLabel("Username")).toHaveCount(0);
+  await expect(page.getByLabel("Password", { exact: true })).toHaveCount(0);
 });

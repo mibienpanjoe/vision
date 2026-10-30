@@ -83,11 +83,15 @@ provider-quality acceptance remain later implementation work.
 
 ## Library and uploads — T34
 
-The library begins with a sign-in form for a locally provisioned account. The
-session remains in its HttpOnly cookie; credentials and source text are never
-saved in browser storage. Signing out or an expired-session response clears the
-visible library. A failed library read has a reload action instead of presenting
-an empty library as a successful result.
+The library opens through the remembered private workspace capability (Q33a).
+Normal entry has no sign-in, sign-out or account-name fields. Bootstrap is
+serialized across browser tabs and renews the HttpOnly session. Browser storage
+contains only a noncredential initialization marker; lost established access
+fails visibly and uses trusted local recovery instead of allocating a new owner.
+Temporary network failure retains mounted content and drafts. A failed library
+read has a reload action instead of presenting an empty library as success.
+The first-visit conversation composer remains pending the conversation resources
+and their authoritative browser consumer; the current entry still shows the library.
 
 The upload form accepts the declared format, title and original file. It shows
 transfer in progress without inventing a percentage. After the API confirms
@@ -125,7 +129,8 @@ data; whole-book and chapter scope remain distinct from story-time inputs.
 
 ## Entity and context explorer — T35
 
-Opening a book requires an explicit reading boundary before requesting entities.
+Opening a book defaults to whole-book evidence eligibility (Q33a). The compatible
+chapter selector remains available in this legacy explorer until replacement.
 Characters, places, objects and organizations come from the eligible API response.
 Search filters only those eligible labels and aliases. Supported aliases and
 candidate identities remain distinct; an ambiguous source mention offers named

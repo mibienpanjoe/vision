@@ -1,3 +1,4 @@
+import { signIn } from "./fixtures";
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
@@ -5,11 +6,7 @@ test.skip(process.env.VISION_TEST_WORKSPACE !== "1", "Requires the isolated work
 test.describe.configure({ mode: "serial" });
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
-  await page.getByLabel("Username").fill("transport_reader");
-  await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByText("Signed in as")).toBeVisible();
+  await signIn(page);
 });
 
 test("real upload produces scoped entities; late aliases and stale detail disappear on cutoff change", async ({ page }) => {
@@ -23,9 +20,7 @@ test("real upload produces scoped entities; late aliases and stale detail disapp
   await book.getByRole("link", { name: "Open book" }).click();
   await expect(page.getByRole("heading", { name: "The annotated world" })).toBeVisible();
   const boundary = page.getByRole("combobox", { name: "Reading boundary", exact: true });
-  await expect(boundary).toHaveValue("");
-  await expect(page.getByRole("button", { name: "Arthur", exact: true })).toHaveCount(0);
-  await boundary.selectOption({ label: "Whole book" });
+  await expect(boundary).toHaveValue("whole_book");
   await page.getByRole("button", { name: "Arthur", exact: true }).click();
   const details = page.getByRole("region", { name: "Entity details" });
   await expect(details).toContainText("Wren · supported alias");

@@ -1,13 +1,11 @@
+import { signIn } from "./fixtures";
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 test.skip(process.env.VISION_TEST_WORKSPACE !== "1", "Requires isolated workspace API/worker fixtures");
 test("reconstruction outcomes, profile, source and exported JSON use the real stored result", async ({ page }) => {
   test.setTimeout(90000);
-  await page.goto("/");
-  await page.getByLabel("Username").fill("transport_reader");
-  await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await signIn(page);
   await page.getByRole("textbox", { name: "Book title", exact: true }).fill("Reconstruction workspace");
   await page.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
   await page.getByLabel("Source file").setInputFiles({ name: "story.md", mimeType: "text/markdown", buffer: readFileSync("../api/tests/fixtures/narrative/story.md") });
@@ -77,10 +75,7 @@ test("reconstruction outcomes, profile, source and exported JSON use the real st
 
 test("a selection that overflowed the context budget is stated on the profile", async ({ page }) => {
   test.setTimeout(90000);
-  await page.goto("/");
-  await page.getByLabel("Username").fill("transport_reader");
-  await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await signIn(page);
   await page.getByRole("textbox", { name: "Book title", exact: true }).fill("Budget notice");
   await page.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
   await page.getByLabel("Source file").setInputFiles({ name: "story.md", mimeType: "text/markdown", buffer: readFileSync("../api/tests/fixtures/narrative/story.md") });

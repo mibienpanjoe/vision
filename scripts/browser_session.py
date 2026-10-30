@@ -44,6 +44,7 @@ try:
         **(values if live else {}),
         **os.environ,
         "DATABASE_URL": test_url,
+        "VISION_WORKSPACE_SECRET": "synthetic-workspace-signing-secret-for-isolated-tests-only",
         "VISION_WEB_ORIGINS": "http://127.0.0.1:13000",
         "VISION_SOURCE_ROOT": str(Path(source_directory.name) / "originals"),
         "VISION_RENDER_ROOT": str(Path(source_directory.name) / "renders"),
@@ -122,7 +123,7 @@ try:
             "tests/visualization.spec.ts tests/refinement.spec.ts tests/render-history.spec.ts tests/security.spec.ts",
         ).split()
     else:
-        specs = ["tests/library.spec.ts" if library else "tests/session.spec.ts"]
+        specs = os.environ.get("VISION_TEST_SESSION_SPECS", "tests/library.spec.ts" if library else "tests/session.spec.ts tests/workspace-session.spec.ts").split()
     subprocess.run(
         ["pnpm", "--dir", "apps/web", "test", *specs, "--workers=1"],
         env={**env, "VISION_TEST_WEB_SESSION": "1"},

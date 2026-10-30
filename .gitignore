@@ -16,6 +16,7 @@ tasks/
 node_modules/
 .next/
 .next-preview/
+.next-test/
 dist/
 build/
 .venv/

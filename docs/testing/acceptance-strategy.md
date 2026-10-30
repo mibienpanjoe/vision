@@ -756,3 +756,13 @@ in an annotation although the quote names only a room; and journey/unknown-attir
 cases submit the same broad profile query with different expected outcomes.
 A profile can legitimately resolve with attire unknown and an inferred scar.
 Outcome agreement therefore also needs those scope qualifications.
+
+### Remembered browser access — Q33a
+
+The real isolated API/browser session gate includes first visit, reload, cold
+concurrent tabs, two-workspace isolation and loss of an established cookie.
+Legacy password transport remains API coverage without product credential fields.
+The legacy library, source, explorer and render-history journeys use that retained
+transport fixture; their results do not establish an upload-to-chat journey.
+Test builds use `.next-test` and API port 18000 when explicitly configured,
+leaving the current local app build and services available.

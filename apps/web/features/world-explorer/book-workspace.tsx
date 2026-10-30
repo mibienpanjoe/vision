@@ -7,7 +7,7 @@ import { Entities } from "./entities";
 export function BookWorkspace({ workId }: { workId: string }) {
   const [work, setWork] = useState<WorkView | null>(null);
   const [chapters, setChapters] = useState<ChapterPage | null>(null);
-  const [boundary, setBoundary] = useState("");
+  const [boundary, setBoundary] = useState("whole_book");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   useEffect(() => {

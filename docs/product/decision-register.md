@@ -238,3 +238,9 @@ ordinary backup/restore still require their release's schema. A disposable
 restore of the actual private book preserved 4,661 passages, original hash,
 legacy citation, owner and allowance, with another workspace denied access.
 Primary-runtime migration/cutover is separately recorded when performed.
+
+Q33a consumes the capability directly in the current browser entry, serializes
+bootstrap across tabs and fails closed after established access is lost. The
+legacy explorer defaults to whole-book eligibility. First-visit chat, durable
+conversation state and retirement of the explorer are still separate tasks;
+this increment is session-consumer proof, not conversation delivery.

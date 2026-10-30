@@ -1,3 +1,4 @@
+import { signIn as legacySignIn } from "./fixtures";
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
@@ -14,11 +15,7 @@ let reader: BrowserContext;
 let other: BrowserContext;
 
 async function signIn(page: Page, username: string) {
-  await page.goto("/");
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByText("Signed in as")).toBeVisible();
+  await legacySignIn(page, username, PASSWORD);
 }
 
 async function inert(page: Page) {
@@ -67,7 +64,7 @@ test("hostile titles and source markup render as inert text", async () => {
 test("another reader cannot open, download or list a private book", async () => {
   const page = await other.newPage();
   await page.goto("/");
-  await expect(page.getByText("Signed in as")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your books" })).toBeVisible();
   await expect(page.getByRole("article", { name: TITLE, exact: true })).toHaveCount(0);
   await page.goto(`/works/${workId}`);
   await expect(page.locator("p[role=alert]")).toContainText("Resource not found.");
@@ -92,21 +89,17 @@ test("pages refuse framing and the proxy keeps the API's origin check", async ()
   expect((await page.request.get("/api/v1/auth/me")).status()).toBe(200);
 });
 
-// Last: it ends the shared reader session.
-test("signing out in one tab leaves the other tab's controls unable to act", async () => {
+// Last: it revokes the shared reader capability through the retained compatibility API.
+test("revoking access in one tab makes the other tab fail closed", async () => {
   const first = await reader.newPage();
   await first.goto("/");
-  await expect(first.getByText("Signed in as")).toBeVisible();
+  await expect(first.getByRole("heading", { name: "Your books" })).toBeVisible();
   const second = await reader.newPage();
   await second.goto("/");
-  await second.getByRole("button", { name: "Sign out", exact: true }).click();
-  await expect(second.getByLabel("Username")).toBeVisible();
-  await first.getByRole("textbox", { name: "Book title", exact: true }).fill("Stale upload");
-  await first.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
-  await first.getByLabel("Source file").setInputFiles({ name: "story.md", mimeType: "text/markdown", buffer: readFileSync("../api/tests/fixtures/narrative/story.md") });
-  const refused = first.waitForResponse(response => response.url().endsWith("/api/v1/works") && response.request().method() === "POST");
-  await first.getByRole("button", { name: "Upload book", exact: true }).click();
-  expect((await refused).status()).toBe(401);
-  await expect(first.getByLabel("Username")).toBeVisible();
+  expect((await second.request.post("/api/v1/auth/logout", { headers: { Origin: "http://127.0.0.1:13000" } })).status()).toBe(204);
+  await first.bringToFront();
+  await first.reload();
+  await expect(first.locator("main").getByRole("alert")).toContainText("Authentication required.");
+  await expect(first.getByRole("textbox", { name: "Book title", exact: true })).toHaveCount(0);
   expect((await first.request.get(`/api/v1/works/${workId}`)).status()).toBe(401);
 });
