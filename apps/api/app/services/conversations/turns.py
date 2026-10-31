@@ -101,6 +101,11 @@ def execute_turn(turn_id):
         with job_lock(engine, turn_id) as acquired:
             if acquired:
                 execute_claimed(engine, turn_id)
+        # Preparation can finish while this turn is committing its waiting state under the lease.
+        # Recheck after release so either this handoff or the preparation notification wakes it.
+        recover_turns(engine, turn_id=turn_id, waiting_only=True)
+        from app.services.dispatch import dispatch_conversations
+        dispatch_conversations(engine, turn_id=turn_id)
     finally:
         engine.dispose()
 
@@ -158,7 +163,7 @@ def fail(engine, turn_id, code):
         pass
 
 
-def recover_turns(engine):
+def recover_turns(engine, work_id=None, turn_id=None, waiting_only=False):
     """Recover abandoned leases and wake persisted requests after preparation, never an active worker."""
     recovered = 0
     ready = select(SourceGeneration.id).where(SourceGeneration.narrative_ready_at.is_not(None), SourceGeneration.search_ready_at.is_not(None))
@@ -168,11 +173,18 @@ def recover_turns(engine):
     wakeable = select(Document.work_id).where(or_(Document.current_generation_id.in_(ready),
         Document.current_generation_id.in_(narrative_failed), latest_parse.in_(["failed", "cancelled"])))
     with Session(engine) as db:
-        ids = list(db.scalars(select(ConversationTurn.id).join(Conversation, Conversation.id == ConversationTurn.conversation_id).where(or_(
+        query = (select(ConversationTurn.id).join(Conversation, Conversation.id == ConversationTurn.conversation_id).where(or_(
             ConversationTurn.status.in_(RUNNING),
             and_(ConversationTurn.status == "waiting_for_book", Conversation.work_id.in_(wakeable)),
             and_(ConversationTurn.status == "queued", ConversationTurn.dispatched_at < store.now() - timedelta(minutes=5))))
-            .order_by(ConversationTurn.created_at).limit(50)))
+            .order_by(ConversationTurn.created_at).limit(50))
+        if work_id is not None:
+            query = query.where(Conversation.work_id == work_id)
+        if turn_id is not None:
+            query = query.where(ConversationTurn.id == turn_id)
+        if waiting_only:
+            query = query.where(ConversationTurn.status == "waiting_for_book")
+        ids = list(db.scalars(query))
     for turn_id in ids:
         with job_lock(engine, turn_id) as acquired:
             if not acquired:

@@ -138,7 +138,7 @@ def dispatch_deletions(engine, work_id: uuid.UUID | None = None) -> int:
         broker.close()
 
 
-def dispatch_conversations(engine, turn_id: uuid.UUID | None = None) -> int:
+def dispatch_conversations(engine, turn_id: uuid.UUID | None = None, work_id: uuid.UUID | None = None) -> int:
     from app.models.conversations import Conversation, ConversationTurn
     from app.models.works import Work
 
@@ -152,6 +152,8 @@ def dispatch_conversations(engine, turn_id: uuid.UUID | None = None) -> int:
                 Conversation.active_turn_id == ConversationTurn.id, Work.deleted_at.is_(None))
             if turn_id is not None:
                 query = query.where(ConversationTurn.id == turn_id)
+            if work_id is not None:
+                query = query.where(Conversation.work_id == work_id)
             sent = 0
             for turn in db.scalars(query.limit(50).with_for_update(of=ConversationTurn, skip_locked=True)):
                 broker.enqueue(Message(queue_name="conversation", actor_name="converse", args=(str(turn.id),), kwargs={}, options={}))

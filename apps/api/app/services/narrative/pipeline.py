@@ -103,6 +103,8 @@ def execute_narrative(job_id: str) -> None:
         with job_lock(engine, uuid.UUID(job_id)) as acquired:
             if acquired:
                 run_locked(engine, uuid.UUID(job_id))
+                from app.services.conversations.attachments import preparation_finished
+                preparation_finished(engine, uuid.UUID(job_id), narrative=True)
     finally:
         engine.dispose()
 

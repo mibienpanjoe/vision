@@ -361,3 +361,15 @@ Only display metadata is normalized; original bytes and citation text remain
 unchanged. Metadata extraction is local, bounded, never executes document code
 or fetches external URLs, and safely falls back when optional metadata is absent
 or malformed. Original paths never become storage references or public URLs.
+
+## Conversation preparation wakeup — Q37b
+
+After committing a terminal ingestion or narrative outcome, the actor notifies
+waiting conversations attached to that work. A successful parse alone does not
+start source-based composition: both narrative and search readiness must exist.
+A failed/cancelled preparation settles the retained request with a safe preparation
+error instead of leaving it waiting forever. The turn rechecks readiness after
+releasing its own lease, covering completion during the waiting-state handoff.
+Notifications drain bounded work-scoped batches. Missing storage or broker
+publication leaves durable intent for normal dispatch/reconciliation. No second
+upload or resubmission of the question is required.

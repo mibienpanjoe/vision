@@ -795,5 +795,5 @@ No image reservation occurs on turn submission or prompt composition.
 This increment supports initial portrayal queries through the existing bounded
 query planner. Longer requests remain stored but fail safely until the structured
 conversational interpreter is connected; followups, sources and explicit images
-are subsequent intent/action tasks. Waiting preparation is resumed by `make
-dispatch`; automatic ingestion completion wakeup is the attachment increment.
+are subsequent intent/action tasks. Committed preparation outcomes automatically wake persisted waiting requests
+(Q37b); `make dispatch` recovers missed notifications or broker outages.

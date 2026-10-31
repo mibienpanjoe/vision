@@ -286,3 +286,9 @@ Q37a ports the reviewed automatic metadata implementation from 1f9d948: file-onl
 uploads use bounded local title/format detection, preserve original bytes and
 keep explicit metadata/replay compatibility. This is the upload API prerequisite;
 the new composer and automatic preparation wakeup remain separate subunits.
+
+Q37b wires committed preparation outcomes to waiting conversation intent, with
+work-scoped batches and an after-lease readiness handoff. This keeps parse-only
+readiness distinct from narrative/search completion and preserves failed-book
+questions. Real parser/worker checks use original synthetic sources and controlled
+text inference; they are separate from private-book model-quality acceptance.
