@@ -16,14 +16,14 @@ from functools import cache
 from app.providers.contracts import ProviderCall, ProviderResult, Usage
 from app.providers.extraction import KNOWN_REF
 
-RULES_VERSION = "rules-v3"
+RULES_VERSION = "rules-v6"
 GLINER = ("fastino/gliner2-base-v1", "f9634218e53580c56edf0de97ca1a7d3f1c2354e")
 COREF = ("biu-nlp/f-coref", "e91dfff12879495d882ba9460d0c5d5dd44ade59")
 LABELS = {"character": "a person or creature in the story, named or described",
           "place": "a location, building, room or landscape",
           "object": "a physical object, item, garment or weapon",
           "organization": "a group, institution or company"}
-TITLES = {"captain", "mr", "mr.", "mrs", "mrs.", "dr", "dr.", "miss", "sir", "lady", "lord", "master", "inspector"}
+TITLES = {"captain", "mr", "mr.", "mrs", "mrs.", "dr", "dr.", "miss", "sir", "lady", "lord", "master", "inspector", "uncle", "aunt"}
 DETERMINERS = {"the", "a", "an", "his", "her", "their", "its", "my", "our", "your"}
 PREPOSITIONS = {"by", "of", "with", "in", "on", "at", "near", "from", "under"}
 # Pronouns and function words a span model sometimes tags as names.
@@ -53,6 +53,20 @@ def head(words: list[str]) -> str:
     return next((words[i - 1] for i, w in enumerate(words) if i and w in PREPOSITIONS), words[-1])
 
 
+def is_name(surface: str) -> bool:
+    words = surface.lstrip("“\"'(").split()
+    while words and words[0].casefold() in DETERMINERS:
+        words.pop(0)
+    return bool(words and words[0][:1].isupper())
+
+
+def full_name(surface: str) -> bool:
+    words = surface.split()
+    while words and words[0].casefold() in DETERMINERS | TITLES:
+        words.pop(0)
+    return len(words) > 1 and all(word[:1].isupper() or word.casefold() in PREPOSITIONS | {"au", "de", "du", "di", "van", "von"} for word in words)
+
+
 def name_key(surface: str) -> str:
     words = normalize(surface).split()
     while words and words[0] in TITLES:
@@ -63,6 +77,9 @@ def name_key(surface: str) -> str:
 def person_evidence(text: str, start: int, end: int) -> bool:
     tail = text[end:end + 120]
     return bool(re.match(r"\s+(?:was|is)\s+(?:a|an)\s+(?:man|woman|boy|girl|person)\b", tail, re.I)
+                or re.match(r"[’']s\s+(?:hair|beard|fingers|face|eyes|hands|voice)\b", tail, re.I)
+                or (re.match(r"\s+(?:says|said|whispers|whispered|asks|asked|replies|replied)\b", tail, re.I)
+                    and bool(re.search(r'[“”"]', text)))
                 or re.match(r"\s+adjusted\s+(?:his|her)\s+[^.!?]{0,40}\b(?:coat|shirt|hat)\b", tail, re.I))
 
 
@@ -77,11 +94,11 @@ def extract(sources: list[dict], known: list[dict], recognize: Recognize, corefe
                 raw.append((index, start, end, label, surface, key))
 
     # Identity: a proper name is one identity whatever its label; common nouns key on the head noun.
-    known_names = {name_key(k["label"]): k for k in known if k["label"][:1].isupper()}
+    known_names = {name_key(k["label"]): k for k in known if is_name(k["label"])}
     proper_keys = set(known_names)
     for _, _, _, _, surface, key in raw:
         stripped = name_key(surface)
-        if stripped and surface.lstrip("“\"'(")[:1].isupper():
+        if stripped and is_name(surface):
             proper_keys.add(stripped)
     identity_of, titled, title_owners = {}, [], defaultdict(set)
     for mention in raw:
@@ -100,14 +117,14 @@ def extract(sources: list[dict], known: list[dict], recognize: Recognize, corefe
     # Keys: reuse an earlier chapter's entity when its folded label matches, otherwise declare one.
     earlier = {}
     for entry in known:
-        name = name_key(entry["label"]) if entry["label"][:1].isupper() else normalize(entry["label"])
+        name = name_key(entry["label"]) if is_name(entry["label"]) else normalize(entry["label"])
         if name:
             earlier.setdefault(("name", name) if name in known_names else ("common", head(name.split())),
                                entry["key"])
     labels, kinds = defaultdict(Counter), defaultdict(Counter)
     for mention, identity in identity_of.items():
         labels[identity][mention[4].strip()] += 1
-        kind = "character" if identity[0] == "name" and (mention[3] == "object" or person_evidence(texts[mention[0]], mention[1], mention[2])) else mention[3]
+        kind = "character" if identity[0] == "name" and person_evidence(texts[mention[0]], mention[1], mention[2]) else mention[3]
         kinds[identity][kind] += 1
     key_of, entities = {}, []
     for identity in dict.fromkeys(identity_of.values()):
@@ -181,24 +198,6 @@ def extract(sources: list[dict], known: list[dict], recognize: Recognize, corefe
                 if label and label.casefold() in quote.casefold():
                     aliases.append({"entity": key_of[main], "label": label, "status": "supported",
                                     "ref": sources[index]["ref"], "quote": quote, "start": a_start})
-    components = defaultdict(set)
-    for identity in key_of:
-        if identity[0] == "name" and len(identity[1].split()) > 1:
-            for word in (identity[1].split()[0], identity[1].split()[-1]):
-                components[word].add(identity)
-    for short, fulls in components.items():
-        brief = ("name", short)
-        if brief not in key_of or len(fulls) != 1:
-            continue
-        full = next(iter(fulls))
-        for mention, identity in identity_of.items():
-            if identity == full:
-                index, start, _, _, quote, _ = mention
-                relations.append({"subject": key_of[brief], "relation": "same_as", "object": key_of[full],
-                                  "ref": sources[index]["ref"], "quote": quote, "start": start})
-                aliases.append({"entity": key_of[full], "label": short, "status": "supported",
-                                "ref": sources[index]["ref"], "quote": quote, "start": start})
-                break
     return {"entities": entities, "mentions": mentions[:1_000], "aliases": aliases[:200], "relations": relations[:200]}
 
 

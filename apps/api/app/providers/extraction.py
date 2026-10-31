@@ -16,7 +16,7 @@ from app.providers.contracts import (
 )
 from pydantic import Field
 
-PROMPT_VERSION = "entities-v3"
+PROMPT_VERSION = "entities-v6"
 KNOWN_REF = "known-entities"
 Kind = Literal["character", "place", "object", "organization"]
 RelationType = Literal["same_as", "carries", "located_at", "member_of", "family_of", "associated_with"]

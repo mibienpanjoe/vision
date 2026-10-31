@@ -458,19 +458,41 @@ visible alias; registry refs themselves are never treated as quoted names.
 
 ### Grounded identity production — Q29
 
-`entities-v3` / local `rules-v3` keeps distinct full-name declarations instead of
+`entities-v6` / local `rules-v6` keeps distinct full-name declarations instead of
 folding everyone with a shared surname into one entity. Explicit “known as”,
 “called”, “addressed as” and same-person statements retain exact quoted identity
 links. A unique literal first/surname variant can link through the full-name
-citation; competing full names and explicit different-person wording prevent
-that link. These links remain separate versioned records, so the source cutoff
+citation only at publication, after considering competing full names of every
+kind across the complete derivation. A person epithet cannot link to its place
+qualifier, and action phrases are not treated as full names. Explicit different-
+person wording prevents a link. These links remain separate versioned records, so the source cutoff
 still controls when they are visible. A title alone remains ambiguous.
 
 The bounded earlier-entity listing prioritizes exact names found in the current
 batch without changing their stable k:n keys. Exact known names retain their
-established type; a narrow literal human-description rule can correct a wrong
-local category. Coreference adds personal references, not arbitrary unrecognized
+established type; literal human descriptions, body-part possessions and quoted
+speaker cues can correct a wrong local category. Properly named objects are not
+automatically promoted to characters. Coreference adds personal references, not arbitrary unrecognized
 phrases. Registry refs collapse only evidence-linked identity groups and retain
 all uniquely attributable names. Original derivations/passages remain unchanged.
 The Q28 synthetic desired outcomes now pass; this is not universal local-model
 quality or private-book reprocessing acceptance (Q30).
+
+### Rules replay and private-book limits — Q30a
+
+A trusted local operator can use `StoredEntities` to reapply current rules to
+previously grounded spans from the same immutable parser generation. It checks
+source text and bounds exactly, records the source derivation/model version, and
+never reuses prior aliases or same-person links. This is replay of earlier
+grounded proposals, not fresh neural inference; original recognizer categories
+may already reflect the earlier rules. Original passages and prior derivations
+remain available. Failed identity review marks a derivation failed so eligible
+reads do not select it.
+
+The private-book comparison exposed cross-type and shared-family false merges in
+the intermediate rules; those derivations were quarantined. Rules-v6 preserves
+the original bytes and 4,661 passage spans. Ten annotated alias/negative pairs
+show zero false merges but four missed alias links; supported short/full names
+share the admissible entity-reference set. The independent four-case pinned-model
+holdout has zero missed aliases and false merges. These bounded checks do not
+establish universal identity/appearance quality or close the remaining Q30 gate.

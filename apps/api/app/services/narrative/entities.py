@@ -5,6 +5,7 @@ the claim and guarded publication shared with later stages.
 """
 
 import json
+import re
 import uuid
 from collections import Counter
 from collections.abc import Callable
@@ -23,6 +24,7 @@ from app.providers.extraction import (
     EntityExtraction,
     entity_request,
 )
+from app.providers.local_entities import full_name, is_name, person_evidence
 from app.services.narrative.derivations import ground, run_derivation
 
 STAGE = "entities"
@@ -46,14 +48,14 @@ def known_listing(previous, text="") -> str:
 
 
 def derive_entities(engine, generation_id: uuid.UUID, adapter: ProviderAdapter, limits: Limits = Limits(),
-                    cancelled: Callable[[], bool] = lambda: False) -> uuid.UUID:
+                    cancelled: Callable[[], bool] = lambda: False, input_id=None) -> uuid.UUID:
     def build(group, previous):
         return entity_request([SourceItem(ref=f"p{p.ordinal}", text=p.text) for p in group],
                               known_listing(previous, "\n".join(p.text for p in group)) if previous else "", limits)
 
     return run_derivation(engine, generation_id, STAGE, adapter, EntityExtraction, PROMPT_VERSION, limits,
                           build, publish, limits.max_input_chars - len(INSTRUCTIONS) - KNOWN_BUDGET,
-                          cancelled=cancelled)
+                          cancelled=cancelled, input_id=input_id)
 
 
 def publish(db, derivation_id, outputs) -> dict:
@@ -97,6 +99,23 @@ def publish(db, derivation_id, outputs) -> dict:
                 entities[identity] = Entity(id=uuid.uuid4(), derivation_id=derivation_id, kind=item.kind, label=item.label)
             local[key] = entities[identity]
         staged.append((by_ref, output, run_id, local, mentions))
+    for by_ref, output, _, local, _ in staged:
+        for relation in output.relations:
+            passage = by_ref.get(relation.ref)
+            if (relation.relation == "same_as" and relation.subject in local and relation.object in local
+                    and passage is not None and ground(passage, relation.quote, relation.start)
+                    and re.search(r"\b(?:were|are) the same (?:person|man|woman)\b", relation.quote, re.I)):
+                local[relation.subject].kind = local[relation.object].kind = "character"
+    for _, _, _, local, mentions in staged:
+        for passage, (start, end), resolved, _ in mentions:
+            if resolved in local and is_name(passage.text[start:end]) and person_evidence(passage.text, start, end):
+                local[resolved].kind = "character"
+    canonical, replacements = {}, {}
+    for entity in entities.values():
+        replacements[entity.id] = canonical.setdefault((entity.kind, entity.label.casefold()), entity)
+    for _, _, _, local, _ in staged:
+        local.update({key: replacements[entity.id] for key, entity in local.items()})
+    entities = canonical
     db.add_all(entities.values())
     db.flush()
     for by_ref, output, run_id, local, mentions in staged:
@@ -136,18 +155,10 @@ def link_name_variants(db, derivation_id, entities, staged):
     """Keep named rows immutable; a full-name citation links an unambiguous component."""
     import re
 
-    people = [e for e in entities if e.kind == "character" and e.label[:1].isupper()]
-    components = {}
-    for person in people:
-        words = person.label.casefold().split()
-        if len(words) > 1:
-            for word in (words[0], words[-1]):
-                components.setdefault(word, set()).add(person.id)
-    for short in people:
-        matches = components.get(short.label.casefold(), set())
-        if len(matches) != 1:
-            continue
-        full_id = next(iter(matches))
+    entities = list(entities)
+    by_id = {entity.id: entity for entity in entities}
+    for short_id, full_id in name_variants(entities):
+        short = by_id[short_id]
         for _, _, run_id, local, mentions in staged:
             grounded = next(((p, a, b) for p, (a, b), resolved, _ in mentions
                              if resolved in local and local[resolved].id == full_id
@@ -160,3 +171,24 @@ def link_name_variants(db, derivation_id, entities, staged):
                 db.add(EntityAlias(entity_id=full_id, label=short.label, status="supported",
                                    passage_id=passage.id, start=start, end=end, model_run_id=run_id))
                 break
+
+
+def name_variants(entities):
+    """Decide component uniqueness over the complete derivation, including competing kinds."""
+    from app.providers.local_entities import PREPOSITIONS, name_key
+
+    named = [entity for entity in entities if is_name(entity.label)]
+    components = {}
+    for entity in named:
+        words = name_key(entity.label).split()
+        if full_name(entity.label):
+            components.setdefault(words[0], set()).add(entity.id)
+            if not set(words) & PREPOSITIONS:
+                components.setdefault(words[-1], set()).add(entity.id)
+    by_id = {entity.id: entity for entity in named}
+    for short in named:
+        matches = components.get(name_key(short.label), set())
+        if short.kind == "character" and len(matches) == 1:
+            full_id = next(iter(matches))
+            if full_id != short.id and by_id[full_id].kind == "character":
+                yield short.id, full_id

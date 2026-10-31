@@ -63,7 +63,7 @@ def call_metadata(capture, budget):
     return {"provider_call_count": len(capture.calls)}
 
 
-def identity_diagnostic(case, recognize, through=None):
+def identity_diagnostic(case, recognize, through=None, corefer=None):
     """Run real local rules/lookup with controlled recognizer spans and an independent truth oracle.
 
     `gaps` records observed disagreements with that oracle; an expected gap is a
@@ -79,7 +79,7 @@ def identity_diagnostic(case, recognize, through=None):
 
     sources = {f"p{number}": text for number, text in enumerate(case["chapters"][:through], 1)}
     output = EntityExtraction.model_validate(extract(
-        [{"ref": ref, "text": text} for ref, text in sources.items()], [], recognize, lambda _: []))
+        [{"ref": ref, "text": text} for ref, text in sources.items()], [], recognize, corefer or (lambda _: [])))
 
     def key(value):
         return uuid.uuid5(uuid.NAMESPACE_URL, f"vision-synthetic/{case['id']}/{value}")
@@ -101,6 +101,9 @@ def identity_diagnostic(case, recognize, through=None):
                     for alias in output.aliases]
     view.relations = [SimpleNamespace(subject_id=ids[relation.subject], object_id=ids[relation.object],
                                      relation=relation.relation) for relation in output.relations]
+    from app.services.narrative.entities import name_variants
+    view.relations.extend(SimpleNamespace(subject_id=short, object_id=full, relation="same_as")
+                          for short, full in name_variants(view.entities.values()))
     lookup = SubjectLookup(view)
 
     def subjects(name):

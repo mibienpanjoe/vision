@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "provenance": "Original synthetic identity diagnostics, written for Q28. No private-book excerpts or names.",
   "cases": [
     {
@@ -82,6 +82,8 @@
       "spans": [["Nera", "character"], ["Finch", "character"]],
       "pairs": [["Nera", "Finch", "separate"]],
       "known_gaps": []
-    }
+    },
+    {"id": "person_epithet_is_not_its_place", "chapters": ["Mars was a red planet. Reaper of Mars wore a black coat. Reaper waited."], "spans": [["Mars", "place"], ["Reaper of Mars", "character"], ["Reaper", "character"]], "pairs": [["Reaper of Mars", "Mars", "separate"], ["Reaper of Mars", "Reaper", "same"]], "known_gaps": []},
+    {"id": "person_action_is_not_a_surname", "chapters": ["Ragnar towers above the gate. Ragnar wore a blue coat."], "spans": [["Ragnar towers", "character"], ["Ragnar", "character"]], "pairs": [["Ragnar towers", "Ragnar", "separate"]], "known_gaps": []}
   ]
 }

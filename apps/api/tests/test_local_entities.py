@@ -253,3 +253,64 @@ def test_pinned_local_models_on_the_synthetic_fixture(database, generation):  # 
     assert (report["misses"], report["false_merges"], report["splits"], report["ambiguity_violations"]) == (
         [], [], [], [])
     assert any("Wren" in quote and ("I was" in quote or "same person" in quote) for quote in relations)
+
+
+@pytest.mark.integration
+def test_stored_model_spans_rederive_new_rules_without_neural_execution(database, generation, monkeypatch):  # noqa: F811
+    import uuid
+
+    from app.providers.stored_entities import StoredEntities
+    from tests.test_entity_extraction import fixture_adapter
+
+    original = derive_entities(database, generation, fixture_adapter())
+    monkeypatch.setattr("app.providers.local_entities.models", lambda: (_ for _ in ()).throw(AssertionError("No new inference")))
+    adapter = StoredEntities(database, uuid.UUID(generation), original)
+    from app.providers.contracts import ProviderCall, ProviderUnavailable
+    ref = next(iter(adapter.sources))
+    bad = ProviderCall(system="", data=json.dumps({"sources": [{"ref": ref, "text": "Changed source"}]}), output_schema={}, max_output_tokens=100, timeout_seconds=1)
+    with pytest.raises(ProviderUnavailable):
+        adapter.complete(bad)
+    rebuilt = derive_entities(database, generation, adapter, input_id=original)
+    with Session(database) as db:
+        new = db.get(Derivation, rebuilt)
+        assert rebuilt != original and new.status == "succeeded" and new.input_derivation_id == original
+        assert db.get(Derivation, original).status == "succeeded"
+        assert db.scalar(select(EntityMention).where(EntityMention.derivation_id == rebuilt)) is not None
+        assert all(run.provider == "local" for run in db.scalars(select(ModelRun).where(ModelRun.derivation_id == rebuilt)))
+
+
+def test_a_properly_named_object_is_not_promoted_to_a_person():
+    output = run(["Sunblade rested on the table."], [("Sunblade", "object")])
+    assert output["entities"] == [{"key": "e0", "kind": "object", "label": "Sunblade"}]
+
+
+def test_family_name_cannot_link_people_from_separate_extraction_batches():
+    from types import SimpleNamespace
+
+    from app.services.narrative.entities import name_variants
+
+    first = run(["Tessa au Vale met Vale."], [("Tessa au Vale", "character"), ("Vale", "character")])
+    second = run(["Oren au Vale met Vale."], [("Oren au Vale", "character"), ("Vale", "character")])
+    assert not first["relations"] and not second["relations"]
+    rows = [SimpleNamespace(id=index, label=label, kind=kind) for index, (label, kind) in enumerate([
+        ("Tessa au Vale", "character"), ("Oren au Vale", "character"), ("Vale", "character"),
+        ("Tessa", "character"), ("Oren", "character"), ("House Vale", "organization"),
+    ])]
+    assert set(name_variants(rows)) == {(3, 0), (4, 1)}
+
+
+def test_a_quoted_speaker_is_a_character_but_a_named_speaking_device_is_not_assumed():
+    output = run(['“Come here,” Oren says.'], [("Oren", "place")])
+    assert output["entities"][0]["kind"] == "character"
+    output = run(["Atlas says the bridge is closed."], [("Atlas", "object")])
+    assert output["entities"][0]["kind"] == "object"
+
+
+def test_kinship_honorific_does_not_compete_with_a_unique_full_name():
+    from types import SimpleNamespace
+
+    from app.services.narrative.entities import name_variants
+
+    rows = [SimpleNamespace(id=index, label=label, kind="character")
+            for index, label in enumerate(["Oren", "Uncle Oren", "OREN AU VALE"])]
+    assert set(name_variants(rows)) == {(0, 2), (1, 2)}

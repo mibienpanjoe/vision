@@ -258,3 +258,10 @@ idempotency receipt; history cursors use immutable ordering. Shared contracts
 validate exact card/specification prompt and generation equality. The API
 security inventory now includes these resources and delegates capability
 exchange tests to their dedicated bootstrap/recovery suites.
+
+Q30a tightens Q29 after private-book negative controls: whole-derivation component
+uniqueness, kind-safe endpoints and exact source cues replace per-batch name
+linking. Rules-only replay records its earlier span source and never reuses
+rejected aliases. Quarantined intermediate results stay attributable but are
+ineligible; immutable source and prior citations remain intact. Four missed
+aliases remain in the private comparison, so full Q30 acceptance stays open.
