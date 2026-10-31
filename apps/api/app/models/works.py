@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 class Work(Base):
     __tablename__ = "works"
-    __table_args__ = (UniqueConstraint("owner_id", "idempotency_key"),)
+    __table_args__ = (UniqueConstraint("owner_id", "idempotency_key"), UniqueConstraint("id", "owner_id", name="uq_work_owner"))
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("principals.id"), index=True)
     title: Mapped[str] = mapped_column(String(256))

@@ -244,3 +244,10 @@ bootstrap across tabs and fails closed after established access is lost. The
 legacy explorer defaults to whole-book eligibility. First-visit chat, durable
 conversation state and retirement of the explorer are still separate tasks;
 this increment is session-consumer proof, not conversation delivery.
+
+Q34 implements DEC-55's persistence with work-attached conversations, ordered
+message receipts and immutable card-to-specification pointers. Composite database
+constraints reinforce service ownership/generation checks. Turn submission and
+publication are separate transactions so durable execution can occur outside a
+request; only the current turn can publish a replacement. Endpoint, worker and
+browser evidence remain separate gates.

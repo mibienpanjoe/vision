@@ -721,3 +721,20 @@ key fails with `401 WORKSPACE_ACCESS_REQUIRED`. Recovery issues the same owner's
 A valid different workspace cookie receives `409 WORKSPACE_CONFLICT` and remains
 untouched. Invalid/expired access can recover; normal visitors cannot claim a
 legacy owner. The operator workflow and private backup proof are Q32b.
+
+### Conversation persistence — Q34
+
+Conversation storage is attached to one owned work. A thread has a stable card
+ID, strong revision and monotonically ordered messages. A turn receipt binds its
+idempotency key, submitted revision and exact request fingerprint; exact replay
+precedes the stale-revision check. New requests supersede unfinished older turns.
+Only the active turn may atomically publish a card revision, assistant receipt
+and terminal outcome. Failed or late work leaves the previous usable card intact.
+
+A card revision points to the exact immutable VisualizationRevision, including
+its source generation. Composite foreign keys reject another owner's work,
+unrelated specifications, mismatched generations and cross-thread turn pointers.
+Cards retain their identity when a later request creates a different verified
+specification. Existing images keep their original specification revision.
+These are storage/service invariants; public conversation endpoints and durable
+worker execution are delivered separately.
