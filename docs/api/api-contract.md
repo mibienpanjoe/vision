@@ -760,3 +760,10 @@ message sequence, returning `next_after` only when more rows remain.
 All reads exclude deleted works. A card's prompt and generation must equal its
 referenced specification, including in shared Python/TypeScript conformance.
 Turn submission/execution and user-facing conversational behavior remain Q36+.
+
+### Composition progress — Q36a
+
+Internal composition callers can observe resolving, retrieving, composing and
+verifying at their actual execution boundaries. Stored-result replay emits no
+new work stages. The existing synchronous visualization API keeps its response
+contract; durable conversation execution consumes these notifications separately.

@@ -270,3 +270,7 @@ Q30b consumes confirmed identity groups in retrieval using a fixed point and
 admits an ambiguous mention only when its complete candidate set belongs to that
 group. Clarifications are bounded; appearance absence and provider failure keep
 their distinct outcomes. Full private-book alias acceptance remains open.
+
+Q36a adds internal composition-stage notifications without changing the stored
+specification or synchronous API. A replay returns its existing result without
+invented processing stages; durable turn publication remains the next subunit.

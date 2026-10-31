@@ -82,7 +82,7 @@ def owned(db, actor, work_id, visualization_id) -> Visualization:
     return found
 
 
-def create(db, actor, work_id: uuid.UUID, body, key: str, correlation_id: str) -> tuple[int, VisualizationCreated]:
+def create(db, actor, work_id: uuid.UUID, body, key: str, correlation_id: str, progress=None) -> tuple[int, VisualizationCreated]:
     owned_object(db, Work, work_id, actor)
     request = body.model_dump(mode="json")
     digest = hashlib.sha256(json.dumps(request, sort_keys=True).encode()).hexdigest()
@@ -99,7 +99,7 @@ def create(db, actor, work_id: uuid.UUID, body, key: str, correlation_id: str) -
 
     if (found := prior()) is not None:
         return replay(found)
-    outcome = compose(db, actor, work_id, body, correlation_id)
+    outcome = compose(db, actor, work_id, body, correlation_id, **({"progress": progress} if progress else {}))
     if outcome.outcome != "resolved":
         return 200, VisualizationCreated(visualization=None, result=VisualizationResult(outcome))
     scope = outcome.data.scope

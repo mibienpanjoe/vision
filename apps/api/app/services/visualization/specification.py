@@ -110,7 +110,8 @@ def member_view(member: Member, verification: Verification) -> MemberView:
                                        label=member.entity.label), role=member.role, traits=traits, unknown=unknown)
 
 
-def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correlation_id: str):
+def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correlation_id: str, progress=lambda _: None):
+    progress("resolving")
     plan = query_plan.plan_query(db, actor, work_id, request)
     if isinstance(plan, query_plan.NeedsContext):
         return NeedsContext(outcome="needs_context", schema_version="1.0",
@@ -128,6 +129,7 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
     if (hit := lookup_cached(db, actor.owner_id, scope)) is not None:
         return ResolvedSpecification.model_validate_json(json.dumps(hit))
 
+    progress("retrieving")
     view = visible_narrative(db, db.get(SourceGeneration, plan.generation_id), plan.cutoff)
     lookup = SubjectLookup(view)
     similar = semantic(db, plan, embedder)
@@ -136,6 +138,7 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
     infos = passage_infos(db, plan)
     selection = select(fuse(found), infos, budget)
     expanded = expand(selection, infos, {c.passage_id: c.anchors for c in found if c.anchors}, budget)
+    progress("composing")
     derivation_id = consolidate(db.get_bind(), plan, expanded, adapter)
     db.expire_all()
     derivation = db.get(Derivation, derivation_id)
@@ -152,6 +155,7 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
     if composed.outcome != "resolved":
         return insufficient("The eligible text does not describe this subject at this moment.")
 
+    progress("verifying")
     verified, removed, adjudication = [], 0, "not_requested"
     for member in [*composed.members, *composed.world]:
         subject = lookup.subject(next(iter(member.entity.ids)))
