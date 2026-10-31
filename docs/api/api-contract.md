@@ -797,3 +797,20 @@ query planner. Longer requests remain stored but fail safely until the structure
 conversational interpreter is connected; followups, sources and explicit images
 are subsequent intent/action tasks. Committed preparation outcomes automatically wake persisted waiting requests
 (Q37b); `make dispatch` recovers missed notifications or broker outages.
+
+### Conversation preparation retry — Q37c
+
+`POST /v1/conversations/{id}/preparation-retries` takes an empty PreparationRetry
+body, Origin, Idempotency-Key and the current conversation If-Match revision.
+It requires an active failed-book request and resolves the parser/narrative job
+through that conversation's owned original generation. The retry keeps the
+original question internally and adds a compact retry receipt; no second upload
+is accepted or required. It resets the eligible preparation job and creates its
+waiting turn in one SQL transaction, then publishes the preparation intent.
+Exact key/revision replay recovers the same turn after a lost response.
+
+Stale conversations, changed source generation and busy preparation fail safely;
+attempt/capacity limits still apply. Unsupported scanned/encrypted sources and
+other immutable-source failures return PREPARATION_NOT_RETRYABLE so the client
+can offer a replacement. Both actual parser and narrative worker failure/retry
+paths retain the original bytes and resume the prior question automatically.

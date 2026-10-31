@@ -67,7 +67,7 @@ def message(db, thread, turn, role, content):
     thread.next_sequence += 1
 
 
-def enqueue(db, actor, conversation_id, match, key, request, correlation_id):
+def enqueue(db, actor, conversation_id, match, key, request, correlation_id, *, message_text=None):
     thread = owned(db, actor, conversation_id, lock=True)
     expected = expected_revision(match)
     digest = fingerprint(request)
@@ -89,7 +89,7 @@ def enqueue(db, actor, conversation_id, match, key, request, correlation_id):
     thread.active_turn_id = turn.id
     thread.revision += 1
     thread.updated_at = now()
-    message(db, thread, turn, "user", request["text"])
+    message(db, thread, turn, "user", message_text if message_text is not None else request["text"])
     db.flush()
     return turn
 

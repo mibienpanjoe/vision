@@ -110,8 +110,8 @@ cancel is offered for queued/running parsing. Each action submits the displayed
 strong revision and a new idempotency key. A revision conflict reloads current
 state and requires the reader to review it. Running cancellation remains
 requested until the worker confirms the terminal outcome. A read failure disables
-mutations until a fresh state arrives. Narrative retry remains PROP-06 and has
-no invented browser control.
+mutations until a fresh state arrives. The legacy library has no narrative retry control. Q37c adds a backend
+conversation-scoped preparation retry; its chat consumer is a separate increment.
 
 No external component source is copied for these controls. Native forms and
 project components use the approved tokens and bundled fonts. Browser coverage

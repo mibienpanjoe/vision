@@ -9,12 +9,13 @@ from app.schemas.conversations import (
     ConversationMessagePage,
     ConversationPage,
     ConversationView,
+    PreparationRetry,
     PromptCardView,
     TurnCancel,
     TurnCreate,
     TurnView,
 )
-from app.services.conversations import resources, store, turns
+from app.services.conversations import attachments, resources, store, turns
 from app.services.dispatch import dispatch_conversations
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
@@ -78,3 +79,13 @@ def cancel_turn(conversation_id: uuid.UUID, turn_id: uuid.UUID, body: TurnCancel
     result = turns.cancel(db, actor, conversation_id, turn_id, match, key)
     db.commit()
     return result
+
+
+@router.post("/{conversation_id}/preparation-retries", response_model=TurnView, status_code=202)
+def retry_book(conversation_id: uuid.UUID, body: PreparationRetry, actor: Actor, db: Database, key: Key, request: Request,
+               match: Annotated[str | None, Header(alias="If-Match", max_length=32)] = None):
+    turn = attachments.retry_preparation(db, actor, conversation_id, match, key, request.state.correlation_id)
+    db.commit()
+    attachments.dispatch_retry(request.app.state.engine, turn)
+    db.refresh(turn)
+    return resources.turn_view(turn)

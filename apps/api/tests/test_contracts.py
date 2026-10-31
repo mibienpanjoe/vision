@@ -23,6 +23,7 @@ MODELS = {
     "PromptCardView": conversations.PromptCardView,
     "TurnCreate": conversations.TurnCreate,
     "TurnCancel": conversations.TurnCancel,
+    "PreparationRetry": conversations.PreparationRetry,
     "TurnView": conversations.TurnView,
     "SourceSpan": scope.SourceSpan,
     "EvidenceView": evidence.EvidenceView,

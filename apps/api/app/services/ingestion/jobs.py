@@ -70,13 +70,7 @@ def mutate_job(db, actor, work_id, job_id, action, match, key):
     if expected != job.revision:
         raise PublicError(412, "REVISION_CONFLICT", "Job changed. Reload its current state.")
     if action == "retry":
-        if job.status not in {"failed", "cancelled"}:
-            raise PublicError(409, "STATE_CONFLICT", "Job cannot be retried in its current state.")
-        if job.attempts >= MAX_ATTEMPTS:
-            raise PublicError(429, "ATTEMPTS_EXHAUSTED", "Job attempt budget is exhausted.")
-        require_capacity(db, actor.owner_id, work_id)
-        job.status, job.stage = "queued", "awaiting_parser"
-        job.cancel_requested, job.dispatched_at, job.completed_at, job.error_code = False, None, None, None
+        prepare_retry(db, actor, work_id, job)
     else:
         if job.status not in {"queued", "running"}:
             raise PublicError(409, "STATE_CONFLICT", "Job cannot be cancelled in its current state.")
@@ -116,3 +110,14 @@ def recover_ingestions(engine):
                 job.revision += 1
                 recovered += 1
     return recovered
+
+
+def prepare_retry(db, actor, work_id, job):
+    """Reset a locked retryable parser intent without committing or publishing."""
+    if job.status not in {"failed", "cancelled"}:
+        raise PublicError(409, "STATE_CONFLICT", "Job cannot be retried in its current state.")
+    if job.attempts >= MAX_ATTEMPTS:
+        raise PublicError(429, "ATTEMPTS_EXHAUSTED", "Job attempt budget is exhausted.")
+    require_capacity(db, actor.owner_id, work_id)
+    job.status, job.stage = "queued", "awaiting_parser"
+    job.cancel_requested, job.dispatched_at, job.completed_at, job.error_code = False, None, None, None

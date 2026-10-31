@@ -344,7 +344,7 @@ outcome or the previously measured recall limits.
 |---|---|
 | REQ-01 | `test_authorization.py`, owner cases in evidence/visualization/refinement/cache integration tests; `library.spec.ts` and scoped history browser checks. Private assets await optional rendering. |
 | REQ-02, REQ-04 | Text/PDF/EPUB parsing and source-generation tests, `test_evidence_api.py`; `evidence.spec.ts` exact Unicode DOM spans and `refinement.spec.ts` old revision citations. PDF OCR is excluded. |
-| REQ-03 | `test_ingestion_recovery.py`, `test_worker_integration.py`, `library.spec.ts`: queued/running cancellation, retry, stale guards, persisted publication. Narrative-stage retry remains PROP-06. |
+| REQ-03 | `test_ingestion_recovery.py`, `test_worker_integration.py`, `library.spec.ts`: queued/running cancellation, retry, stale guards, persisted publication. Conversation-scoped preparation retry is covered by `test_conversation_preparation_retry.py`; the generic narrative-job route remains PROP-06. |
 | REQ-05–REQ-07 | Entity, chronology, appearance and visual-fact tests; T22 live extraction measurement; explorer identity options. Live extraction retains its measured limitations. |
 | REQ-08–REQ-10 | Fusion, semantic/lexical integration, scene/reconstruction tests and T33's deterministic/live scored cases; live recall misses remain recorded above. |
 | REQ-11, REQ-12 | Spoiler-eligibility, query-resolution, scoped-cache and history tests; explorer/context/boundary browser cases. |

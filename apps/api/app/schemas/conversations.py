@@ -34,6 +34,10 @@ class TurnCreate(ContractModel):
         return value
 
 
+class PreparationRetry(ContractModel):
+    pass
+
+
 class TurnCancel(ContractModel):
     pass
 

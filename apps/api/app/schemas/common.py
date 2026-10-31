@@ -7,6 +7,7 @@ from app.schemas.conversations import (
     ConversationMessagePage,
     ConversationPage,
     ConversationView,
+    PreparationRetry,
     PromptCardView,
     TurnCancel,
     TurnCreate,
@@ -97,6 +98,7 @@ class SchemaCatalog(ContractModel):
     conversation_page: ConversationPage
     conversation_messages: ConversationMessagePage
     prompt_card: PromptCardView
+    conversation_preparation_retry: PreparationRetry
     conversation_turn_cancel: TurnCancel
     conversation_turn_create: TurnCreate
     conversation_turn: TurnView

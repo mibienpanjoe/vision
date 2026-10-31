@@ -1773,6 +1773,12 @@
       "title": "PhraseMoment",
       "type": "object"
     },
+    "PreparationRetry": {
+      "additionalProperties": false,
+      "properties": {},
+      "title": "PreparationRetry",
+      "type": "object"
+    },
     "PrincipalView": {
       "additionalProperties": false,
       "properties": {
@@ -3286,6 +3292,9 @@
     "conversation_page": {
       "$ref": "#/$defs/ConversationPage"
     },
+    "conversation_preparation_retry": {
+      "$ref": "#/$defs/PreparationRetry"
+    },
     "conversation_turn": {
       "$ref": "#/$defs/TurnView"
     },
@@ -3426,6 +3435,7 @@
     "conversation_page",
     "conversation_messages",
     "prompt_card",
+    "conversation_preparation_retry",
     "conversation_turn_cancel",
     "conversation_turn_create",
     "conversation_turn"

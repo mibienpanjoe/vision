@@ -346,8 +346,9 @@ The generation view reports `narrative_status` and `narrative_error`.
 runs on-device entities then appearance candidates, sends no text anywhere and
 marks the generation ready when both succeed. `live` runs entities → events →
 facts through the gateway and is for synthetic fixtures only (DEC-37). Any
-other value fails jobs visibly as `PROVIDER_NOT_ENABLED`. No owner-facing retry route exists yet; a failed job
-completes again only through a new generation or operator requeue.
+other value fails jobs visibly as `PROVIDER_NOT_ENABLED`. Failed preparation can be retried in the owned conversation context (Q37c),
+using its strong revision/key and the existing attempt/capacity limits. Generic
+narrative-job retry outside that context remains PROP-06.
 
 ## Automatic upload metadata
 

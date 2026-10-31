@@ -793,5 +793,17 @@
     "value": {
       "owner_id": "forged"
     }
+  },
+  {
+    "model": "PreparationRetry",
+    "valid": true,
+    "value": {}
+  },
+  {
+    "model": "PreparationRetry",
+    "valid": false,
+    "value": {
+      "source_job_id": "forged"
+    }
   }
 ]
