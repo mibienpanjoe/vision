@@ -11,7 +11,6 @@ from app.models.works import Document, IngestionJob, Work, WorkDeletion
 from app.schemas.works import IngestionView, UploadAccepted, WorkView
 from app.services.dispatch import dispatch_ingestions
 from app.services.ingestion.adapters import REVISIONS
-from app.services.ingestion.inputs import validate_source
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -44,10 +43,16 @@ def accepted_view(db, work):
     return UploadAccepted(work=view, job=ingestion_view(job))
 
 
-def create_work(db, actor, metadata, data, key, correlation_id):
-    validate_source(data, metadata.format)
+def create_work(db, actor, metadata, data, key, correlation_id, filename=""):
+    from app.services.ingestion.metadata import filename_title, resolve_metadata
+
+    supplied = metadata.model_dump()
+    if metadata.title is None:
+        supplied["filename_title"] = filename_title(filename)
+    metadata = resolve_metadata(metadata, data, filename)
+    supplied["format"] = metadata.format
     fingerprint = hashlib.sha256(data).hexdigest()
-    digest = hashlib.sha256(json.dumps({**metadata.model_dump(), "sha256": fingerprint}, sort_keys=True).encode()).hexdigest()
+    digest = hashlib.sha256(json.dumps({**supplied, "sha256": fingerprint}, sort_keys=True).encode()).hexdigest()
     prior = db.scalar(select(Work).where(Work.owner_id == actor.owner_id, Work.idempotency_key == key))
     if prior is not None:
         if prior.request_hash != digest or prior.deleted_at is not None:

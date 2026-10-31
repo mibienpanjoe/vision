@@ -281,3 +281,8 @@ Only an active turn can atomically publish a verified card, assistant receipt an
 terminal state. Initial-query processing reuses existing source/prompt gates;
 structured followups and ingestion-completion wakeup are separate increments.
 No image is implicitly requested by this text execution path.
+
+Q37a ports the reviewed automatic metadata implementation from 1f9d948: file-only
+uploads use bounded local title/format detection, preserve original bytes and
+keep explicit metadata/replay compatibility. This is the upload API prerequisite;
+the new composer and automatic preparation wakeup remain separate subunits.

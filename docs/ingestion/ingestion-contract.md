@@ -348,3 +348,16 @@ marks the generation ready when both succeed. `live` runs entities â†’ events â†
 facts through the gateway and is for synthetic fixtures only (DEC-37). Any
 other value fails jobs visibly as `PROVIDER_NOT_ENABLED`. No owner-facing retry route exists yet; a failed job
 completes again only through a new generation or operator requeue.
+
+## Automatic upload metadata
+
+A file-only upload detects PDF by signature, EPUB by its bounded ZIP mimetype,
+and UTF-8 text otherwise; a Markdown extension distinguishes Markdown text.
+Explicit supported formats remain accepted and validated against the source.
+An optional title overrides detection. Otherwise, the title comes from EPUB
+package metadata, PDF document-info metadata, a bounded Markdown H1/front-matter
+or plain-text `Title:` marker, then a cleaned filename stem or `Untitled book`.
+Only display metadata is normalized; original bytes and citation text remain
+unchanged. Metadata extraction is local, bounded, never executes document code
+or fetches external URLs, and safely falls back when optional metadata is absent
+or malformed. Original paths never become storage references or public URLs.

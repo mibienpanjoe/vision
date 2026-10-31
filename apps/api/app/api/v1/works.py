@@ -43,7 +43,7 @@ Actor = Annotated[ActorScope, Depends(current_actor)]
 Database = Annotated[Session, Depends(database_session)]
 UPLOAD_SCHEMA = UploadMetadata.model_json_schema()
 UPLOAD_SCHEMA["properties"]["file"] = {"type": "string", "format": "binary"}
-UPLOAD_SCHEMA["required"].append("file")
+UPLOAD_SCHEMA["required"] = ["file"]
 
 Key = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")]
 
@@ -77,18 +77,18 @@ async def upload(request: Request, key: Key, actor: Actor, db: Database):
 
     bounded = Request(request.scope, receive)
     async with bounded.form(max_files=1, max_fields=2, max_part_size=4096) as form:
-        if sorted(form.keys()) != ["file", "format", "title"] or len(form.multi_items()) != 3:
-            raise PublicError(422, "INVALID_REQUEST", "Upload requires title, format and one file.")
+        if "file" not in form or set(form) - {"file", "format", "title"} or len(form.multi_items()) != len(form):
+            raise PublicError(422, "INVALID_REQUEST", "Upload requires one file and optional title and format.")
         file = form["file"]
         if not isinstance(file, UploadFile):
             raise PublicError(422, "INVALID_REQUEST", "Upload requires one source file.")
         try:
-            metadata = UploadMetadata.model_validate({"title": form["title"], "format": form["format"]})
+            metadata = UploadMetadata.model_validate({"title": form.get("title"), "format": form.get("format")})
         except ValidationError:
             raise PublicError(422, "INVALID_REQUEST", "Invalid upload metadata.") from None
         data = await file.read(MAX_SOURCE_BYTES + 1)
         try:
-            return await run_in_threadpool(create_work, db, actor, metadata, data, key, request.state.correlation_id)
+            return await run_in_threadpool(create_work, db, actor, metadata, data, key, request.state.correlation_id, file.filename or "")
         except (OSError, ValueError):
             raise storage_error() from None
 

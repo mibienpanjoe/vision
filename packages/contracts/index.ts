@@ -388,8 +388,8 @@ export type WorkId5 = string;
 export type SpanResolution = ResolvedSourceSpan | NeedsContext | InsufficientEvidence | Failed;
 export type Outcome4 = "resolved";
 export type SchemaVersion4 = "1.0";
-export type Format1 = "txt" | "md" | "pdf" | "epub";
-export type Title4 = string;
+export type Format1 = ("txt" | "md" | "pdf" | "epub") | null;
+export type Title4 = string | null;
 export type CreatedAt8 = string;
 export type Id17 = string;
 export type Revision7 = number;
@@ -913,8 +913,8 @@ export interface UploadAccepted {
   work: WorkView;
 }
 export interface UploadMetadata {
-  format: Format1;
-  title: Title4;
+  format?: Format1;
+  title?: Title4;
 }
 /**
  * 201 with `visualization` when a resolved result was stored; 200 with it null for any other outcome.
