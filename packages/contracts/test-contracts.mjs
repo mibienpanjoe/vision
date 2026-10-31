@@ -28,6 +28,9 @@ for (const [index, item] of cases.entries()) {
             throw new Error("Excerpt coordinates must preserve the source span");
           }
         }
+        const card = item.model === "PromptCardView" ? item.value : item.model === "ConversationView" ? item.value.card : null;
+        if (card && (card.prompt !== card.specification.result.data.generation.prompt ||
+            card.generation_id !== card.specification.result.data.scope.generation_id)) throw new Error("Card must retain its exact specification");
         if (item.model === "SpanResolution" && item.value.outcome === "resolved") validateSpan(item.value.data);
       } catch { valid = false; }
     }

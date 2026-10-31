@@ -251,3 +251,10 @@ constraints reinforce service ownership/generation checks. Turn submission and
 publication are separate transactions so durable execution can occur outside a
 request; only the current turn can publish a replacement. Endpoint, worker and
 browser evidence remain separate gates.
+
+Q35 exposes bounded conversation/card/message/turn reads under the existing
+Origin and owner boundaries. Conversation creation uses an owner-serialized
+idempotency receipt; history cursors use immutable ordering. Shared contracts
+validate exact card/specification prompt and generation equality. The API
+security inventory now includes these resources and delegates capability
+exchange tests to their dedicated bootstrap/recovery suites.

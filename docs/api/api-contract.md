@@ -738,3 +738,25 @@ Cards retain their identity when a later request creates a different verified
 specification. Existing images keep their original specification revision.
 These are storage/service invariants; public conversation endpoints and durable
 worker execution are delivered separately.
+
+### Conversation resources — Q35
+
+`POST /v1/conversations` accepts `work_id` and an optional title (160 characters).
+It requires Origin and Idempotency-Key, creates only under an owned live work,
+and returns 201 with ConversationView and the strong revision ETag. Exact
+creation replay returns the same resource; changed normalized input conflicts.
+No owner identifier is accepted from the client.
+
+`GET /v1/conversations` returns at most 50 summaries (default 30), ordered by
+creation time then ID descending. `after` is the last thread UUID; optional
+`work_id` filters an owned book. Foreign, deleted and mismatched cursors return
+the common safe 404. Ordering is stable while messages are appended.
+
+`GET /v1/conversations/{id}` returns the current strong ETag, active turn and card.
+`GET /v1/conversations/{id}/messages?after=0&limit=30` pages forward by immutable
+message sequence, returning `next_after` only when more rows remain.
+`GET /v1/conversations/{id}/turns/{turn_id}` polls one owned receipt;
+`GET /v1/conversations/{id}/cards/{number}` reads an immutable historical card.
+All reads exclude deleted works. A card's prompt and generation must equal its
+referenced specification, including in shared Python/TypeScript conformance.
+Turn submission/execution and user-facing conversational behavior remain Q36+.

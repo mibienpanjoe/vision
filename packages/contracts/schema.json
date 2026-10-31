@@ -245,6 +245,264 @@
       "title": "ContextChoice",
       "type": "object"
     },
+    "ConversationCreate": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "default": "New conversation",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "work_id": {
+          "format": "uuid",
+          "title": "Work Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "work_id"
+      ],
+      "title": "ConversationCreate",
+      "type": "object"
+    },
+    "ConversationMessagePage": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ConversationMessageView"
+          },
+          "maxItems": 50,
+          "title": "Items",
+          "type": "array"
+        },
+        "next_after": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next After"
+        }
+      },
+      "required": [
+        "items",
+        "next_after"
+      ],
+      "title": "ConversationMessagePage",
+      "type": "object"
+    },
+    "ConversationMessageView": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "maxLength": 4000,
+          "title": "Content",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "user",
+            "assistant"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "turn_id": {
+          "format": "uuid",
+          "title": "Turn Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "turn_id",
+        "sequence",
+        "role",
+        "content",
+        "created_at"
+      ],
+      "title": "ConversationMessageView",
+      "type": "object"
+    },
+    "ConversationPage": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ConversationSummary"
+          },
+          "maxItems": 50,
+          "title": "Items",
+          "type": "array"
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Cursor"
+        }
+      },
+      "required": [
+        "items",
+        "next_cursor"
+      ],
+      "title": "ConversationPage",
+      "type": "object"
+    },
+    "ConversationSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "work_id": {
+          "format": "uuid",
+          "title": "Work Id",
+          "type": "string"
+        },
+        "work_title": {
+          "title": "Work Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "work_id",
+        "work_title",
+        "title",
+        "revision",
+        "created_at",
+        "updated_at"
+      ],
+      "title": "ConversationSummary",
+      "type": "object"
+    },
+    "ConversationView": {
+      "additionalProperties": false,
+      "properties": {
+        "active_turn": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TurnView"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "card": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PromptCardView"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "last_sequence": {
+          "minimum": 0,
+          "title": "Last Sequence",
+          "type": "integer"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "work_id": {
+          "format": "uuid",
+          "title": "Work Id",
+          "type": "string"
+        },
+        "work_title": {
+          "title": "Work Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "work_id",
+        "work_title",
+        "title",
+        "revision",
+        "created_at",
+        "updated_at",
+        "last_sequence",
+        "active_turn",
+        "card"
+      ],
+      "title": "ConversationView",
+      "type": "object"
+    },
     "CreativeAddition": {
       "additionalProperties": false,
       "properties": {
@@ -1555,6 +1813,48 @@
       "title": "ProbeRequest",
       "type": "object"
     },
+    "PromptCardView": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "generation_id": {
+          "format": "uuid",
+          "title": "Generation Id",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "specification": {
+          "$ref": "#/$defs/VisualizationView"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "generation_id",
+        "prompt",
+        "specification",
+        "created_at"
+      ],
+      "title": "PromptCardView",
+      "type": "object"
+    },
     "RefinementRequest": {
       "additionalProperties": false,
       "properties": {
@@ -2286,6 +2586,122 @@
       "title": "TraitView",
       "type": "object"
     },
+    "TurnCreate": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "TurnCreate",
+      "type": "object"
+    },
+    "TurnView": {
+      "additionalProperties": false,
+      "properties": {
+        "card_revision": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Card Revision"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Completed At"
+        },
+        "conversation_id": {
+          "format": "uuid",
+          "title": "Conversation Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dispatch_pending": {
+          "title": "Dispatch Pending",
+          "type": "boolean"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error Code"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VisualizationResult"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "waiting_for_book",
+            "resolving",
+            "retrieving",
+            "composing",
+            "verifying",
+            "succeeded",
+            "needs_context",
+            "insufficient_evidence",
+            "failed",
+            "superseded",
+            "cancelled"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "conversation_id",
+        "status",
+        "dispatch_pending",
+        "error_code",
+        "result",
+        "card_revision",
+        "created_at",
+        "completed_at"
+      ],
+      "title": "TurnView",
+      "type": "object"
+    },
     "UploadAccepted": {
       "additionalProperties": false,
       "properties": {
@@ -2840,6 +3256,24 @@
     "chapters": {
       "$ref": "#/$defs/ChapterPage"
     },
+    "conversation": {
+      "$ref": "#/$defs/ConversationView"
+    },
+    "conversation_create": {
+      "$ref": "#/$defs/ConversationCreate"
+    },
+    "conversation_messages": {
+      "$ref": "#/$defs/ConversationMessagePage"
+    },
+    "conversation_page": {
+      "$ref": "#/$defs/ConversationPage"
+    },
+    "conversation_turn": {
+      "$ref": "#/$defs/TurnView"
+    },
+    "conversation_turn_create": {
+      "$ref": "#/$defs/TurnCreate"
+    },
     "entity_detail": {
       "$ref": "#/$defs/EntityDetail"
     },
@@ -2875,6 +3309,9 @@
     },
     "probe_request": {
       "$ref": "#/$defs/ProbeRequest"
+    },
+    "prompt_card": {
+      "$ref": "#/$defs/PromptCardView"
     },
     "refinement_request": {
       "$ref": "#/$defs/RefinementRequest"
@@ -2962,7 +3399,14 @@
     "render_cancel",
     "render",
     "render_page",
-    "refinement_request"
+    "refinement_request",
+    "conversation_create",
+    "conversation",
+    "conversation_page",
+    "conversation_messages",
+    "prompt_card",
+    "conversation_turn_create",
+    "conversation_turn"
   ],
   "title": "SchemaCatalog",
   "type": "object"

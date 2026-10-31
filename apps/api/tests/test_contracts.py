@@ -5,6 +5,7 @@ import pytest
 from app.schemas import (
     access,
     common,
+    conversations,
     evidence,
     render,
     retrieval,
@@ -17,6 +18,11 @@ CASES = json.loads(
     (Path(__file__).parents[3] / "packages/contracts/conformance.json").read_text()
 )
 MODELS = {
+    "ConversationCreate": conversations.ConversationCreate,
+    "ConversationView": conversations.ConversationView,
+    "PromptCardView": conversations.PromptCardView,
+    "TurnCreate": conversations.TurnCreate,
+    "TurnView": conversations.TurnView,
     "SourceSpan": scope.SourceSpan,
     "EvidenceView": evidence.EvidenceView,
     "PrincipalView": access.PrincipalView,

@@ -2,6 +2,15 @@ from typing import Annotated
 
 from app.schemas.access import LoginRequest, PrincipalView
 from app.schemas.base import ContractModel
+from app.schemas.conversations import (
+    ConversationCreate,
+    ConversationMessagePage,
+    ConversationPage,
+    ConversationView,
+    PromptCardView,
+    TurnCreate,
+    TurnView,
+)
 from app.schemas.entities import EntityDetail, EntityPage
 from app.schemas.evidence import EvidenceRequest, EvidenceView
 from app.schemas.jobs import JobView, ProbeRequest
@@ -81,3 +90,11 @@ class SchemaCatalog(ContractModel):
     render: RenderView
     render_page: RenderPage
     refinement_request: RefinementRequest
+
+    conversation_create: ConversationCreate
+    conversation: ConversationView
+    conversation_page: ConversationPage
+    conversation_messages: ConversationMessagePage
+    prompt_card: PromptCardView
+    conversation_turn_create: TurnCreate
+    conversation_turn: TurnView
