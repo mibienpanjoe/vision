@@ -156,3 +156,12 @@ def test_other_owners_and_hidden_entities_get_the_safe_not_found(story):
     with pytest.raises(PublicError) as unknown:
         plan(query="Arthur", entity_id=str(uuid.uuid4()))
     assert unknown.value.status == 404
+
+
+def test_consolidated_identity_links_reach_a_fixed_point_independent_of_row_order():
+    from types import SimpleNamespace
+
+    from app.services.reconstruction.context import subject_group
+    a, b, c, other = (uuid.uuid4() for _ in range(4))
+    db = SimpleNamespace(execute=lambda _: [(b, c), (a, b), (other, uuid.uuid4())])
+    assert subject_group(db, uuid.uuid4(), [a]) == {a, b, c}

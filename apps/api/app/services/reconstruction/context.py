@@ -39,10 +39,13 @@ def claims(db, derivation_id: uuid.UUID) -> tuple[list[Fact], Chronology, dict]:
 
 def subject_group(db, derivation_id, entity_ids) -> set:
     group = set(entity_ids)
-    for a, b in db.execute(select(EntityRelation.subject_id, EntityRelation.object_id).where(
-            EntityRelation.derivation_id == derivation_id, EntityRelation.relation == "same_as")):
-        if a in group or b in group:
-            group |= {a, b}
+    links = list(db.execute(select(EntityRelation.subject_id, EntityRelation.object_id).where(
+        EntityRelation.derivation_id == derivation_id, EntityRelation.relation == "same_as")))
+    while True:
+        expanded = group | {member for a, b in links if a in group or b in group for member in (a, b)}
+        if expanded == group:
+            break
+        group = expanded
     return group
 
 

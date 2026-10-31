@@ -496,3 +496,11 @@ show zero false merges but four missed alias links; supported short/full names
 share the admissible entity-reference set. The independent four-case pinned-model
 holdout has zero missed aliases and false merges. These bounded checks do not
 establish universal identity/appearance quality or close the remaining Q30 gate.
+
+Q30b retrieval computes the transitive closure of confirmed consolidation identity
+links independently of row order. An ambiguous mention is entity-linked only
+when all of its candidates lie within that confirmed group. Query planning caps
+clarification choices at five; absence of verified appearance traits remains an
+insufficient-evidence outcome rather than an identity or provider failure.
+This boundary is compatible with the existing scoped reconstruction API and
+does not resolve the private-book aliases still missing from production.

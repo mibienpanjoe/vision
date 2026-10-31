@@ -265,3 +265,8 @@ linking. Rules-only replay records its earlier span source and never reuses
 rejected aliases. Quarantined intermediate results stay attributable but are
 ineligible; immutable source and prior citations remain intact. Four missed
 aliases remain in the private comparison, so full Q30 acceptance stays open.
+
+Q30b consumes confirmed identity groups in retrieval using a fixed point and
+admits an ambiguous mention only when its complete candidate set belongs to that
+group. Clarifications are bounded; appearance absence and provider failure keep
+their distinct outcomes. Full private-book alias acceptance remains open.
