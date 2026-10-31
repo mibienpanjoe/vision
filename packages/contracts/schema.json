@@ -2586,6 +2586,12 @@
       "title": "TraitView",
       "type": "object"
     },
+    "TurnCancel": {
+      "additionalProperties": false,
+      "properties": {},
+      "title": "TurnCancel",
+      "type": "object"
+    },
     "TurnCreate": {
       "additionalProperties": false,
       "properties": {
@@ -3271,6 +3277,9 @@
     "conversation_turn": {
       "$ref": "#/$defs/TurnView"
     },
+    "conversation_turn_cancel": {
+      "$ref": "#/$defs/TurnCancel"
+    },
     "conversation_turn_create": {
       "$ref": "#/$defs/TurnCreate"
     },
@@ -3405,6 +3414,7 @@
     "conversation_page",
     "conversation_messages",
     "prompt_card",
+    "conversation_turn_cancel",
     "conversation_turn_create",
     "conversation_turn"
   ],

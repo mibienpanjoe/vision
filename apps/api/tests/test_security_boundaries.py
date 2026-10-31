@@ -53,6 +53,8 @@ def world(api, monkeypatch, renders):
     bodies = {
         "/v1/jobs": {"value": 2},
         "/v1/conversations": {"work_id": work_id, "title": "Another portrait"},
+        "/v1/conversations/{conversation_id}/turns": {"text": "Arthur"},
+        "/v1/conversations/{conversation_id}/turns/{turn_id}/cancel": {},
         "/v1/works/{work_id}/evidence": {"span": span, "parser_revision": spec["scope"]["parser_revision"],
                                          "reading_boundary": boundary},
         "/v1/works/{work_id}/visualizations/compose": {"query": "Arthur", "through_chapter_id": boundary["chapter_id"]},

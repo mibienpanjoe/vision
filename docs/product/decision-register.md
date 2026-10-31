@@ -274,3 +274,10 @@ their distinct outcomes. Full private-book alias acceptance remains open.
 Q36a adds internal composition-stage notifications without changing the stored
 specification or synchronous API. A replay returns its existing result without
 invented processing stages; durable turn publication remains the next subunit.
+
+Q36b wires committed turn/message intent to the real Redis/Dramatiq path with
+lease-aware recovery, bounded attempts, supersession and conditional cancellation.
+Only an active turn can atomically publish a verified card, assistant receipt and
+terminal state. Initial-query processing reuses existing source/prompt gates;
+structured followups and ingestion-completion wakeup are separate increments.
+No image is implicitly requested by this text execution path.

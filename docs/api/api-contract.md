@@ -767,3 +767,31 @@ Internal composition callers can observe resolving, retrieving, composing and
 verifying at their actual execution boundaries. Stored-result replay emits no
 new work stages. The existing synchronous visualization API keeps its response
 contract; durable conversation execution consumes these notifications separately.
+
+### Durable conversation turns — Q36b
+
+`POST /v1/conversations/{id}/turns` accepts `text` (1–4,000 characters), Origin,
+Idempotency-Key and the conversation's displayed strong If-Match revision. The
+server records the user message and queued turn before broker publication and
+returns 202 TurnView. Exact key/revision/payload replay returns the same turn;
+a changed request conflicts, and a stale different submission returns 412.
+Broker failure leaves `dispatch_pending` visible for operator dispatch.
+
+The real worker acquires a SQL advisory lease, waits durably for book readiness,
+and reports actual resolving/retrieving/composing/verifying stages. Recoverable
+interruption has at most three execution attempts. Verified output uses the
+existing specification service and a turn-scoped creation receipt; atomic card,
+assistant-message and terminal publication checks the active turn again. Newer
+requests supersede unfinished older turns. The prior usable card stays available
+on cancellation, missing evidence, clarification, failure or late completion.
+
+`POST /v1/conversations/{id}/turns/{turn_id}/cancel` accepts an empty TurnCancel
+body with key and the current conversation revision. Exact cancellation replay
+is allowed; other payloads, foreign turn IDs and stale revisions fail safely.
+No image reservation occurs on turn submission or prompt composition.
+
+This increment supports initial portrayal queries through the existing bounded
+query planner. Longer requests remain stored but fail safely until the structured
+conversational interpreter is connected; followups, sources and explicit images
+are subsequent intent/action tasks. Waiting preparation is resumed by `make
+dispatch`; automatic ingestion completion wakeup is the attachment increment.

@@ -410,6 +410,7 @@ export interface SchemaCatalog {
   conversation_messages: ConversationMessagePage;
   conversation_page: ConversationPage;
   conversation_turn: TurnView;
+  conversation_turn_cancel: TurnCancel;
   conversation_turn_create: TurnCreate;
   entity_detail: EntityDetail;
   entity_page: EntityPage;
@@ -666,6 +667,7 @@ export interface ConversationSummary {
   work_id: WorkId3;
   work_title: WorkTitle1;
 }
+export interface TurnCancel {}
 export interface TurnCreate {
   text: Text1;
 }

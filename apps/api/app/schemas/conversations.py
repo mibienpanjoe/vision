@@ -34,6 +34,10 @@ class TurnCreate(ContractModel):
         return value
 
 
+class TurnCancel(ContractModel):
+    pass
+
+
 class TurnView(ContractModel):
     id: uuid.UUID
     conversation_id: uuid.UUID

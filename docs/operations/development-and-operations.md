@@ -799,3 +799,16 @@ flow has no username/password/account selector.
 Q32's disposable upgrade checks compare original bytes, exact Unicode citations,
 book/generation identity and durable render allowance. A private-workspace restore
 is a separate isolated proof, not permission to clear the user's runtime data.
+
+### Conversation dispatch recovery
+
+`make dispatch` also reconciles interrupted conversation leases and persisted
+requests waiting for book preparation, then publishes their committed SQL intent.
+It does not take over a live lease. Turn execution has a three-attempt bound;
+terminal failures keep the submitted message and prior usable prompt. Redis
+publication failure remains pending in SQL. Conversation retry cannot retry an
+uncertain paid image call; image reservations retain their separate lifecycle.
+Queued turns whose publication is more than five minutes old can be republished
+by reconciliation; duplicate delivery is guarded by the same turn lease/receipt.
+Unready books are excluded from the wakeup candidate batch, so they cannot block
+recovery of later ready requests.

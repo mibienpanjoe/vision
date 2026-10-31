@@ -1,4 +1,5 @@
 import dramatiq
+from app.services.conversations.turns import execute_turn
 from app.services.dispatch import configured_broker
 from app.services.ingestion.parse import execute_ingestion
 from app.services.narrative.pipeline import execute_narrative
@@ -41,3 +42,8 @@ def render(job_id: str) -> None:
 @dramatiq.actor(queue_name="retention", max_retries=10, min_backoff=1000, max_backoff=60_000, time_limit=300_000)
 def purge_work(work_id: str) -> None:
     execute_purge(work_id)
+
+
+@dramatiq.actor(queue_name="conversation", max_retries=2, min_backoff=1000, max_backoff=5000, time_limit=900_000)
+def converse(turn_id: str) -> None:
+    execute_turn(turn_id)

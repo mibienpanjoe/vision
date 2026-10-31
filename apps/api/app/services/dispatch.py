@@ -136,3 +136,29 @@ def dispatch_deletions(engine, work_id: uuid.UUID | None = None) -> int:
         return 0
     finally:
         broker.close()
+
+
+def dispatch_conversations(engine, turn_id: uuid.UUID | None = None) -> int:
+    from app.models.conversations import Conversation, ConversationTurn
+    from app.models.works import Work
+
+    broker = configured_broker()
+    if broker is None:
+        return 0
+    try:
+        with Session(engine) as db, db.begin():
+            query = select(ConversationTurn).join(Conversation, Conversation.id == ConversationTurn.conversation_id).join(Work, Work.id == Conversation.work_id).where(
+                ConversationTurn.status == "queued", ConversationTurn.dispatched_at.is_(None),
+                Conversation.active_turn_id == ConversationTurn.id, Work.deleted_at.is_(None))
+            if turn_id is not None:
+                query = query.where(ConversationTurn.id == turn_id)
+            sent = 0
+            for turn in db.scalars(query.limit(50).with_for_update(of=ConversationTurn, skip_locked=True)):
+                broker.enqueue(Message(queue_name="conversation", actor_name="converse", args=(str(turn.id),), kwargs={}, options={}))
+                turn.dispatched_at = datetime.now(UTC)
+                sent += 1
+        return sent
+    except RedisError:
+        return 0
+    finally:
+        broker.close()

@@ -781,5 +781,17 @@
       "work_id": "11111111-1111-4111-8111-111111111111",
       "owner_id": "11111111-1111-4111-8111-111111111111"
     }
+  },
+  {
+    "model": "TurnCancel",
+    "valid": true,
+    "value": {}
+  },
+  {
+    "model": "TurnCancel",
+    "valid": false,
+    "value": {
+      "owner_id": "forged"
+    }
   }
 ]
