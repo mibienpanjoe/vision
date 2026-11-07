@@ -11,9 +11,9 @@ import "@fontsource/geist-mono/latin-500.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Vision — Your library",
+  title: "Vision",
   manifest: "/manifest.webmanifest",
-  description: "A private reading workspace for exploring the worlds within your books.",
+  description: "Source-grounded image prompts from your own books.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

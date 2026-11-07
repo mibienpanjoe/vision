@@ -2,36 +2,23 @@ import { expect, test } from "@playwright/test";
 
 test.skip(!process.env.VISION_TEST_RESTORE_ORIGIN, "Requires the isolated packaged restore drill");
 
-test("restored library and entity explorer render surviving data and omit the deleted book", async ({ page }) => {
+test("restored workspace keeps the surviving book and omits the deleted one", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   const login = await page.request.post("/api/v1/auth/login", { headers: { Origin: process.env.VISION_TEST_RESTORE_ORIGIN! },
     data: { username: "package_reader", password: "synthetic package check passphrase" } });
   expect(login.status()).toBe(200);
-  await page.goto("/library");
-  const book = page.getByRole("article", { name: "Packaged", exact: true });
-  await expect(book).toBeVisible();
-  // The signed-out session probe intentionally answers 401; inspect console errors after authentication settles.
+  const books = (await (await page.request.get("/api/v1/works")).json()).items as { id: string; title: string }[];
+  expect(books.map(book => book.title)).toEqual(["Packaged"]);
+  const book = books[0];
+  expect((await page.request.get(`/api/v1/works/${book.id}/original`)).status()).toBe(200);
+  // A saved book opens for a new question without another upload.
+  await page.goto(`/conversations/new?work=${book.id}`);
+  await expect(page.getByRole("heading", { name: "What would you like to see?" })).toBeVisible();
+  await expect(page.getByLabel("Book file")).toHaveCount(0);
   page.on("console", entry => { if (entry.type() === "error") errors.push(entry.text()); });
-  await expect(page.getByRole("article", { name: "Delete after snapshot" })).toHaveCount(0);
-  await expect(book.locator(".readiness > div").nth(2)).toContainText("Ready");
-  await page.screenshot({ path: "../../.local/restored-library.png", fullPage: true });
-  await book.getByRole("link", { name: "Open book" }).click();
-  await expect(page.getByRole("heading", { name: "Packaged", exact: true })).toBeVisible();
-  await page.getByRole("combobox", { name: "Reading boundary", exact: true }).selectOption({ label: "Whole book" });
-  await page.getByRole("button", { name: "Arthur", exact: true }).click();
-  await expect(page.getByRole("region", { name: "Entity details" })).toContainText("Arthur");
-  const evidence = page.waitForResponse(response => response.url().endsWith("/evidence"));
-  await page.getByRole("button", { name: "Read passage 1", exact: true }).click();
-  const resolved = await evidence;
-  expect(resolved.status()).toBe(200);
-  const span = (await resolved.json()).span;
-  const reader = page.getByRole("region", { name: "Source reader", exact: true });
-  await expect(reader.locator("mark").first()).toHaveText(span.quote);
   await page.setViewportSize({ width: 320, height: 850 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: "../../.local/restored-book.png", fullPage: true });
-  await reader.scrollIntoViewIfNeeded();
-  await page.screenshot({ path: "../../.local/restored-evidence.png" });
+  await page.screenshot({ path: "../../.local/restored-workspace.png", fullPage: true });
   expect(errors).toEqual([]);
 });
