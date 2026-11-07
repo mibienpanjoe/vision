@@ -16,11 +16,13 @@ from app.schemas.conversations import (
     ConversationPage,
     ConversationSummary,
     ConversationView,
+    PromptCardHistory,
+    PromptCardSummary,
     PromptCardView,
     TurnView,
 )
 from app.schemas.visualization import VisualizationResult
-from app.services.conversations import store
+from app.services.conversations import store, variants
 from app.services.visualization import history
 from sqlalchemy import select, tuple_
 
@@ -44,7 +46,8 @@ def card(db, actor, thread, number):
         raise PublicError(404, "RESOURCE_NOT_FOUND", "Resource not found.")
     specification = history.view(db, history.owned(db, actor, thread.work_id, revision.visualization_id), revision.visualization_revision)
     return PromptCardView(id=revision.card_id, revision=revision.number, generation_id=revision.generation_id,
-                          prompt=specification.result.data.generation.prompt, specification=specification, created_at=revision.created_at)
+                          prompt=specification.result.data.generation.prompt, specification=specification,
+                          variants=variants.variants(db, revision, specification.result.data), created_at=revision.created_at)
 
 
 def view(db, actor, thread):
@@ -92,3 +95,14 @@ def turn(db, actor, conversation_id, turn_id):
     if found is None:
         raise PublicError(404, "RESOURCE_NOT_FOUND", "Resource not found.")
     return turn_view(found)
+
+
+def card_history(db, actor, thread):
+    rows = db.scalars(select(PromptCardRevision).where(PromptCardRevision.card_id == thread.card_id)
+                      .order_by(PromptCardRevision.number.desc()).limit(50))
+    items = []
+    for row in rows:
+        spec = history.view(db, history.owned(db, actor, thread.work_id, row.visualization_id), row.visualization_revision).result.data
+        items.append(PromptCardSummary(revision=row.number, current=row.number == thread.card_revision, prompt=spec.generation.prompt,
+                                       resolved_moment=spec.scope.resolved_moment, style=spec.generation.style, created_at=row.created_at))
+    return PromptCardHistory(items=items)

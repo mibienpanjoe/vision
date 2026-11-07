@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
+from app.schemas.appearance_variants import AppearanceVariant
 from app.schemas.base import ContractModel
 from app.schemas.retrieval import Id
 from app.schemas.visualization import VisualizationResult, VisualizationView
@@ -36,6 +37,11 @@ class TurnCreate(ContractModel):
         return value
 
 
+class VariantSelection(ContractModel):
+    variant_id: str = Field(pattern=r"^variant:[0-9a-f]{16}$")
+    card_revision: int = Field(ge=1, description="The card revision the variant was issued for")
+
+
 class PreparationRetry(ContractModel):
     pass
 
@@ -62,6 +68,7 @@ class PromptCardView(ContractModel):
     generation_id: uuid.UUID
     prompt: str
     specification: VisualizationView
+    variants: list[AppearanceVariant] = Field(default_factory=list, max_length=3)
     created_at: datetime
 
     @model_validator(mode="after")
@@ -99,6 +106,19 @@ class ConversationMessageView(ContractModel):
     role: Literal["user", "assistant"]
     content: str = Field(max_length=4000)
     created_at: datetime
+
+
+class PromptCardSummary(ContractModel):
+    revision: int = Field(ge=1)
+    current: bool
+    prompt: str
+    resolved_moment: str | None
+    style: str | None
+    created_at: datetime
+
+
+class PromptCardHistory(ContractModel):
+    items: list[PromptCardSummary] = Field(max_length=50, description="Newest first; earlier versions are immutable and historical")
 
 
 class ConversationMessagePage(ContractModel):

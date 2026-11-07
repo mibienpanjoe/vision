@@ -10,12 +10,14 @@ from app.schemas.conversations import (
     ConversationPage,
     ConversationView,
     PreparationRetry,
+    PromptCardHistory,
     PromptCardView,
     TurnCancel,
     TurnCreate,
     TurnView,
+    VariantSelection,
 )
-from app.services.conversations import attachments, resources, store, turns
+from app.services.conversations import actions, attachments, resources, store, turns
 from app.services.dispatch import dispatch_conversations
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
@@ -58,6 +60,11 @@ def read_turn(conversation_id: uuid.UUID, turn_id: uuid.UUID, actor: Actor, db: 
     return resources.turn(db, actor, conversation_id, turn_id)
 
 
+@router.get("/{conversation_id}/cards", response_model=PromptCardHistory)
+def read_card_history(conversation_id: uuid.UUID, actor: Actor, db: Database):
+    return resources.card_history(db, actor, store.owned(db, actor, conversation_id))
+
+
 @router.get("/{conversation_id}/cards/{number}", response_model=PromptCardView)
 def read_card(conversation_id: uuid.UUID, number: int, actor: Actor, db: Database):
     return resources.card(db, actor, store.owned(db, actor, conversation_id), number)
@@ -87,5 +94,15 @@ def retry_book(conversation_id: uuid.UUID, body: PreparationRetry, actor: Actor,
     turn = attachments.retry_preparation(db, actor, conversation_id, match, key, request.state.correlation_id)
     db.commit()
     attachments.dispatch_retry(request.app.state.engine, turn)
+    db.refresh(turn)
+    return resources.turn_view(turn)
+
+
+@router.post("/{conversation_id}/variant-selections", response_model=TurnView, status_code=202)
+def select_variant(conversation_id: uuid.UUID, body: VariantSelection, actor: Actor, db: Database, key: Key, request: Request,
+                   match: Annotated[str | None, Header(alias="If-Match", max_length=32)] = None):
+    turn = actions.select_variant(db, actor, conversation_id, match, key, body, request.state.correlation_id)
+    db.commit()
+    dispatch_conversations(request.app.state.engine, turn.id)
     db.refresh(turn)
     return resources.turn_view(turn)

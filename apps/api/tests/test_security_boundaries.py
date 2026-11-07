@@ -54,6 +54,7 @@ def world(api, monkeypatch, renders):
         "/v1/jobs": {"value": 2},
         "/v1/conversations": {"work_id": work_id, "title": "Another portrait"},
         "/v1/conversations/{conversation_id}/preparation-retries": {},
+        "/v1/conversations/{conversation_id}/variant-selections": {"variant_id": "variant:" + "0" * 16, "card_revision": 1},
         "/v1/conversations/{conversation_id}/turns": {"text": "Arthur"},
         "/v1/conversations/{conversation_id}/turns/{turn_id}/cancel": {},
         "/v1/works/{work_id}/evidence": {"span": span, "parser_revision": spec["scope"]["parser_revision"],

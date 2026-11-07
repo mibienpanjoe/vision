@@ -175,6 +175,8 @@ def annotated_consolidation(sources):
                       "evidence": evidence(f["evidence"])})
     moment = next((event for phrase, event in MOMENTS.items()
                    if phrase in f"{request['request']} {request['moment']} {request['scene']}" and event in keys), None)
+    # A moment named by an event label (a selected variant) anchors that event, as a model would.
+    moment = moment or next((event for event in keys if str(request["moment"]).strip().casefold() == event), None)
     return {"events": events, "relations": relations, "facts": facts, "requested_event": moment}
 
 

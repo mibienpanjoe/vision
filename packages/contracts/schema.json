@@ -80,6 +80,66 @@
       "title": "AnchorView",
       "type": "object"
     },
+    "AppearanceVariant": {
+      "additionalProperties": false,
+      "properties": {
+        "card_revision": {
+          "minimum": 1,
+          "title": "Card Revision",
+          "type": "integer"
+        },
+        "changes": {
+          "items": {
+            "$ref": "#/$defs/TraitChange"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Changes",
+          "type": "array"
+        },
+        "event_id": {
+          "format": "uuid",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceSpan"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "generation_id": {
+          "format": "uuid",
+          "title": "Generation Id",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^variant:[0-9a-f]{16}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "event_id",
+        "changes",
+        "evidence",
+        "card_revision",
+        "generation_id"
+      ],
+      "title": "AppearanceVariant",
+      "type": "object"
+    },
     "CanonicalLock": {
       "additionalProperties": false,
       "properties": {
@@ -1819,6 +1879,80 @@
       "title": "ProbeRequest",
       "type": "object"
     },
+    "PromptCardHistory": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "description": "Newest first; earlier versions are immutable and historical",
+          "items": {
+            "$ref": "#/$defs/PromptCardSummary"
+          },
+          "maxItems": 50,
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "title": "PromptCardHistory",
+      "type": "object"
+    },
+    "PromptCardSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "current": {
+          "title": "Current",
+          "type": "boolean"
+        },
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "resolved_moment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Resolved Moment"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Style"
+        }
+      },
+      "required": [
+        "revision",
+        "current",
+        "prompt",
+        "resolved_moment",
+        "style",
+        "created_at"
+      ],
+      "title": "PromptCardSummary",
+      "type": "object"
+    },
     "PromptCardView": {
       "additionalProperties": false,
       "properties": {
@@ -1848,6 +1982,14 @@
         },
         "specification": {
           "$ref": "#/$defs/VisualizationView"
+        },
+        "variants": {
+          "items": {
+            "$ref": "#/$defs/AppearanceVariant"
+          },
+          "maxItems": 3,
+          "title": "Variants",
+          "type": "array"
         }
       },
       "required": [
@@ -2523,6 +2665,46 @@
       "title": "ThroughChapter",
       "type": "object"
     },
+    "TraitChange": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "After",
+          "type": "array"
+        },
+        "attribute": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Attribute",
+          "type": "string"
+        },
+        "before": {
+          "description": "Canonical values on the active card; empty when unknown there",
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Before",
+          "type": "array"
+        }
+      },
+      "required": [
+        "attribute",
+        "before",
+        "after"
+      ],
+      "title": "TraitChange",
+      "type": "object"
+    },
     "TraitView": {
       "additionalProperties": false,
       "properties": {
@@ -2782,6 +2964,28 @@
         }
       },
       "title": "UploadMetadata",
+      "type": "object"
+    },
+    "VariantSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "card_revision": {
+          "description": "The card revision the variant was issued for",
+          "minimum": 1,
+          "title": "Card Revision",
+          "type": "integer"
+        },
+        "variant_id": {
+          "pattern": "^variant:[0-9a-f]{16}$",
+          "title": "Variant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "variant_id",
+        "card_revision"
+      ],
+      "title": "VariantSelection",
       "type": "object"
     },
     "VerificationView": {
@@ -3297,6 +3501,9 @@
     "conversation": {
       "$ref": "#/$defs/ConversationView"
     },
+    "conversation_card_history": {
+      "$ref": "#/$defs/PromptCardHistory"
+    },
     "conversation_create": {
       "$ref": "#/$defs/ConversationCreate"
     },
@@ -3317,6 +3524,9 @@
     },
     "conversation_turn_create": {
       "$ref": "#/$defs/TurnCreate"
+    },
+    "conversation_variant_selection": {
+      "$ref": "#/$defs/VariantSelection"
     },
     "entity_detail": {
       "$ref": "#/$defs/EntityDetail"
@@ -3450,6 +3660,8 @@
     "conversation_messages",
     "prompt_card",
     "conversation_preparation_retry",
+    "conversation_card_history",
+    "conversation_variant_selection",
     "conversation_turn_cancel",
     "conversation_turn_create",
     "conversation_turn"

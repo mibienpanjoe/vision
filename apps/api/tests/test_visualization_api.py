@@ -222,3 +222,17 @@ def test_complete_quoted_verdict_coverage_is_applied_at_the_api(api, monkeypatch
     spec = outcome(compose(chapter=3, query="Arthur at home after the war"))["data"]
     assert spec["verification"]["adjudication"] == "applied"
     assert all(t["adjudication"] == "entailed" for t in spec["subject"]["traits"] if t["status"] == "canonical")
+
+
+def test_subject_only_request_composes_a_base_portrait_from_stable_identity(api):
+    compose, *_ = api
+    # The sword's material is stated identically at two moments (childhood and war): a stable base trait.
+    body = outcome(compose(chapter=3, query="the silver sword"))
+    assert body["outcome"] == "resolved", body
+    spec = body["data"]
+    assert spec["scope"]["resolved_moment"] is None and spec["participants"] == [] and spec["world"] == []
+    assert traits(spec["subject"]) == {"material": ("canonical", ["silver"])}
+    assert "silver" in spec["generation"]["prompt"] and "Brann" not in spec["generation"]["prompt"]
+    assert spec["lineage"]["consolidation_id"]
+    # Arthur's appearance changes between moments and has no stable trait, so moment choices remain.
+    assert outcome(compose(chapter=3, query="Arthur"))["outcome"] == "needs_context"

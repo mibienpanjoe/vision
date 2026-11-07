@@ -32,6 +32,7 @@ class Context:
     choices: dict[str, dict]
     pending: dict | None
     messages: list[dict] = field(default_factory=list)
+    variant: str | None = None  # the moment label of a server-issued variant selection
 
     def block(self) -> dict:
         """Data for the classifier; message text stays untrusted quoted data."""
@@ -84,4 +85,4 @@ def build(db, thread, turn) -> Context:
                                                              ConversationMessage.turn_id != turn.id)
                            .order_by(ConversationMessage.sequence.desc()).limit(MESSAGES)))
     messages = [{"role": row.role, "text": row.content[:MESSAGE_CHARS]} for row in reversed(rows)]
-    return Context(current, earlier, choices, pending, messages)
+    return Context(current, earlier, choices, pending, messages, turn.request.get("moment") if turn.request.get("variant") else None)

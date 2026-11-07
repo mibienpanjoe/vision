@@ -818,6 +818,40 @@ inference (PROP-09), and unknown refs or invalid output fall back.
 Committed preparation outcomes automatically wake persisted waiting requests
 (Q37b); `make dispatch` recovers missed notifications or broker outages.
 
+### Appearance variants — Q40
+
+PromptCardView carries up to three `variants`: other moments in the card's own
+query-scoped consolidation where the same resolved subject (its confirmed
+identity group only) has explicit canonical traits that differ from the card.
+Each lists the changed traits (`before` empty when unknown on the card), exact
+evidence spans, the event label and ID, and the card revision and generation it
+was issued for. IDs are deterministic per card revision, generation and event.
+No timeline beyond that consolidation is claimed; variants are computed on read
+and verified again only when selected (Q41).
+
+### Variant selection — Q41
+
+`POST /v1/conversations/{id}/variant-selections` takes VariantSelection
+(`variant_id` issued on the current card, `card_revision`), Origin,
+Idempotency-Key and the conversation If-Match revision, and returns 202
+TurnView. A variant not on the current card or an older card revision returns
+409 (`VARIANT_UNAVAILABLE`, `CARD_CHANGED`); a stale tab returns 412. Exact
+replay returns the same turn. The selection is an ordinary durable turn with a
+compact "Show <moment>" message: the moment is reconstructed and verified
+again, the prior card stays active until a verified replacement publishes, and
+no image is reserved.
+
+### Card history and change receipts — Q42
+
+`GET /v1/conversations/{id}/cards` returns PromptCardHistory, newest first (at
+most 50): each immutable revision's exact prompt, resolved moment, style and
+whether it is current. Earlier revisions stay readable by number and are shown
+only as historical. Each published revision adds a concise assistant receipt:
+"Restyled: <style>. Book facts unchanged." for presentation edits, "Updated from
+the book: <moment>." after a verified moment or scene change, or "Restored the
+earlier version". Two tabs at one revision cannot both apply: the second gets
+412; exact key/payload replay returns the same turn and a changed payload 409.
+
 ### Conversation preparation retry — Q37c
 
 `POST /v1/conversations/{id}/preparation-retries` takes an empty PreparationRetry

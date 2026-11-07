@@ -8,10 +8,12 @@ from app.schemas.conversations import (
     ConversationPage,
     ConversationView,
     PreparationRetry,
+    PromptCardHistory,
     PromptCardView,
     TurnCancel,
     TurnCreate,
     TurnView,
+    VariantSelection,
 )
 from app.schemas.entities import EntityDetail, EntityPage
 from app.schemas.evidence import EvidenceRequest, EvidenceView
@@ -99,6 +101,8 @@ class SchemaCatalog(ContractModel):
     conversation_messages: ConversationMessagePage
     prompt_card: PromptCardView
     conversation_preparation_retry: PreparationRetry
+    conversation_card_history: PromptCardHistory
+    conversation_variant_selection: VariantSelection
     conversation_turn_cancel: TurnCancel
     conversation_turn_create: TurnCreate
     conversation_turn: TurnView
