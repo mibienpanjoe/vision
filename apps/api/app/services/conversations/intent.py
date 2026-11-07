@@ -106,6 +106,8 @@ def model_intent(db, owner_id, generation_id, context, text):
 
 
 def classify(db, owner_id, generation_id, context, text, ref=None) -> tuple[ConversationIntent, str]:
+    if context.variant is not None:
+        return ConversationIntent(kind="moment_edit", moment=context.variant), "action"
     if ref is not None:
         if ref not in context.choices:
             return ConversationIntent(kind="new_portrayal", query=text[:1000]), "deterministic"

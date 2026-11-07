@@ -37,6 +37,11 @@ class TurnCreate(ContractModel):
         return value
 
 
+class VariantSelection(ContractModel):
+    variant_id: str = Field(pattern=r"^variant:[0-9a-f]{16}$")
+    card_revision: int = Field(ge=1, description="The card revision the variant was issued for")
+
+
 class PreparationRetry(ContractModel):
     pass
 

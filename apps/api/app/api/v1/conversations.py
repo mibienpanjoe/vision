@@ -14,8 +14,9 @@ from app.schemas.conversations import (
     TurnCancel,
     TurnCreate,
     TurnView,
+    VariantSelection,
 )
-from app.services.conversations import attachments, resources, store, turns
+from app.services.conversations import actions, attachments, resources, store, turns
 from app.services.dispatch import dispatch_conversations
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
@@ -87,5 +88,15 @@ def retry_book(conversation_id: uuid.UUID, body: PreparationRetry, actor: Actor,
     turn = attachments.retry_preparation(db, actor, conversation_id, match, key, request.state.correlation_id)
     db.commit()
     attachments.dispatch_retry(request.app.state.engine, turn)
+    db.refresh(turn)
+    return resources.turn_view(turn)
+
+
+@router.post("/{conversation_id}/variant-selections", response_model=TurnView, status_code=202)
+def select_variant(conversation_id: uuid.UUID, body: VariantSelection, actor: Actor, db: Database, key: Key, request: Request,
+                   match: Annotated[str | None, Header(alias="If-Match", max_length=32)] = None):
+    turn = actions.select_variant(db, actor, conversation_id, match, key, body, request.state.correlation_id)
+    db.commit()
+    dispatch_conversations(request.app.state.engine, turn.id)
     db.refresh(turn)
     return resources.turn_view(turn)

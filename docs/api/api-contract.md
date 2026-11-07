@@ -829,6 +829,18 @@ was issued for. IDs are deterministic per card revision, generation and event.
 No timeline beyond that consolidation is claimed; variants are computed on read
 and verified again only when selected (Q41).
 
+### Variant selection — Q41
+
+`POST /v1/conversations/{id}/variant-selections` takes VariantSelection
+(`variant_id` issued on the current card, `card_revision`), Origin,
+Idempotency-Key and the conversation If-Match revision, and returns 202
+TurnView. A variant not on the current card or an older card revision returns
+409 (`VARIANT_UNAVAILABLE`, `CARD_CHANGED`); a stale tab returns 412. Exact
+replay returns the same turn. The selection is an ordinary durable turn with a
+compact "Show <moment>" message: the moment is reconstructed and verified
+again, the prior card stays active until a verified replacement publishes, and
+no image is reserved.
+
 ### Conversation preparation retry — Q37c
 
 `POST /v1/conversations/{id}/preparation-retries` takes an empty PreparationRetry
