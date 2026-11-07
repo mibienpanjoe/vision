@@ -346,6 +346,14 @@ reports material. A state with no canonical, disputed or inferred trait is
 claims at more than one event, the state is `needs_context` with those events
 in chronological order instead of a blend.
 
+A character-only request (no moment, scene or participant) first tries a
+moment-free base portrait (`base-v1`, Q39): only identity claims enter; an
+identity value is canonical when untimed or repeated identically at two or more
+distinct events, a single timed mention is an inference, and values that differ
+between events are excluded. Scene, acquired and interval claims (clothing,
+injuries, props) never enter. One absent trait leaves the others. Without a
+canonical stable trait the request keeps the grounded moment choices.
+
 The consolidation names the event matching the requested moment
 (`requested_event`, `consolidation-schema-v2`); `services/reconstruction/context.py`
 reads the stored event id from the derivation scope and never guesses one from

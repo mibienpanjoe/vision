@@ -17,8 +17,14 @@ from app.models.passages import Passage
 from app.models.visual_facts import FactEvent, VisualFact
 from app.services.narrative.chronology import Chronology, Statement
 from app.services.narrative.eligibility import visible_narrative
-from app.services.reconstruction.scene import Entity, Scene, absentees, compose_scene
-from app.services.reconstruction.state import Fact, State, reconstruct
+from app.services.reconstruction.scene import (
+    Entity,
+    Member,
+    Scene,
+    absentees,
+    compose_scene,
+)
+from app.services.reconstruction.state import Fact, State, base_state, reconstruct
 from app.services.retrieval.entity_lookup import SubjectLookup
 from sqlalchemy import select
 
@@ -87,3 +93,12 @@ def scene(db, plan, derivation_id: uuid.UUID) -> tuple[Scene | State, dict]:
     requested = [entities[lookup.subject(p.entity_ids[0])] for p in plan.participants]
     return compose_scene(facts, chronology, state.event, subject, present, participants, requested,
                          absentees(texts, list(entities.values())), carriers), labels
+
+
+def base_scene(db, plan, derivation_id: uuid.UUID) -> Scene:
+    """A character-only portrait from stable identity traits, with no moment or other member."""
+    facts, _, _ = claims(db, derivation_id)
+    subject = plan.subject
+    state = base_state(facts, subject_group(db, derivation_id, subject.entity_ids), subject.kind)
+    member = Member(Entity(frozenset(subject.entity_ids), subject.kind, subject.label), "subject", state)
+    return Scene(state.outcome, None, [member] if state.outcome == "resolved" else [], unknown=state.unknown)

@@ -46,8 +46,9 @@ from app.services.narrative import pipeline
 from app.services.narrative.eligibility import latest, visible_narrative
 from app.services.reconstruction.cache import GATES_VERSION, cache_scope, remember
 from app.services.reconstruction.cache import lookup as lookup_cached
-from app.services.reconstruction.context import scene
+from app.services.reconstruction.context import base_scene, scene
 from app.services.reconstruction.scene import Member
+from app.services.reconstruction.state import BASE_VERSION
 from app.services.retrieval import query_plan
 from app.services.retrieval.consolidation import LIMITS as CONSOLIDATION_LIMITS
 from app.services.retrieval.consolidation import consolidate
@@ -147,6 +148,12 @@ def compose(db, actor, work_id: uuid.UUID, request: VisualizationRequest, correl
                       correlation_id)
 
     composed, labels = scene(db, plan, derivation_id)
+    if (not hasattr(composed, "members") and composed.outcome == "needs_context" and plan.moment is None
+            and plan.context is None and not plan.participants):
+        # A character-only request: a base portrait from stable traits, else the grounded moment choices.
+        base = base_scene(db, plan, derivation_id)
+        if base.outcome == "resolved":
+            composed = base
     if not hasattr(composed, "members"):  # a subject state: no single moment applies
         if composed.outcome == "needs_context":
             return NeedsContext(outcome="needs_context", schema_version="1.0", choices=[
@@ -224,5 +231,5 @@ def versions(db, plan, adapter, embedder, judge, budget) -> dict:
                 "consolidation": query_limits(adapter, "consolidation", CONSOLIDATION_LIMITS).model_dump(),
                 "adjudication": query_limits(judge, "adjudication", ADJUDICATION_LIMITS).model_dump() if judge else None,
             }, sort_keys=True),
-            "gates": GATES_VERSION, "prompt": COMPOSE_VERSION, "spec": SPEC_VERSION, "fusion": json.dumps(WEIGHTS, sort_keys=True),
+            "gates": GATES_VERSION, "base": BASE_VERSION, "prompt": COMPOSE_VERSION, "spec": SPEC_VERSION, "fusion": json.dumps(WEIGHTS, sort_keys=True),
             "budget": [budget.passages, budget.characters]}
