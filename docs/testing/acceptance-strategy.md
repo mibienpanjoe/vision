@@ -792,5 +792,12 @@ the integration suite and the conversation specs. `security.spec.ts`,
 Remaining limits are recorded rather than hidden: the deterministic fixtures do
 not establish extraction quality on private books; the reported private-book
 identity re-test was skipped by maintainer decision on 2026-11-07; the live
-render gate was not rerun for the conversation path; and the bounded live
-reconstruction run on the synthetic story is recorded below when complete.
+render gate was not rerun for the conversation path.
+
+The bounded live reconstruction on the synthetic story (2026-11-07, Groq
+default adapter, `annotation-match-v4`, one run of 17 cases, about 96k tokens,
+19 minutes paced) matched 13/17 outcomes and 10/23 expected canonical traits
+with 0 incorrect canonical values, 0 spoiler leaks and no blocking failures;
+13 traits were missed, 10 extra, 1 inference and 2 disputes missed. Canonical
+recall is below the T33 baseline (14/23) while outcome agreement is unchanged
+(13/17), so recall on the live provider remains a recorded limit (PROP-07).
