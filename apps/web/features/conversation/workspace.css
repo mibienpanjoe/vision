@@ -101,7 +101,7 @@ button.conversation-link { color: var(--muted-foreground); background: transpare
 .conversation-workspace .conversation-new { border: 0; text-align: left; padding-inline: .75rem; color: var(--muted-foreground); }
 .conversation-workspace .conversation-theme { border-color: transparent; background: transparent; }
 .conversation-variants { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin-top: 1.25rem; }
-.conversation-variants button { padding: 0; text-align: left; overflow-wrap: anywhere; }
+.conversation-variants button { text-align: left; overflow-wrap: anywhere; }
 .conversation-variants span { color: var(--muted-foreground); }
 .conversation-history-versions { margin-top: 1.5rem; color: var(--muted-foreground); font-size: .875rem; }
 .conversation-history-versions summary { cursor: pointer; }
@@ -116,3 +116,9 @@ button.conversation-link { color: var(--muted-foreground); background: transpare
 .conversation-claims { list-style: none; padding: 0; display: grid; gap: .25rem; font-size: .875rem; }
 .conversation-claims button[aria-pressed="true"] { color: var(--foreground); text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) { .conversation-moment { transition: none; } }
+.conversation-actions .conversation-image, .conversation-actions .conversation-image-state { flex-basis: 100%; margin: .5rem 0 0; }
+.conversation-image-state { font-size: .875rem; color: var(--muted-foreground); }
+.conversation-books { display: grid; gap: 1.25rem; min-width: 0; }
+.conversation-books h2 { font-size: .75rem; font-weight: 500; color: var(--muted-foreground); margin: 0 .5rem .25rem; overflow-wrap: anywhere; }
+.conversation-books ul { list-style: none; margin: 0; padding: 0; }
+.conversation-book-actions { display: flex; gap: .75rem; margin: .25rem .5rem 0; font-size: .8125rem; }

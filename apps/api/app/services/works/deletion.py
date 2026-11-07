@@ -8,17 +8,20 @@ from app.core.security import owned_object
 from app.core.storage import PrivateSources, private_renders
 from app.db.session import configured_engine
 from app.models.access import Base
+from app.models.conversations import Conversation, ConversationTurn
 from app.models.generations import SourceGeneration
 from app.models.narrative_jobs import NarrativeJob
 from app.models.renders import RenderJob
 from app.models.works import Document, IngestionJob, Work, WorkDeletion
 from app.schemas.works import WorkDeletionView
+from app.services.conversations.store import TERMINAL
 from app.services.dispatch import dispatch_deletions
 from app.services.ingestion.jobs import job_lock
 from sqlalchemy import delete, false, func, or_, select, text, tuple_, update
 from sqlalchemy.orm import Session
 
 ACTIVE = ("queued", "running")
+RUNNING_TURN = ("resolving", "retrieving", "composing", "verifying")
 
 
 def deletion_view(deletion: WorkDeletion) -> WorkDeletionView:
@@ -68,6 +71,11 @@ def stop_processing(db, work_id: uuid.UUID, now: datetime) -> None:
     for job in db.scalars(select(NarrativeJob).where(NarrativeJob.generation_id.in_(generations),
                                                      NarrativeJob.status == "queued").with_for_update()):
         job.status, job.stage, job.error_code, job.completed_at = "cancelled", "cancelled", "WORK_DELETED", now
+    # Unfinished conversation turns end with the work; a running one stops at its next guarded step.
+    for turn in db.scalars(select(ConversationTurn).join(Conversation, Conversation.id == ConversationTurn.conversation_id)
+                           .where(Conversation.work_id == work_id, ConversationTurn.status.notin_(TERMINAL)).with_for_update(of=ConversationTurn)):
+        if turn.status in {"queued", "waiting_for_book"}:
+            turn.status, turn.completed_at, turn.error_code = "cancelled", now, "WORK_DELETED"
     for job in db.scalars(select(RenderJob).where(RenderJob.work_id == work_id, RenderJob.status.in_(ACTIVE))
                           .with_for_update()):
         job.cancel_requested, job.revision = True, job.revision + 1
@@ -118,7 +126,9 @@ def active_jobs(db, work_id: uuid.UUID) -> int:
                for model, condition in [
                    (IngestionJob, IngestionJob.document_id.in_(select(Document.id).where(Document.work_id == work_id))),
                    (NarrativeJob, NarrativeJob.generation_id.in_(generations)),
-                   (RenderJob, RenderJob.work_id == work_id)])
+                   (RenderJob, RenderJob.work_id == work_id)]) + db.scalar(
+        select(func.count()).select_from(ConversationTurn).join(Conversation, Conversation.id == ConversationTurn.conversation_id)
+        .where(Conversation.work_id == work_id, ConversationTurn.status.in_(RUNNING_TURN)))
 
 
 def execute_purge(work_id: str) -> None:

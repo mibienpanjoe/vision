@@ -8,16 +8,26 @@ from app.schemas.conversations import (
     ConversationCreate,
     ConversationMessagePage,
     ConversationPage,
+    ConversationRender,
+    ConversationRenderPage,
     ConversationView,
     PreparationRetry,
     PromptCardHistory,
     PromptCardView,
+    RenderRequest,
     TurnCancel,
     TurnCreate,
     TurnView,
     VariantSelection,
 )
-from app.services.conversations import actions, attachments, resources, store, turns
+from app.services.conversations import (
+    actions,
+    attachments,
+    render_actions,
+    resources,
+    store,
+    turns,
+)
 from app.services.dispatch import dispatch_conversations
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
@@ -106,3 +116,13 @@ def select_variant(conversation_id: uuid.UUID, body: VariantSelection, actor: Ac
     dispatch_conversations(request.app.state.engine, turn.id)
     db.refresh(turn)
     return resources.turn_view(turn)
+
+
+@router.post("/{conversation_id}/renders", response_model=ConversationRender, status_code=202)
+def generate_image(conversation_id: uuid.UUID, body: RenderRequest, actor: Actor, db: Database, key: Key):
+    return render_actions.reserve(db, actor, store.owned(db, actor, conversation_id, lock=True), body.card_revision)
+
+
+@router.get("/{conversation_id}/renders", response_model=ConversationRenderPage)
+def list_images(conversation_id: uuid.UUID, actor: Actor, db: Database):
+    return render_actions.page(db, actor, store.owned(db, actor, conversation_id))

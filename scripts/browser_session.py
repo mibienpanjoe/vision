@@ -57,6 +57,9 @@ try:
     }
     if live:
         env["HF_HUB_OFFLINE"] = "1"
+    if conversation and not live_render:
+        # Reservations need a selected provider; the worker swaps in synthetic images, and the token is fake.
+        env.update(VISION_RENDER_PROVIDER="huggingface", HF_TOKEN="synthetic-unused-token", VISION_RENDER_MODEL="")
     os.environ["DATABASE_URL"] = test_url
     command.upgrade(Config(str(root / "apps/api/alembic.ini")), "head")
     if library or workspace:
@@ -119,7 +122,7 @@ try:
     elif live_render:
         specs = ["tests/render-flow.spec.ts"]
     elif conversation:
-        specs = os.environ.get("VISION_TEST_CONVERSATION_SPECS", "tests/conversation-upload.spec.ts tests/conversation-prompt.spec.ts tests/conversation-moments.spec.ts tests/conversation-sources.spec.ts").split()
+        specs = os.environ.get("VISION_TEST_CONVERSATION_SPECS", "tests/conversation-upload.spec.ts tests/conversation-prompt.spec.ts tests/conversation-moments.spec.ts tests/conversation-sources.spec.ts tests/conversation-images.spec.ts tests/conversation-resume.spec.ts tests/conversation-recovery.spec.ts").split()
     elif workspace:
         specs = os.environ.get(
             "VISION_TEST_WORKSPACE_SPECS",
