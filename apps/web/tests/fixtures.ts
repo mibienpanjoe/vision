@@ -7,7 +7,7 @@ export async function signIn(page: Page, username = "transport_reader", password
     data: { username, password },
   });
   expect(result.status()).toBe(200);
-  await page.goto("/");
+  await page.goto("/library");
   await expect(page.getByRole("heading", { name: "Your books" })).toBeVisible();
 }
 

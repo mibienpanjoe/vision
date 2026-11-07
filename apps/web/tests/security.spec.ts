@@ -41,7 +41,7 @@ test.afterAll(async () => {
 test("hostile titles and source markup render as inert text", async () => {
   const page = await reader.newPage();
   page.on("dialog", dialog => { throw new Error(`unexpected dialog ${dialog.message()}`); });
-  await page.goto("/");
+  await page.goto("/library");
   await page.getByRole("textbox", { name: "Book title", exact: true }).fill(TITLE);
   await page.getByRole("combobox", { name: "Format", exact: true }).selectOption("md");
   await page.getByLabel("Source file").setInputFiles({ name: "../../hostile.md", mimeType: "text/html", buffer: Buffer.from(SOURCE) });
@@ -63,7 +63,7 @@ test("hostile titles and source markup render as inert text", async () => {
 
 test("another reader cannot open, download or list a private book", async () => {
   const page = await other.newPage();
-  await page.goto("/");
+  await page.goto("/library");
   await expect(page.getByRole("heading", { name: "Your books" })).toBeVisible();
   await expect(page.getByRole("article", { name: TITLE, exact: true })).toHaveCount(0);
   await page.goto(`/works/${workId}`);
@@ -78,7 +78,7 @@ test("another reader cannot open, download or list a private book", async () => 
 
 test("pages refuse framing and the proxy keeps the API's origin check", async () => {
   const page = await reader.newPage();
-  const shell = await page.goto("/");
+  const shell = await page.goto("/library");
   const headers = shell!.headers();
   expect(headers["x-frame-options"]).toBe("DENY");
   expect(headers["x-content-type-options"]).toBe("nosniff");
@@ -92,10 +92,10 @@ test("pages refuse framing and the proxy keeps the API's origin check", async ()
 // Last: it revokes the shared reader capability through the retained compatibility API.
 test("revoking access in one tab makes the other tab fail closed", async () => {
   const first = await reader.newPage();
-  await first.goto("/");
+  await first.goto("/library");
   await expect(first.getByRole("heading", { name: "Your books" })).toBeVisible();
   const second = await reader.newPage();
-  await second.goto("/");
+  await second.goto("/library");
   expect((await second.request.post("/api/v1/auth/logout", { headers: { Origin: "http://127.0.0.1:13000" } })).status()).toBe(204);
   await first.bringToFront();
   await first.reload();

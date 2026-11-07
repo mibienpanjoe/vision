@@ -12,7 +12,7 @@ test("controlled conversation preview is unavailable without explicit opt-in", a
 
 test("library shell opens dark by default and persists an explicit theme", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "light" });
-  await page.goto("/");
+  await page.goto("/library");
   await expect(page.getByRole("heading", { name: "Your library", exact: true })).toBeVisible();
   await expect(page.locator("html")).toHaveClass("dark");
   const theme = page.getByRole("combobox", { name: "Color theme" });
@@ -28,7 +28,7 @@ test("library shell opens dark by default and persists an explicit theme", async
 
 test("shell remains usable at narrow widths and by keyboard", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
-  await page.goto("/");
+  await page.goto("/library");
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Skip to library" })).toBeFocused();
   await page.keyboard.press("Enter");
@@ -40,7 +40,7 @@ test("fonts and approved icons are served locally in both themes", async ({ page
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
-  await page.goto("/");
+  await page.goto("/library");
   await page.evaluate(async () => {
     await document.fonts.ready;
     await document.fonts.load('13px "Geist Mono"');

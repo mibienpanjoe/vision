@@ -131,7 +131,7 @@ test.describe("real library", () => {
 
 test("expired workspace access offers recovery without credential fields", async ({ page }) => {
   await page.route("**/api/v1/auth/workspace", route => route.fulfill({ status: 401, json: { error: { code: "WORKSPACE_ACCESS_REQUIRED", message: "This workspace needs local access recovery." } } }));
-  await page.goto("/");
+  await page.goto("/library");
   await expect(page.locator("main").getByRole("alert")).toContainText("local access recovery");
   await expect(page.getByLabel("Username")).toHaveCount(0);
   await expect(page.getByLabel("Password", { exact: true })).toHaveCount(0);

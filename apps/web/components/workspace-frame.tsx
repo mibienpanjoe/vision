@@ -9,7 +9,7 @@ export function WorkspaceFrame({ children, section = "library" }: { children: Re
   return <div className="workspace">
     <a className="skip-link" href={`#${section}`}>Skip to {section}</a>
     <header className="site-header">
-      <a className="brand" href="/" aria-label="Vision home">
+      <a className="brand" href="/library" aria-label="Vision home">
         <Image className="mark-light" src={lightMark} alt="" width={48} height={48} unoptimized />
         <Image className="mark-dark" src={darkMark} alt="" width={48} height={48} unoptimized /><span>Vision</span>
       </a><ThemeControl />

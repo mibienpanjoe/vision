@@ -12,7 +12,7 @@ test("same-origin proxy carries an HttpOnly session to the real API", async ({ p
   const authenticated = await page.goto("/api/v1/auth/me");
   expect(authenticated?.status()).toBe(200);
   await expect(page.locator("body")).toContainText("transport_reader");
-  await page.goto("/");
+  await page.goto("/library");
   await expect(page.getByRole("heading", { name: "Your library", exact: true })).toBeVisible();
   const uploaded = await page.evaluate(async () => {
     const source = "é🦊é\r\nThe captain wore a blue coat.";

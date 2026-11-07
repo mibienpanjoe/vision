@@ -28,8 +28,8 @@ export function BookWorkspace({ workId }: { workId: string }) {
     finally { setBusy(false); }
   }
   return <>
-    <a className="back-link" href="/">← Your library</a>
-    {error && <p role="alert">{error} <a href="/">Return to your library</a> or <button className="secondary" onClick={() => window.location.reload()}>Reload book</button></p>}
+    <a className="back-link" href="/library">← Your library</a>
+    {error && <p role="alert">{error} <a href="/library">Return to your library</a> or <button className="secondary" onClick={() => window.location.reload()}>Reload book</button></p>}
     {!work && !error && <p role="status">Opening your book…</p>}
     {work && <><div className="library-heading"><p className="eyebrow">Explore the text</p><h1 className="book-title">{work.title}</h1></div>
       {chapters && !error && <>
