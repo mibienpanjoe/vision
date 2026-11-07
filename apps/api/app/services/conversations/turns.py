@@ -8,11 +8,14 @@ from app.db.session import configured_engine
 from app.models.conversations import Conversation, ConversationTurn
 from app.models.generations import SourceGeneration
 from app.models.narrative_jobs import NarrativeJob
+from app.models.visualizations import Visualization
 from app.models.works import Document, IngestionJob, Work
+from app.schemas.conversation_intent import INTENT_VERSION, ConversationIntent
 from app.schemas.retrieval import VisualizationRequest
-from app.services.conversations import resources, store
+from app.schemas.visualization import CanonicalLock, RefinementRequest
+from app.services.conversations import context, intent, resources, store
 from app.services.ingestion.jobs import job_lock
-from app.services.visualization import history
+from app.services.visualization import history, refinement
 from sqlalchemy import and_, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -127,23 +130,18 @@ def execute_claimed(engine, turn_id):
             turn.attempts += 1
             turn.status = "resolving"
             actor, work_id, request, correlation = ActorScope(thread.owner_id, "workspace"), thread.work_id, turn.request, turn.correlation_id
-        # Q38 replaces this bounded initial-query adapter with durable structured conversational intent.
-        if len(request["text"]) > 1000:
-            raise PublicError(422, "INTENT_NOT_SUPPORTED", "Use a shorter initial portrayal request.")
-        body = VisualizationRequest(query=request["text"])
-        with Session(engine) as db:
-            _, result = history.create(db, actor, work_id, body, f"turn_{turn_id.hex}", correlation,
-                                       progress=lambda value: stage(engine, turn_id, value))
-        with Session(engine) as db, db.begin():
-            thread, turn = active(db, turn_id)
-            if result.visualization:
-                store.publish_card(db, turn_id, result.visualization.id, result.visualization.revision, "Your source-grounded prompt is ready.")
-            else:
-                outcome = result.result.root
-                receipt = {"needs_context": "Choose which portrayal you mean.", "insufficient_evidence": "The eligible text does not establish a usable portrayal.",
-                           "failed": "This request could not finish. Your previous prompt is still available."}[outcome.outcome]
-                finish(db, thread, turn, outcome.outcome, receipt, {"result": result.result.model_dump(mode="json")},
-                       outcome.error.code if outcome.outcome == "failed" else None)
+            situation = context.build(db, thread, turn)
+            chosen = turn.intent
+            generation_id = db.scalar(select(Document.current_generation_id).where(Document.work_id == work_id, Document.revision == 1))
+        if chosen is None:
+            with Session(engine) as db, db.begin():
+                proposed, source = intent.classify(db, actor.owner_id, generation_id, situation, request["text"], request.get("choice"))
+            with Session(engine) as db, db.begin():
+                _, turn = active(db, turn_id)
+                turn.intent = turn.intent or {"version": INTENT_VERSION, "source": source, **proposed.model_dump(mode="json")}
+                chosen = turn.intent
+        route(engine, turn_id, actor, work_id, situation, ConversationIntent.model_validate(
+            {k: v for k, v in chosen.items() if k not in {"version", "source"}}), request, correlation)
     except Superseded:
         return
     except PublicError as error:
@@ -152,6 +150,72 @@ def execute_claimed(engine, turn_id):
         raise  # Leave durable progress for lease-aware recovery after storage returns.
     except Exception:
         fail(engine, turn_id, "TURN_FAILED")
+
+
+RECEIPTS = {"needs_context": "Choose which portrayal you mean.", "insufficient_evidence": "The eligible text does not establish a usable portrayal.",
+            "failed": "This request could not finish. Your previous prompt is still available."}
+
+
+def route(engine, turn_id, actor, work_id, situation, chosen, request, correlation):
+    current, key = situation.current, f"turn_{turn_id.hex}"
+    if chosen.kind in {"source_request", "image_request"}:
+        receipt = ("The cited passages are attached to the prompt card." if chosen.kind == "source_request"
+                   else "Use Generate image on the prompt card to render the active prompt.")
+        with Session(engine) as db, db.begin():
+            thread, turn = active(db, turn_id)
+            finish(db, thread, turn, "succeeded", receipt, {"intent": chosen.kind, "card_revision": thread.card_revision})
+        return
+    if chosen.kind == "moment_edit" and chosen.ref:
+        earlier = next(p for p in situation.earlier if p.ref == chosen.ref)
+        with Session(engine) as db, db.begin():
+            store.publish_card(db, turn_id, earlier.visualization_id, earlier.visualization_revision, "Restored the earlier portrayal.")
+        return
+    if chosen.kind == "presentation_edit":
+        with Session(engine) as db:  # refine commits its own revision and idempotency receipt
+            visualization = db.get(Visualization, current.visualization_id)
+            mode = chosen.creative_mode or current.request.get("creative_mode", "canon_first")
+            locks = [CanonicalLock(entity_id=current.entity_id, attribute=name, value=value)
+                     for name in chosen.keep for value in current.canonical.get(name, [])]
+            body = RefinementRequest(style=chosen.style or current.request.get("style"), creative_mode=mode, locks=locks)
+            refined = refinement.refine(db, actor, work_id, visualization.id, body, f'"{visualization.revision}"', key)
+        with Session(engine) as db, db.begin():
+            store.publish_card(db, turn_id, refined.id, refined.revision, "Your prompt was restyled; the book facts are unchanged.")
+        return
+    body, pending = visualization_request(situation, chosen, request)
+    with Session(engine) as db:
+        _, result = history.create(db, actor, work_id, body, key, correlation,
+                                   progress=lambda value: stage(engine, turn_id, value))
+    with Session(engine) as db, db.begin():
+        thread, turn = active(db, turn_id)
+        if result.visualization:
+            store.publish_card(db, turn_id, result.visualization.id, result.visualization.revision, "Your source-grounded prompt is ready.")
+        else:
+            outcome = result.result.root
+            finish(db, thread, turn, outcome.outcome, RECEIPTS[outcome.outcome],
+                   {"result": result.result.model_dump(mode="json"), "visualization_request": pending},
+                   outcome.error.code if outcome.outcome == "failed" else None)
+
+
+def visualization_request(situation, chosen, request):
+    """Every content change, including wardrobe or scene, goes through full source verification."""
+    current = situation.current
+    if chosen.kind == "clarification_answer":
+        choice = situation.choices[chosen.ref]
+        values = dict(situation.pending or {"query": request["text"][:1000]})
+        if choice.get("field") == "subject":
+            values.update(entity_id=choice["id"], query=None)
+        elif choice.get("field") == "moment":
+            values["moment"] = {"kind": "phrase", "text": choice["label"]}
+        else:
+            values["context"] = choice["label"]
+    elif chosen.kind == "moment_edit":
+        values = {"entity_id": current.entity_id, "query": chosen.query,
+                  "moment": {"kind": "phrase", "text": chosen.moment} if chosen.moment else None, "context": chosen.context,
+                  "style": current.request.get("style"), "creative_mode": current.request.get("creative_mode", "canon_first")}
+    else:
+        values = {"query": chosen.query}
+    body = VisualizationRequest.model_validate({k: v for k, v in values.items() if v is not None})
+    return body, body.model_dump(mode="json")
 
 
 def fail(engine, turn_id, code):

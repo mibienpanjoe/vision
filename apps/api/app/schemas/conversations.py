@@ -25,6 +25,8 @@ class ConversationCreate(ContractModel):
 
 class TurnCreate(ContractModel):
     text: str = Field(min_length=1, max_length=4000)
+    choice: str | None = Field(default=None, pattern=r"^choice:[0-9]{1,3}$",
+                               description="A server-issued ref from the previous turn's open choices")
 
     @field_validator("text")
     @classmethod

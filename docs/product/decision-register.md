@@ -137,6 +137,7 @@ documents fixed all details.
 | PROP-06 | Generic narrative-job retry with `If-Match` and `Idempotency-Key`; Q37c supplies the accepted conversation-scoped preparation retry | Outside the conversation context |
 | PROP-07 | Reconstruction acceptance targets on the synthetic corpus: zero blocking failures (incorrect canonical, spoiler leak) as a hard gate; canonical recall and outcome agreement measured per live run, starting from the T33 baseline (14/23, 13/17) and reviewed before Phase 7 limits | Maintainer review before Phase 7 (OPEN-05) |
 | PROP-08 | Measured T44 budgets: keep `VISION_MAX_ACTIVE_WORKS` at 3 (one serial worker, about 16 minutes per novel); lower `VISION_CONTEXT_CHARACTERS` to 12,000 for the free Groq tier (no measured recall loss down to 10,000; 18,500+ characters were refused 4/4, 12,700 and below accepted 3/3) or keep 20,000 on a paid tier; skip the immediate malformed-output retry when the provider is per-minute limited | Maintainer review (OPEN-05); [measured budgets](../operations/development-and-operations.md#measured-budgets--t44) |
+| PROP-09 | Conversational intent: deterministic classifier by default; model proposal opt-in with `VISION_INTENT_MODEL=1` until a bounded named-provider calibration shows it beats the deterministic table | Maintainer review after Q38 calibration |
 
 ## Open decisions
 

@@ -192,6 +192,10 @@ export type WorkTitle1 = string;
  */
 export type Items2 = ConversationSummary[];
 export type NextCursor = string | null;
+/**
+ * A server-issued ref from the previous turn's open choices
+ */
+export type Choice = string | null;
 export type Text1 = string;
 /**
  * @minItems 2
@@ -671,6 +675,7 @@ export interface ConversationSummary {
 export interface PreparationRetry {}
 export interface TurnCancel {}
 export interface TurnCreate {
+  choice?: Choice;
   text: Text1;
 }
 export interface EntityDetail {

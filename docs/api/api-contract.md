@@ -792,10 +792,30 @@ body with key and the current conversation revision. Exact cancellation replay
 is allowed; other payloads, foreign turn IDs and stale revisions fail safely.
 No image reservation occurs on turn submission or prompt composition.
 
-This increment supports initial portrayal queries through the existing bounded
-query planner. Longer requests remain stored but fail safely until the structured
-conversational interpreter is connected; followups, sources and explicit images
-are subsequent intent/action tasks. Committed preparation outcomes automatically wake persisted waiting requests
+### Conversational intent — Q38
+
+TurnCreate also accepts an optional `choice` (`choice:N`), a ref the previous
+needs-context turn issued; UI actions never send resource IDs. The worker
+rebuilds a finite context from durable state (current and up to five earlier
+portrayals, open choices, six recent messages truncated to 500 characters as
+untrusted data) and classifies the turn once into a versioned typed intent
+(`conversation-intent-v1`) stored on the turn, so redelivery never re-classifies:
+
+| Intent | Execution |
+|---|---|
+| `new_portrayal` | Existing specification service with a self-contained query |
+| `moment_edit` | Same subject entity with the new moment/context through full source verification; an earlier-portrayal ref republishes that stored card |
+| `presentation_edit` | Existing refinement under the visualization's strong revision; style/mode only, kept traits become canonical locks |
+| `clarification_answer` | Fills the stored pending request's subject, moment or context from the issued choice |
+| `source_request`, `image_request` | Receipt only; the card is unchanged (Q45/Q46 own the actions) |
+
+A style that describes clothing, body, setting or story facts is routed to
+`moment_edit` and so cannot bypass verification as a presentation edit. The
+deterministic classifier is the default authority; `VISION_INTENT_MODEL=1` lets
+the configured query adapter propose the intent under bounded structured
+inference (PROP-09), and unknown refs or invalid output fall back.
+
+Committed preparation outcomes automatically wake persisted waiting requests
 (Q37b); `make dispatch` recovers missed notifications or broker outages.
 
 ### Conversation preparation retry — Q37c

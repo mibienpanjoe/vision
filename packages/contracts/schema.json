@@ -2601,6 +2601,20 @@
     "TurnCreate": {
       "additionalProperties": false,
       "properties": {
+        "choice": {
+          "anyOf": [
+            {
+              "pattern": "^choice:[0-9]{1,3}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A server-issued ref from the previous turn's open choices",
+          "title": "Choice"
+        },
         "text": {
           "maxLength": 4000,
           "minLength": 1,
