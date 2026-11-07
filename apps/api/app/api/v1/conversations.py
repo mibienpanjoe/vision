@@ -10,6 +10,7 @@ from app.schemas.conversations import (
     ConversationPage,
     ConversationView,
     PreparationRetry,
+    PromptCardHistory,
     PromptCardView,
     TurnCancel,
     TurnCreate,
@@ -57,6 +58,11 @@ def list_messages(conversation_id: uuid.UUID, actor: Actor, db: Database,
 @router.get("/{conversation_id}/turns/{turn_id}", response_model=TurnView)
 def read_turn(conversation_id: uuid.UUID, turn_id: uuid.UUID, actor: Actor, db: Database):
     return resources.turn(db, actor, conversation_id, turn_id)
+
+
+@router.get("/{conversation_id}/cards", response_model=PromptCardHistory)
+def read_card_history(conversation_id: uuid.UUID, actor: Actor, db: Database):
+    return resources.card_history(db, actor, store.owned(db, actor, conversation_id))
 
 
 @router.get("/{conversation_id}/cards/{number}", response_model=PromptCardView)

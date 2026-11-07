@@ -151,3 +151,27 @@ test("one click on another moment replaces the prompt with a verified portrayal"
   await expect(page.getByRole("list", { name: "Conversation messages" }).getByText("Show war", { exact: true })).toBeVisible();
   expect(renders).toBe(0);
 });
+
+test("a second tab cannot silently apply a stale edit and earlier versions stay historical", async ({ page, context }) => {
+  test.setTimeout(120000);
+  await page.goto("/conversations/new");
+  await page.getByLabel("Book file").setInputFiles("../api/tests/fixtures/narrative/story.md");
+  await page.getByRole("textbox", { name: "Message" }).fill("Arthur after the war at home");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  const prompt = page.getByTestId("active-prompt");
+  await expect(prompt).toContainText("plain linen shirt", { timeout: 60000 });
+  const first = await prompt.textContent();
+  const other = await context.newPage();
+  await other.goto(page.url());
+  await expect(other.getByTestId("active-prompt")).toHaveText(first!);
+  await page.getByRole("textbox", { name: "Message" }).fill("as a charcoal sketch");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(prompt).toContainText("charcoal sketch", { timeout: 60000 });
+  await other.getByRole("textbox", { name: "Message" }).fill("as an oil painting");
+  await other.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(other.getByRole("button", { name: "Refresh conversation" })).toBeVisible();
+  await expect(other.getByTestId("active-prompt")).toHaveText(first!);
+  await page.getByText("Earlier versions").click();
+  await expect(page.getByLabel("Earlier version 1")).toContainText(first!);
+  await expect(prompt).toContainText("charcoal sketch");
+});

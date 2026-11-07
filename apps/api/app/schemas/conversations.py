@@ -108,6 +108,19 @@ class ConversationMessageView(ContractModel):
     created_at: datetime
 
 
+class PromptCardSummary(ContractModel):
+    revision: int = Field(ge=1)
+    current: bool
+    prompt: str
+    resolved_moment: str | None
+    style: str | None
+    created_at: datetime
+
+
+class PromptCardHistory(ContractModel):
+    items: list[PromptCardSummary] = Field(max_length=50, description="Newest first; earlier versions are immutable and historical")
+
+
 class ConversationMessagePage(ContractModel):
     items: list[ConversationMessageView] = Field(max_length=50)
     next_after: int | None = Field(ge=1)

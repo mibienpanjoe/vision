@@ -241,10 +241,22 @@ export type Title = string;
 export type UpdatedAt = string;
 export type WorkId1 = string;
 export type WorkTitle = string;
+export type CreatedAt4 = string;
+export type Current = boolean;
+export type Prompt2 = string;
+export type ResolvedMoment1 = string | null;
+export type Revision3 = number;
+export type Style2 = string | null;
+/**
+ * Newest first; earlier versions are immutable and historical
+ *
+ * @maxItems 50
+ */
+export type Items1 = PromptCardSummary[];
 export type Title1 = string;
 export type WorkId2 = string;
 export type Content = string;
-export type CreatedAt4 = string;
+export type CreatedAt5 = string;
 export type Id7 = string;
 export type Role1 = "user" | "assistant";
 export type Sequence = number;
@@ -252,11 +264,11 @@ export type TurnId = string;
 /**
  * @maxItems 50
  */
-export type Items1 = ConversationMessageView[];
+export type Items2 = ConversationMessageView[];
 export type NextAfter1 = number | null;
-export type CreatedAt5 = string;
+export type CreatedAt6 = string;
 export type Id8 = string;
-export type Revision3 = number;
+export type Revision4 = number;
 export type Title2 = string;
 export type UpdatedAt1 = string;
 export type WorkId3 = string;
@@ -264,13 +276,18 @@ export type WorkTitle1 = string;
 /**
  * @maxItems 50
  */
-export type Items2 = ConversationSummary[];
+export type Items3 = ConversationSummary[];
 export type NextCursor = string | null;
 /**
  * A server-issued ref from the previous turn's open choices
  */
 export type Choice = string | null;
 export type Text1 = string;
+/**
+ * The card revision the variant was issued for
+ */
+export type CardRevision2 = number;
+export type VariantId = string;
 /**
  * @minItems 2
  * @maxItems 2
@@ -334,7 +351,7 @@ export type ParserRevision2 = string;
  * Reading cutoff; null means the whole book
  */
 export type ThroughChapterId2 = string | null;
-export type Items3 = EntitySummary[];
+export type Items4 = EntitySummary[];
 export type ChapterId = string | null;
 export type Excerpt = string;
 export type ExcerptStart = number;
@@ -358,7 +375,7 @@ export type ReadingBoundary = WholeBook | ThroughChapter;
 export type Mode = "whole_book";
 export type ChapterId1 = string;
 export type Mode1 = "through_chapter";
-export type Current = boolean;
+export type Current1 = boolean;
 export type Id12 = string;
 export type JobId = string;
 /**
@@ -373,7 +390,7 @@ export type ParserRevision5 = string;
 export type SearchReady = boolean;
 export type Status4 = "building" | "available" | "failed" | "cancelled";
 export type Warnings = string[];
-export type Items4 = GenerationView[];
+export type Items5 = GenerationView[];
 export type Attempts = number;
 export type CancelRequested = boolean;
 export type CorrelationId1 = string;
@@ -381,7 +398,7 @@ export type DispatchPending1 = boolean;
 export type DocumentId = string;
 export type ErrorCode1 = string | null;
 export type Id13 = string;
-export type Revision4 = number;
+export type Revision5 = number;
 export type Stage = "awaiting_parser" | "parse" | "parsed" | "failed" | "cancelled";
 export type Status5 = "queued" | "running" | "succeeded" | "failed" | "cancelled";
 export type Warnings1 = string[];
@@ -397,10 +414,10 @@ export type CurrentParserRevision = string | null;
 export type DocumentId1 = string;
 export type Format = "txt" | "md" | "pdf" | "epub";
 export type Id15 = string;
-export type Revision5 = number;
+export type Revision6 = number;
 export type Sha256 = string;
 export type Title3 = string;
-export type Items5 = WorkView[];
+export type Items6 = WorkView[];
 export type NextCursor1 = string | null;
 export type Password = string;
 export type Username = string;
@@ -413,13 +430,13 @@ export type CreativeMode2 = "canon_first" | "interpretation";
  * @maxItems 32
  */
 export type Locks1 = CanonicalLock[];
-export type Style2 = string | null;
+export type Style3 = string | null;
 /**
  * A running call is never interrupted; its outcome is still kept
  */
 export type CancelRequested1 = boolean;
 export type CompletedAt1 = string | null;
-export type CreatedAt6 = string;
+export type CreatedAt7 = string;
 export type Dispatched = boolean;
 export type ErrorCode2 = string | null;
 export type Id17 = string;
@@ -430,7 +447,7 @@ export type OutputMediaType = string | null;
  */
 export type OutputSha256 = string | null;
 export type Provider = string;
-export type Revision6 = number;
+export type Revision7 = number;
 export type SpecificationRevision = number;
 export type SpecificationSha256 = string;
 export type Status7 = "queued" | "running" | "succeeded" | "failed" | "cancelled" | "acceptance_unknown";
@@ -444,13 +461,13 @@ export type CurrentRevision = number;
 /**
  * Newest first
  */
-export type Items6 = RenderView[];
+export type Items7 = RenderView[];
 export type ConsolidationId1 = string;
-export type CreatedAt7 = string;
+export type CreatedAt8 = string;
 export type GenerationId5 = string;
 export type Number = number;
 export type ParserRevision6 = string;
-export type Items7 = RevisionSummary[];
+export type Items8 = RevisionSummary[];
 export type CreativeMode3 = "canon_first" | "interpretation";
 export type DocumentRevisionId3 = string;
 export type GenerationId6 = string;
@@ -462,11 +479,11 @@ export type Outcome4 = "resolved";
 export type SchemaVersion4 = "1.0";
 export type Format1 = ("txt" | "md" | "pdf" | "epub") | null;
 export type Title4 = string | null;
-export type CreatedAt8 = string;
+export type CreatedAt9 = string;
 export type Id18 = string;
-export type Revision7 = number;
+export type Revision8 = number;
 export type Subject = string;
-export type Items8 = VisualizationSummary[];
+export type Items9 = VisualizationSummary[];
 export type CompletedAt2 = string | null;
 export type RequestedAt = string;
 export type Status8 = "pending" | "purging" | "completed";
@@ -478,6 +495,7 @@ export type WorkId6 = string;
 export interface SchemaCatalog {
   chapters: ChapterPage;
   conversation: ConversationView;
+  conversation_card_history: PromptCardHistory;
   conversation_create: ConversationCreate;
   conversation_messages: ConversationMessagePage;
   conversation_page: ConversationPage;
@@ -485,6 +503,7 @@ export interface SchemaCatalog {
   conversation_turn: TurnView;
   conversation_turn_cancel: TurnCancel;
   conversation_turn_create: TurnCreate;
+  conversation_variant_selection: VariantSelection;
   entity_detail: EntityDetail;
   entity_page: EntityPage;
   error: ErrorEnvelope;
@@ -734,30 +753,41 @@ export interface EvidenceSpan {
   quote: Quote1;
   start: Start1;
 }
+export interface PromptCardHistory {
+  items: Items1;
+}
+export interface PromptCardSummary {
+  created_at: CreatedAt4;
+  current: Current;
+  prompt: Prompt2;
+  resolved_moment: ResolvedMoment1;
+  revision: Revision3;
+  style: Style2;
+}
 export interface ConversationCreate {
   title?: Title1;
   work_id: WorkId2;
 }
 export interface ConversationMessagePage {
-  items: Items1;
+  items: Items2;
   next_after: NextAfter1;
 }
 export interface ConversationMessageView {
   content: Content;
-  created_at: CreatedAt4;
+  created_at: CreatedAt5;
   id: Id7;
   role: Role1;
   sequence: Sequence;
   turn_id: TurnId;
 }
 export interface ConversationPage {
-  items: Items2;
+  items: Items3;
   next_cursor: NextCursor;
 }
 export interface ConversationSummary {
-  created_at: CreatedAt5;
+  created_at: CreatedAt6;
   id: Id8;
-  revision: Revision3;
+  revision: Revision4;
   title: Title2;
   updated_at: UpdatedAt1;
   work_id: WorkId3;
@@ -768,6 +798,10 @@ export interface TurnCancel {}
 export interface TurnCreate {
   choice?: Choice;
   text: Text1;
+}
+export interface VariantSelection {
+  card_revision: CardRevision2;
+  variant_id: VariantId;
 }
 export interface EntityDetail {
   conflicts: Conflicts;
@@ -846,7 +880,7 @@ export interface NarrativeScope {
   through_chapter_id: ThroughChapterId2;
 }
 export interface EntityPage {
-  items: Items3;
+  items: Items4;
   scope: NarrativeScope;
 }
 export interface ErrorEnvelope {
@@ -880,10 +914,10 @@ export interface ThroughChapter {
   mode: Mode1;
 }
 export interface GenerationPage {
-  items: Items4;
+  items: Items5;
 }
 export interface GenerationView {
-  current: Current;
+  current: Current1;
   id: Id12;
   job_id: JobId;
   narrative_error: NarrativeError;
@@ -904,7 +938,7 @@ export interface IngestionView {
   document_id: DocumentId;
   error_code: ErrorCode1;
   id: Id13;
-  revision: Revision4;
+  revision: Revision5;
   stage: Stage;
   status: Status5;
   warnings: Warnings1;
@@ -919,7 +953,7 @@ export interface JobView {
   status: Status6;
 }
 export interface LibraryPage {
-  items: Items5;
+  items: Items6;
   next_cursor: NextCursor1;
 }
 export interface WorkView {
@@ -928,7 +962,7 @@ export interface WorkView {
   document_id: DocumentId1;
   format: Format;
   id: Id15;
-  revision: Revision5;
+  revision: Revision6;
   sha256: Sha256;
   title: Title3;
 }
@@ -947,12 +981,12 @@ export interface ProbeRequest {
 export interface RefinementRequest {
   creative_mode: CreativeMode2;
   locks?: Locks1;
-  style: Style2;
+  style: Style3;
 }
 export interface RenderView {
   cancel_requested: CancelRequested1;
   completed_at: CompletedAt1;
-  created_at: CreatedAt6;
+  created_at: CreatedAt7;
   dispatched: Dispatched;
   error_code: ErrorCode2;
   id: Id17;
@@ -960,7 +994,7 @@ export interface RenderView {
   output_media_type: OutputMediaType;
   output_sha256: OutputSha256;
   provider: Provider;
-  revision: Revision6;
+  revision: Revision7;
   specification_revision: SpecificationRevision;
   specification_sha256: SpecificationSha256;
   status: Status7;
@@ -973,14 +1007,14 @@ export interface RenderCreate {
 }
 export interface RenderPage {
   current_revision: CurrentRevision;
-  items: Items6;
+  items: Items7;
 }
 export interface RevisionPage {
-  items: Items7;
+  items: Items8;
 }
 export interface RevisionSummary {
   consolidation_id: ConsolidationId1;
-  created_at: CreatedAt7;
+  created_at: CreatedAt8;
   generation_id: GenerationId5;
   number: Number;
   parser_revision: ParserRevision6;
@@ -1014,12 +1048,12 @@ export interface VisualizationCreated {
   visualization: VisualizationView | null;
 }
 export interface VisualizationPage {
-  items: Items8;
+  items: Items9;
 }
 export interface VisualizationSummary {
-  created_at: CreatedAt8;
+  created_at: CreatedAt9;
   id: Id18;
-  revision: Revision7;
+  revision: Revision8;
   subject: Subject;
 }
 export interface WorkDeletionView {

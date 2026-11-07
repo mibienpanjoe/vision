@@ -3,7 +3,7 @@
 import { BookOpen, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
-import { api, type ConversationPage, type ConversationSummary } from "@/lib/api";
+import { api, type ConversationPage, type ConversationSummary, type PromptCardHistory } from "@/lib/api";
 import { ConversationComposer } from "./composer";
 import { useConversation } from "./use-conversation";
 import { useComposer } from "./use-composer";
@@ -23,6 +23,11 @@ export function LiveConversation({ initialId }: { initialId: string | null }) {
   const following = useRef(true);
   const card = thread.view?.card;
   const turn = thread.view?.active_turn;
+  const [history, setHistory] = useState<PromptCardHistory["items"]>([]);
+  useEffect(() => {
+    if (!thread.id || !card || card.revision < 2) { setHistory([]); return; }
+    void api<PromptCardHistory>(`/conversations/${thread.id}/cards`).then(page => setHistory(page.items.filter(item => !item.current))).catch(() => {});
+  }, [thread.id, card?.revision]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { void api<ConversationPage>("/conversations").then(page => setRecent(page.items)).catch(() => {}); }, [thread.id]);
   useEffect(() => { if (following.current) scroll.current?.scrollTo({ top: scroll.current.scrollHeight }); }, [thread.messages.length, card?.revision]);
   async function copy() {
@@ -68,6 +73,11 @@ export function LiveConversation({ initialId }: { initialId: string | null }) {
                 {variant.label}<span> · {variant.changes.map(change => change.after.join(", ")).join("; ")}</span>
               </button>)}
             </div>}
+            {history.length > 0 && <details className="conversation-history-versions"><summary>Earlier versions</summary>
+              <ol>{history.map(item => <li key={item.revision} aria-label={`Earlier version ${item.revision}`}>
+                <small>Version {item.revision}{item.resolved_moment ? ` · ${item.resolved_moment}` : ""}{item.style ? ` · ${item.style}` : ""}</small>
+                <p>{item.prompt}</p></li>)}</ol>
+            </details>}
           </section>}
           {(thread.error || composer.error) && <div role="alert" className="conversation-status conversation-error"><p>{composer.error || thread.error}</p>
             {composer.uncertain && <button className="secondary" type="button" onClick={() => void composer.send()}>Retry request</button>}

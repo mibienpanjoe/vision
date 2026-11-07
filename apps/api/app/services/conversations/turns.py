@@ -1,4 +1,5 @@
 """Durable turn execution: bounded retries and atomic publication guarded by the active thread."""
+import re
 import uuid
 from datetime import timedelta
 
@@ -168,7 +169,7 @@ def route(engine, turn_id, actor, work_id, situation, chosen, request, correlati
     if chosen.kind == "moment_edit" and chosen.ref:
         earlier = next(p for p in situation.earlier if p.ref == chosen.ref)
         with Session(engine) as db, db.begin():
-            store.publish_card(db, turn_id, earlier.visualization_id, earlier.visualization_revision, "Restored the earlier portrayal.")
+            store.publish_card(db, turn_id, earlier.visualization_id, earlier.visualization_revision, f"Restored the earlier version ({earlier.subject}).")
         return
     if chosen.kind == "presentation_edit":
         with Session(engine) as db:  # refine commits its own revision and idempotency receipt
@@ -179,7 +180,7 @@ def route(engine, turn_id, actor, work_id, situation, chosen, request, correlati
             body = RefinementRequest(style=chosen.style or current.request.get("style"), creative_mode=mode, locks=locks)
             refined = refinement.refine(db, actor, work_id, visualization.id, body, f'"{visualization.revision}"', key)
         with Session(engine) as db, db.begin():
-            store.publish_card(db, turn_id, refined.id, refined.revision, "Your prompt was restyled; the book facts are unchanged.")
+            store.publish_card(db, turn_id, refined.id, refined.revision, change_receipt(chosen))
         return
     body, pending = visualization_request(situation, chosen, request)
     with Session(engine) as db:
@@ -188,12 +189,26 @@ def route(engine, turn_id, actor, work_id, situation, chosen, request, correlati
     with Session(engine) as db, db.begin():
         thread, turn = active(db, turn_id)
         if result.visualization:
-            store.publish_card(db, turn_id, result.visualization.id, result.visualization.revision, "Your source-grounded prompt is ready.")
+            moment = result.visualization.result.data.scope.resolved_moment
+            text = ("Your source-grounded prompt is ready." if current is None or chosen.kind == "new_portrayal"
+                    else f"Updated from the book: {moment}." if moment else "Updated from the book.")
+            store.publish_card(db, turn_id, result.visualization.id, result.visualization.revision, text)
         else:
             outcome = result.result.root
             finish(db, thread, turn, outcome.outcome, RECEIPTS[outcome.outcome],
                    {"result": result.result.model_dump(mode="json"), "visualization_request": pending},
                    outcome.error.code if outcome.outcome == "failed" else None)
+
+
+def change_receipt(chosen):
+    """A concise, factual change receipt for a presentation-only edit."""
+    style = re.sub(r"^(as|in)\s+(an?\s+)?", "", chosen.style, flags=re.I) if chosen.style else None
+    parts = [f"restyled: {style}"] if style else []
+    if chosen.creative_mode:
+        parts.append("artist's choices allowed for unknowns" if chosen.creative_mode == "interpretation" else "book facts only")
+    if chosen.keep:
+        parts.append("kept " + ", ".join(chosen.keep))
+    return (("; ".join(parts) or "Updated").capitalize() + ". Book facts unchanged.")[:4000]
 
 
 def visualization_request(situation, chosen, request):

@@ -841,6 +841,17 @@ compact "Show <moment>" message: the moment is reconstructed and verified
 again, the prior card stays active until a verified replacement publishes, and
 no image is reserved.
 
+### Card history and change receipts — Q42
+
+`GET /v1/conversations/{id}/cards` returns PromptCardHistory, newest first (at
+most 50): each immutable revision's exact prompt, resolved moment, style and
+whether it is current. Earlier revisions stay readable by number and are shown
+only as historical. Each published revision adds a concise assistant receipt:
+"Restyled: <style>. Book facts unchanged." for presentation edits, "Updated from
+the book: <moment>." after a verified moment or scene change, or "Restored the
+earlier version". Two tabs at one revision cannot both apply: the second gets
+412; exact key/payload replay returns the same turn and a changed payload 409.
+
 ### Conversation preparation retry — Q37c
 
 `POST /v1/conversations/{id}/preparation-retries` takes an empty PreparationRetry

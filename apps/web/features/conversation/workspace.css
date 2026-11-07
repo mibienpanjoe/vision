@@ -103,3 +103,7 @@ button.conversation-link { color: var(--muted-foreground); background: transpare
 .conversation-variants { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin-top: 1.25rem; }
 .conversation-variants button { padding: 0; text-align: left; overflow-wrap: anywhere; }
 .conversation-variants span { color: var(--muted-foreground); }
+.conversation-history-versions { margin-top: 1.5rem; color: var(--muted-foreground); font-size: .875rem; }
+.conversation-history-versions summary { cursor: pointer; }
+.conversation-history-versions ol { list-style: none; padding: 0; margin: .75rem 0 0; display: grid; gap: 1rem; }
+.conversation-history-versions p { margin: .25rem 0 0; overflow-wrap: anywhere; }
