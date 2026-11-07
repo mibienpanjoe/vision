@@ -5,7 +5,18 @@
 **Status:** product and technical definition  
 **Product:** Vision  
 **Category:** narrative-aware visual reconstruction platform  
-**Primary output:** source-grounded, structured JSON specifications for image generation
+**Primary output:** a source-grounded, copyable image prompt backed by a structured specification
+
+**Accepted direction, 2026-10-30:** DEC-55 selects a remembered conversation:
+open without sign-in, attach a book and ask, receive a faithful prompt, optionally
+choose an appearance moment, refine, copy or explicitly generate an image.
+Whole-book source eligibility is the default; entity selection and reading-limit
+setup are not required. Exact sources, structured export and earlier versions
+remain available on demand. The [conversation contract](workspace.md#conversation-experience--q26)
+owns states and acceptance. Implementation is pending; the existing library and
+scoped reconstruction remain the runtime baseline. This direction supersedes the
+mandatory setup and simultaneous-panel interaction described below, while
+retaining grounding, chronology, privacy and compatible scoped APIs.
 
 ## 1. Product definition
 

@@ -4,13 +4,94 @@ The browser consumes the owned API contracts through the same-origin `/api/v1`
 proxy. [Visual identity](../design/visual-identity.md) owns presentation;
 [API contracts](../api/api-contract.md) own authorization and mutations.
 
+## Conversation experience — Q26
+
+**Status:** accepted product direction, 2026-10-30 (DEC-55); implementation and
+runtime acceptance pending. The sections after this contract describe the
+existing library/explorer implementation, not delivery of this conversation.
+
+Open directly into a private, remembered conversation. Attach a book and ask in
+one composer; detect its title and format. Sign-in, entity browsing and a reading
+limit are not prerequisites. A quiet sidebar opens recent books and conversations.
+Whole-book evidence eligibility is the default; it does not send the book to a
+provider or permit blending incompatible ages, outfits or story moments.
+
+The primary result is one evolving image prompt card, useful independently of an
+image purchase. Copy prompt copies only the active stored prompt; Generate image
+is an adjacent, explicit action. Sources, prior versions and exact structured
+export open on demand. A card revision references an immutable specification;
+an old image stays attached to the prompt revision that actually generated it.
+
+### States and actions
+
+| State | Observable behavior and next action |
+|---|---|
+| First visit | One labelled composer and Attach book action; no credential, chapter or entity setup. Workspace initialization failure keeps the draft and offers retry without exposing a shared library. |
+| Attach and ask | Drop/select a book and type together; automatic metadata, editable draft, one submission. A replacement attachment does not silently discard the question. |
+| Reading the book | Show actual preparation status. Persist a submitted request while waiting and resume on readiness; failure preserves it with Retry or Replace book. No fake percentages. |
+| Resolving identity | Supported aliases share the same subject. Genuine ambiguity asks one short question with contextual options; choosing one continues the pending request. No entity-cleanup chore. |
+| Prompt ready | A readable, copyable supported prompt; omit unknown details. Offer optional, normally two or three, evidence-backed moments only when visual differences exist. |
+| Moment switch | One selection applies a server-issued moment action without another Submit. Indicate selection and pending state; retain the prior prompt until a verified replacement commits. |
+| Refinement | Typed followups retain subject, clothing/style and moment context after reload. Presentation edits preserve claims; changed subject/scene reconstructs. A compact receipt accompanies the next version. |
+| Sources open | Drawer/sheet shows the exact cited passage and highlight in place. Closing restores invoker focus and reading position; it adds no chat turn. |
+| Image pending | Only an explicit Generate image action starts a render of the active verified revision. Show real status; draft typing remains available. |
+| Image finished or failed | Display the attached image and Download, or a safe actionable error. An uncertain paid outcome is distinct from a rejected request and never automatically resubmitted. |
+| Return visit | Resume the same private book, ordered thread, context, active card and images across tabs/browser close/service restart within the documented session policy. Never claim legacy books for a new visitor. |
+| Failure or stale tab | Preserve draft and prior valid prompt. Distinguish absent evidence, service failure and stale revision; refresh explicitly before conflicting edits. Late results cannot replace newer work. |
+| Narrow screen | History and sources open on demand; keep composer and prompt usable at 320px and 200% text without horizontal overflow. Every action supports keyboard/touch and named selected/pending states. |
+
+Status changes must not pull a reader away from an earlier message. Expand details
+locally and offer Return to latest when appropriate. Restore focus after drawers
+and preserve an editable draft during pending work. Use readable contrast, visible
+focus and reduced-motion preferences in light and dark themes.
+
+### Grounding and persistence boundaries
+
+Missing eye color does not discard supported clothing. No supported appearance,
+unresolved identity and unavailable provider are separate outcomes with distinct
+recovery. Do not promote rumor, metaphor, someone else's possessions or conflicting
+details to canonical traits. Whole-book eligibility still requires temporal and
+holder verification; existing explicit-cutoff API clients retain their semantics.
+
+Reuse owner-scoped, same-origin APIs with conditional idempotent mutations and
+durable dispatch intent. Store messages, context, turn receipts and immutable
+card revisions; browser-only transcripts do not satisfy remembered conversation.
+Keep original bytes and exact Unicode source spans immutable. Preserve the
+existing local-ingestion, selected-excerpt disclosure and finite render budgets.
+Upload, suggestions, navigation, refinements and retries must not implicitly buy
+an image. Public hosting, cross-device access and direct prompt editing remain
+outside this increment. Concrete endpoints and session lifetime are implementation
+proposals; this contract does not claim those resources already exist.
+
+### Controlled preview — Q27
+
+An opt-in `/preview/conversation` entry point demonstrates the interaction using
+only the synthetic story. `make conversation-preview-check` builds separately
+under `.next-preview` and runs its Chromium checks; start that preview with
+`VISION_CONVERSATION_PREVIEW=1 pnpm --dir apps/web exec next start --hostname 127.0.0.1 --port 13001`. Without that runtime flag the route returns 404. The normal library is
+unchanged. Preview controls choose explicit sample outcomes; attachments supply
+only a display filename and are never uploaded or parsed. Responses, image
+placeholders and sessionStorage history are simulated, not real extraction,
+durable workspace access, paid generation or cross-tab concurrency proof.
+
+The preview exercises moment selection, source focus restoration, copy, immutable
+sample versions/export, earlier-image association, preparation retry/replacement,
+ambiguity, missing evidence, unavailable service, stale version and uncertain
+image outcomes. Unknown image acceptance survives reload without another send.
+Actual storage failure leaves the in-memory draft usable. Real resources and
+provider-quality acceptance remain later implementation work.
+
 ## Library and uploads — T34
 
-The library begins with a sign-in form for a locally provisioned account. The
-session remains in its HttpOnly cookie; credentials and source text are never
-saved in browser storage. Signing out or an expired-session response clears the
-visible library. A failed library read has a reload action instead of presenting
-an empty library as a successful result.
+The library opens through the remembered private workspace capability (Q33a).
+Normal entry has no sign-in, sign-out or account-name fields. Bootstrap is
+serialized across browser tabs and renews the HttpOnly session. Browser storage
+contains only a noncredential initialization marker; lost established access
+fails visibly and uses trusted local recovery instead of allocating a new owner.
+Temporary network failure retains mounted content and drafts. A failed library
+read has a reload action instead of presenting an empty library as success.
+The first-visit conversation composer remains pending the conversation resources
+and their authoritative browser consumer; the current entry still shows the library.
 
 The upload form accepts the declared format, title and original file. It shows
 transfer in progress without inventing a percentage. After the API confirms
@@ -29,8 +110,8 @@ cancel is offered for queued/running parsing. Each action submits the displayed
 strong revision and a new idempotency key. A revision conflict reloads current
 state and requires the reader to review it. Running cancellation remains
 requested until the worker confirms the terminal outcome. A read failure disables
-mutations until a fresh state arrives. Narrative retry remains PROP-06 and has
-no invented browser control.
+mutations until a fresh state arrives. The legacy library has no narrative retry control. Q37c adds a backend
+conversation-scoped preparation retry; its chat consumer is a separate increment.
 
 No external component source is copied for these controls. Native forms and
 project components use the approved tokens and bundled fonts. Browser coverage
@@ -48,7 +129,8 @@ data; whole-book and chapter scope remain distinct from story-time inputs.
 
 ## Entity and context explorer — T35
 
-Opening a book requires an explicit reading boundary before requesting entities.
+Opening a book defaults to whole-book evidence eligibility (Q33a). The compatible
+chapter selector remains available in this legacy explorer until replacement.
 Characters, places, objects and organizations come from the eligible API response.
 Search filters only those eligible labels and aliases. Supported aliases and
 candidate identities remain distinct; an ambiguous source mention offers named

@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "provenance": "Original Q30 holdout, independent of the Q28 development cases. No private source content.",
+  "cases": [
+    {"id":"holdout_nickname","chapters":["Marion and Lark were the same person. Marion wore a grey coat. Lark smiled."],"spans":[["Marion","character"],["Lark","character"]],"pairs":[["Marion","Lark","same"]],"known_gaps":[]},
+    {"id":"holdout_siblings","chapters":["Elias Vale and Marion Vale were different people. Vale was their shared family name."],"spans":[["Elias Vale","character"],["Marion Vale","character"],["Vale","character"]],"pairs":[["Elias Vale","Marion Vale","separate"]],"known_gaps":[]},
+    {"id":"holdout_titles","chapters":["Captain Asha carried a brass compass. Captain Rowan carried a silver cup. The captain waited."],"spans":[["Captain Asha","character"],["Captain Rowan","character"],["The captain","character"]],"pairs":[["Captain Asha","Captain Rowan","separate"]],"known_gaps":[]},
+    {"id":"holdout_surname","chapters":["Corin Myles entered. Myles wore a green coat."],"spans":[["Corin Myles","character"],["Myles","character"]],"pairs":[["Corin Myles","Myles","same"]],"known_gaps":[]}
+  ]
+}

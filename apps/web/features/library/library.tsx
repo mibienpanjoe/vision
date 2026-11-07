@@ -1,32 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { api, ApiError, message, type LibraryPage, type PrincipalView, type WorkView } from "@/lib/api";
 import { Illustration } from "@/components/illustration";
-import { SignIn } from "./session";
+import { useSession } from "@/components/session-provider";
 import { Upload } from "./upload";
 import { JobStatus } from "./job-status";
 
 export function Library() {
-  const [actor, setActor] = useState<PrincipalView | null>(null);
-  const [checking, setChecking] = useState(true);
-  const [error, setError] = useState("");
-  const signedOut = useCallback(() => setActor(null), []);
-
-  useEffect(() => {
-    let active = true;
-    api<PrincipalView>("/auth/me").then(value => { if (active) setActor(value); }).catch(error => {
-      if (active && !(error instanceof ApiError && error.status === 401)) setError(message(error));
-    }).finally(() => { if (active) setChecking(false); });
-    return () => { active = false; };
-  }, []);
-
-  if (checking) return <p role="status">Opening your library…</p>;
-  return <>
-    {error && <p role="alert">{error} <button className="secondary" onClick={() => window.location.reload()}>Reload library</button></p>}
-    {!actor ? <SignIn onSignedIn={value => { setError(""); setActor(value); }} />
-      : <PrivateLibrary key={actor.id} actor={actor} signedOut={signedOut} />}
-  </>;
+  const { actor, retry } = useSession();
+  return <PrivateLibrary key={actor.id} actor={actor} signedOut={retry} />;
 }
 
 function PrivateLibrary({ actor, signedOut }: { actor: PrincipalView; signedOut: () => void }) {
@@ -56,16 +39,9 @@ function PrivateLibrary({ actor, signedOut }: { actor: PrincipalView; signedOut:
     } catch (error) { setError(message(error)); if (error instanceof ApiError && error.status === 401) signedOut(); }
     finally { setBusy(false); }
   }
-  async function logout() {
-    setBusy(true); setError("");
-    try { await api("/auth/logout", { method: "POST" }); signedOut(); }
-    catch (error) { setError(message(error)); if (error instanceof ApiError && error.status === 401) signedOut(); }
-    finally { setBusy(false); }
-  }
 
   return <>
     {error && <p role="alert">{error} <button className="secondary" onClick={() => window.location.reload()}>Reload library</button></p>}
-      <div className="library-toolbar"><p>Signed in as <strong>{actor.username}</strong></p><button className="secondary" onClick={() => void logout()} disabled={busy}>Sign out</button></div>
       <Upload disabled={busy} onUnauthorized={signedOut} onUploaded={({ work }) => setWorks(previous => [work, ...previous.filter(item => item.id !== work.id)])} />
       <section aria-labelledby="books-title" className="book-list">
         <h2 id="books-title">Your books</h2>

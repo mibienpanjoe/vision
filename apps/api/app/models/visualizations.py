@@ -24,7 +24,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 class Visualization(Base):
     __tablename__ = "visualizations"
-    __table_args__ = (UniqueConstraint("owner_id", "work_id", "idempotency_key"),)
+    __table_args__ = (UniqueConstraint("owner_id", "work_id", "idempotency_key"), UniqueConstraint("id", "work_id", "owner_id", name="uq_visualization_owner_work"))
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("principals.id"), index=True)
     work_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("works.id"), index=True)
@@ -37,6 +37,7 @@ class Visualization(Base):
 
 class VisualizationRevision(Base):
     __tablename__ = "visualization_revisions"
+    __table_args__ = (UniqueConstraint("visualization_id", "number", "generation_id", name="uq_visualization_revision_generation"),)
     visualization_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("visualizations.id"), primary_key=True)
     number: Mapped[int] = mapped_column(primary_key=True)
     generation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("source_generations.id"))

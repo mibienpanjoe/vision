@@ -70,7 +70,8 @@ def consolidation_rule(sources):
     if ref(RUMOR):
         facts.append({"subject": "Arthur", "attribute": "eyes", "value": "golden", "kind": "identity",
                       "support": "explicit", "modality": "fact", "evidence": [{"ref": ref(RUMOR), "quote": RUMOR}]})
-    if ref("I was Wren at ten"):
+    if ref("I was Wren at ten") and "Wren" in {e["label"] for e in json.loads(
+            next(s["text"] for s in sources if s["ref"] == "request"))["entities"]}:
         request = next(s["text"] for s in sources if s["ref"] == "request")
         refs = {e["label"]: e["ref"] for e in json.loads(request)["entities"]}
         # Wren is also Arthur's revealed alias: identify the two records by registry ref.
@@ -179,7 +180,10 @@ def test_input_outside_the_boundary_is_refused_and_links_stay_scoped(story):
     derivation_id = consolidate(story.engine, whole, whole_expanded, RuleAdapter(consolidation_rule))
     story.db.expire_all()
     links = story.db.scalars(query(EntityRelation).where(EntityRelation.derivation_id == derivation_id)).all()
-    assert [link.relation for link in links] == ["same_as"] and counts(story, EntityRelation) == before + 1
+    # The confirmed identity group already joins Wren to Arthur (Q30b), so consolidation adds no link.
+    assert "wren" in SubjectLookup(visible_narrative(story.db, story.db.get(SourceGeneration, whole.generation_id),
+                                                     whole.cutoff)).names(whole.subject)
+    assert links == [] and counts(story, EntityRelation) == before
 
 
 def test_expansion_adds_only_earlier_context_and_reports_budget_refusals():

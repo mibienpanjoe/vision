@@ -346,5 +346,31 @@ The generation view reports `narrative_status` and `narrative_error`.
 runs on-device entities then appearance candidates, sends no text anywhere and
 marks the generation ready when both succeed. `live` runs entities → events →
 facts through the gateway and is for synthetic fixtures only (DEC-37). Any
-other value fails jobs visibly as `PROVIDER_NOT_ENABLED`. No owner-facing retry route exists yet; a failed job
-completes again only through a new generation or operator requeue.
+other value fails jobs visibly as `PROVIDER_NOT_ENABLED`. Failed preparation can be retried in the owned conversation context (Q37c),
+using its strong revision/key and the existing attempt/capacity limits. Generic
+narrative-job retry outside that context remains PROP-06.
+
+## Automatic upload metadata
+
+A file-only upload detects PDF by signature, EPUB by its bounded ZIP mimetype,
+and UTF-8 text otherwise; a Markdown extension distinguishes Markdown text.
+Explicit supported formats remain accepted and validated against the source.
+An optional title overrides detection. Otherwise, the title comes from EPUB
+package metadata, PDF document-info metadata, a bounded Markdown H1/front-matter
+or plain-text `Title:` marker, then a cleaned filename stem or `Untitled book`.
+Only display metadata is normalized; original bytes and citation text remain
+unchanged. Metadata extraction is local, bounded, never executes document code
+or fetches external URLs, and safely falls back when optional metadata is absent
+or malformed. Original paths never become storage references or public URLs.
+
+## Conversation preparation wakeup — Q37b
+
+After committing a terminal ingestion or narrative outcome, the actor notifies
+waiting conversations attached to that work. A successful parse alone does not
+start source-based composition: both narrative and search readiness must exist.
+A failed/cancelled preparation settles the retained request with a safe preparation
+error instead of leaving it waiting forever. The turn rechecks readiness after
+releasing its own lease, covering completion during the waiting-state handoff.
+Notifications drain bounded work-scoped batches. Missing storage or broker
+publication leaves durable intent for normal dispatch/reconciliation. No second
+upload or resubmission of the question is required.

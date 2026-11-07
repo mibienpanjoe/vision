@@ -197,3 +197,52 @@ def reconstruct(facts: list[Fact], subject_ids, kind: str, event, chronology: Ch
     if not any(t.status in {"canonical", "disputed", "inferred"} for t in state.traits.values()):
         state.outcome = "insufficient_evidence"
     return state
+
+
+BASE_VERSION = "base-v1"
+
+
+def base_state(facts: list[Fact], subject_ids, kind: str) -> State:
+    """A moment-free base portrait: only identity traits that hold wherever the text states them.
+
+    Scene, acquired and interval claims change between moments and never enter. An identity value
+    is canonical when it is untimed or repeated identically at two or more distinct moments; one
+    timed mention is an inference, and values that differ between moments are excluded, never blended.
+    """
+    own = [f for f in facts if f.subject in subject_ids]
+    state = State("resolved", None)
+    removed = {(part(f.attribute), f.value.casefold()) for f in own
+               if f.explained and f.polarity == "negated" and f.modality in CANONICAL_MODALITY}
+    groups: dict[str, list[Fact]] = {}
+    for fact in own:
+        if not fact.explained:
+            state.excluded[fact.id] = "missing_assumption"
+        elif fact.modality not in CANONICAL_MODALITY:
+            state.excluded[fact.id] = fact.modality
+        elif fact.polarity == "negated":
+            state.excluded[fact.id] = "negated"
+        elif fact.kind != "identity":
+            state.excluded[fact.id] = "changes between moments"
+        elif (part(fact.attribute), fact.value.casefold()) in removed:
+            state.excluded[fact.id] = "removed"
+        else:
+            groups.setdefault(fact.attribute.casefold(), []).append(fact)
+    for key, items in groups.items():
+        chosen = [f for f in items if f.canonical] or items
+        values = sorted({f.value for f in chosen}, key=str.casefold)
+        if len({v.casefold() for v in values}) > 1:
+            for fact in items:
+                state.excluded[fact.id] = "differs between moments"
+            continue
+        moments = {e for f in chosen for e in f.events}
+        stable = any(f.canonical and not f.events for f in chosen) or (len(moments) > 1 and all(f.canonical for f in chosen))
+        reason = None if stable else "stated at one moment; not established as stable across the book"
+        state.traits[key] = Trait(key, "canonical" if stable else "inferred", values, [f.id for f in chosen], reason)
+        for fact in items:
+            if fact not in chosen:
+                state.excluded[fact.id] = "weaker than explicit evidence here"
+    known = {attribute_key(t.attribute) for t in state.traits.values() if t.status == "canonical"}
+    state.unknown = [a for a in CORE.get(kind, ()) if a not in known]
+    if not any(t.status == "canonical" for t in state.traits.values()):
+        state.outcome = "insufficient_evidence"
+    return state

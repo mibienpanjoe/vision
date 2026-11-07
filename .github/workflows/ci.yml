@@ -34,6 +34,8 @@ jobs:
         run: pnpm --dir apps/web exec playwright install --with-deps chromium
       - name: Static, contract, unit, build and browser shell checks
         run: make check
+      - name: Controlled conversation preview interactions
+        run: make conversation-preview-check
       - name: Real database, broker, worker and browser session checks
         run: make integration browser-session
       - name: Real library upload, retry and cancellation controls

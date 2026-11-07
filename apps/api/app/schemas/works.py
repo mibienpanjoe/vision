@@ -7,12 +7,14 @@ from pydantic import Field, field_validator
 
 
 class UploadMetadata(ContractModel):
-    title: str = Field(min_length=1, max_length=256)
-    format: Literal["txt", "md", "pdf", "epub"]
+    title: str | None = Field(default=None, min_length=1, max_length=256)
+    format: Literal["txt", "md", "pdf", "epub"] | None = None
 
     @field_validator("title")
     @classmethod
     def meaningful_title(cls, value):
+        if value is None:
+            return None
         if not value.strip() or any(ord(char) < 32 for char in value):
             raise ValueError("Invalid title")
         return value

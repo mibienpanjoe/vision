@@ -23,7 +23,8 @@ library = os.environ.get("VISION_TEST_LIBRARY") == "1"
 # Billed: the workspace harness with the configured image provider instead of the synthetic one.
 live_render = os.environ.get("VISION_TEST_LIVE_RENDER") == "1"
 live = os.environ.get("VISION_TEST_LIVE_WORKSPACE") == "1"
-workspace = os.environ.get("VISION_TEST_WORKSPACE") == "1" or live or live_render
+conversation = os.environ.get("VISION_TEST_CONVERSATION") == "1"
+workspace = os.environ.get("VISION_TEST_WORKSPACE") == "1" or live or live_render or conversation
 api_port = int(os.environ.get("VISION_TEST_API_PORT", "8000"))
 url = make_url(os.environ.get("DATABASE_URL", values["DATABASE_URL"]))
 name = "vision_test_" + uuid.uuid4().hex
@@ -44,12 +45,14 @@ try:
         **(values if live else {}),
         **os.environ,
         "DATABASE_URL": test_url,
+        "VISION_WORKSPACE_SECRET": "synthetic-workspace-signing-secret-for-isolated-tests-only",
         "VISION_WEB_ORIGINS": "http://127.0.0.1:13000",
         "VISION_SOURCE_ROOT": str(Path(source_directory.name) / "originals"),
         "VISION_RENDER_ROOT": str(Path(source_directory.name) / "renders"),
         "REDIS_URL": values["REDIS_URL"],
         "VISION_QUEUE_NAMESPACE": name,
         "VISION_NARRATIVE_PROVIDER": "local" if workspace else "off",
+        "VISION_TEST_WORKSPACE": "1" if workspace else "0",
         "VISION_TEST_PARSE_GATE": str(Path(source_directory.name) / "parse-gate"),
     }
     if live:
@@ -63,7 +66,7 @@ try:
         )
         worker_log = (root / ".local/library-worker.log").open("w")
         worker = subprocess.Popen(
-            [str(root / "apps/api/.venv/bin/dramatiq"), "app.workers.bootstrap" if live else "tests.browser_worker", "--processes", "1", "--threads", "1", "--queues", "ingestion", "retention", *( ["narrative", "render"] if workspace else [] )],
+            [str(root / "apps/api/.venv/bin/dramatiq"), "app.workers.bootstrap" if live else "tests.conversation_upload_worker" if conversation else "tests.browser_worker", "--processes", "1", "--threads", "2" if conversation else "1", "--queues", "ingestion", "retention", *( ["narrative", "render"] if workspace else [] ), *( ["conversation"] if conversation else [] )],
             cwd=root / "apps/api", env=env, stdout=worker_log, stderr=worker_log, start_new_session=True,
         )
         env["VISION_TEST_WORKER_PID"] = str(worker.pid)
@@ -115,6 +118,8 @@ try:
         specs = ["tests/product-flow.spec.ts"]
     elif live_render:
         specs = ["tests/render-flow.spec.ts"]
+    elif conversation:
+        specs = os.environ.get("VISION_TEST_CONVERSATION_SPECS", "tests/conversation-upload.spec.ts").split()
     elif workspace:
         specs = os.environ.get(
             "VISION_TEST_WORKSPACE_SPECS",
@@ -122,7 +127,7 @@ try:
             "tests/visualization.spec.ts tests/refinement.spec.ts tests/render-history.spec.ts tests/security.spec.ts",
         ).split()
     else:
-        specs = ["tests/library.spec.ts" if library else "tests/session.spec.ts"]
+        specs = os.environ.get("VISION_TEST_SESSION_SPECS", "tests/library.spec.ts" if library else "tests/session.spec.ts tests/workspace-session.spec.ts").split()
     subprocess.run(
         ["pnpm", "--dir", "apps/web", "test", *specs, "--workers=1"],
         env={**env, "VISION_TEST_WEB_SESSION": "1"},

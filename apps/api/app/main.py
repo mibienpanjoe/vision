@@ -2,6 +2,7 @@ import os
 from contextlib import asynccontextmanager
 
 from app.api.v1.auth import router as auth_router
+from app.api.v1.conversations import router as conversations_router
 from app.api.v1.entities import router as entities_router
 from app.api.v1.evidence import router as evidence_router
 from app.api.v1.jobs import router as jobs_router
@@ -50,6 +51,7 @@ def create_app() -> FastAPI:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=[host.strip() for host in hosts if host.strip()])
     install_errors(app)
     app.include_router(auth_router)
+    app.include_router(conversations_router)
     app.include_router(jobs_router)
     app.include_router(works_router)
     app.include_router(evidence_router)

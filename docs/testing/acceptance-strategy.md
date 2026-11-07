@@ -66,6 +66,69 @@ own executable checks below.
 | Prompt injection and hostile upload | REQ-19, REQ-22 | No tool/credential access or unbounded parser work |
 | Optional render | REQ-20 | Real image/specification linkage and visible provider failure/retry outcome |
 
+## Conversational acceptance cases — Q26
+
+**Status:** planned checks for DEC-55, not passing runtime evidence. The
+[conversation contract](../product/workspace.md#conversation-experience--q26)
+owns the interaction. A controlled clickable preview proves interactions only;
+delivery also requires real API, persistence, worker and browser outcomes.
+
+Use the existing annotated synthetic story for the grounded example: attach it
+and ask for Arthur before the war. A supported prompt may describe his blue wool
+coat, chestnut hair and unmarked left cheek at ten. It must omit an asserted eye
+color, adult scar, steel armor, wings and Brann's sword. Show exact supporting
+spans. A home-dinner option, when supported, uses the linen shirt and visible scar
+without combining adult appearance with childhood hair or resolving conflicting
+eye records. If a character-only base cannot safely combine traits, offer the
+supported alternatives rather than inventing a composite. These are expected
+outcomes, not a claim that current extraction achieves them.
+
+| Journey | Required observable and persisted proof |
+|---|---|
+| First visit and attach + ask | No credential/entity/chapter fields before submission; automatic metadata. A request during preparation persists and resumes once; failed preparation keeps the question with retry/replace. |
+| Fragmented identity regression | Reproduce reported private-book duplicate-name/type and insufficient-reference cases read-only. Trace exact source → extraction → aliases → retrieval → consolidation → gates; retain private excerpts only under `.local/`. Equivalent evidenced names yield the same subject/reference set after versioned reprocessing. |
+| Identity controls | Synthetic nicknames/full names/titles and cross-chapter reveals require quoted links. Shared titles and similar names never merge by similarity alone; “captain” asks Mira or Brann. Separate unresolved identity, no appearance evidence and provider failure. Compare a separate annotated holdout under the configured live text provider. |
+| Prompt and moment changes | Copy equals the active stored prompt text alone; JSON export equals its exact specification. A one-click moment change retains the prior prompt while pending, publishes verified revision + receipt atomically and rejects stale/forged actions. |
+| Context and revision safety | “Make it charcoal”, “keep the clothes” and “use the earlier appearance” retain the resolved subject and appropriate context after reload. Test two tabs, lost responses, replay and late old results; inspect stored revision and unchanged prior canonical claims. |
+| Source inspection | Open exact-span drawer, verify Unicode highlight against the original passage, then close with focus/scroll restored. No chat message is added. Old citations survive versioned reprocessing. |
+| Explicit image and uncertainty | Only Generate image starts a reservation; inspect exact prompt revision, persisted receipt, private pixels and download. Editing a prompt preserves the old image association. Unknown acceptance never causes another automatic paid send; finite allowance survives session recovery. |
+| Return, privacy and recovery | Reopen browser/restart services and inspect saved book/thread/context/card/images. A separate workspace cannot read them or claim legacy books. Temporary bootstrap/storage failure preserves drafts. Test deletion/backup/restore with disposable copies, preserving the user's current book. |
+| Layout and reading | Inspect populated, long-text, empty, pending and failed states at 1366×768, 1440×900, 390×844 and 320px; test 200% text, keyboard, light/dark and reduced motion. No horizontal overflow, focus loss, disabled draft typing or forced scroll on status updates. |
+
+Record actual provider/model, source/derivation revision, actor/workspace,
+call/token/latency budgets and observed omissions for live cases. Re-test the
+reported user surface; fixture success and valid JSON cannot close that gate.
+No additional paid image request is implied by these cases. Run only within
+existing disclosure authorization and remaining finite allowance, otherwise mark
+the live gate incomplete. Concrete session-expiry tests follow the documented
+policy when selected; no lifetime is assumed by this contract.
+
+## Identity failure baseline — Q28
+
+The 2026-10-30 read-only audit of the current private generation reproduced
+duplicate names across entity types and fragmented full-name/short-name groups.
+No stored alias or `same_as` relationship joined them. Owner-scoped query planning
+therefore returned identity choices, while selecting one fragment restricted
+entity-linked retrieval and could leave it with no unique lookup names.
+Private spans, selected evidence, derivation/model identities and annotations
+remain in ignored local evidence; none are synthetic fixture content.
+
+| Stage | Observed failure class and limit |
+|---|---|
+| Local producer/publication | Persisted mentions point to split or mistyped identities. Bounded earlier-name context and type-sensitive publication are independently reproduced with controlled outputs in PostgreSQL; this does not attribute every observed private-book error to one rule. |
+| Candidate retrieval | Selected identity fragments yield different passage sets. The audit runs entity/appearance/lexical selection and inspects stored historical selection spans; it does not replay semantic ranks or claim complete relevant-source recall. |
+| Stored consolidation | Two persisted text-provider calls succeeded. One stored no appearance facts despite receiving source items. This is an empty extraction result, not proof that the whole book contains no visual evidence. Name-plus-appearance-cue matches are candidates, often about another holder. |
+| Attribution verification | The other stored consolidation yields seven candidate traits on replay, all rejected as unattributed by deterministic gates. Exact passage inspection finds a character-name mention assigned to a different full-name identity than the selected short-name fragment. Keep the gate; repair the identity evidence upstream. |
+| Provider availability | Neither stored call failed at the provider. No new text/image calls or adjudication were made; replaying current gates against stored data is not a fresh live-provider or browser acceptance run. |
+
+The [original synthetic fixture](../../apps/api/tests/fixtures/narrative/identity_cases.json)
+has eleven positive/negative cases with independent desired outcomes and named
+known gaps. `test_local_entities.py` and `test_query_resolution.py` exercise exact
+quotes, supported aliases, surname/title controls, later reveals, wrong types,
+bounded name continuity and actual PostgreSQL publication/owned planning. Desired
+outcomes remain the repair oracle; reproducing a known failure closes Q28's
+diagnostic task, not the identity-quality gates for later delivery.
+
 ## Evidence levels
 
 - **Documentation checks:** relative links/anchors, JSON syntax, fences, IDs,
@@ -281,7 +344,7 @@ outcome or the previously measured recall limits.
 |---|---|
 | REQ-01 | `test_authorization.py`, owner cases in evidence/visualization/refinement/cache integration tests; `library.spec.ts` and scoped history browser checks. Private assets await optional rendering. |
 | REQ-02, REQ-04 | Text/PDF/EPUB parsing and source-generation tests, `test_evidence_api.py`; `evidence.spec.ts` exact Unicode DOM spans and `refinement.spec.ts` old revision citations. PDF OCR is excluded. |
-| REQ-03 | `test_ingestion_recovery.py`, `test_worker_integration.py`, `library.spec.ts`: queued/running cancellation, retry, stale guards, persisted publication. Narrative-stage retry remains PROP-06. |
+| REQ-03 | `test_ingestion_recovery.py`, `test_worker_integration.py`, `library.spec.ts`: queued/running cancellation, retry, stale guards, persisted publication. Conversation-scoped preparation retry is covered by `test_conversation_preparation_retry.py`; the generic narrative-job route remains PROP-06. |
 | REQ-05–REQ-07 | Entity, chronology, appearance and visual-fact tests; T22 live extraction measurement; explorer identity options. Live extraction retains its measured limitations. |
 | REQ-08–REQ-10 | Fusion, semantic/lexical integration, scene/reconstruction tests and T33's deterministic/live scored cases; live recall misses remain recorded above. |
 | REQ-11, REQ-12 | Spoiler-eligibility, query-resolution, scoped-cache and history tests; explorer/context/boundary browser cases. |
@@ -693,3 +756,13 @@ in an annotation although the quote names only a room; and journey/unknown-attir
 cases submit the same broad profile query with different expected outcomes.
 A profile can legitimately resolve with attire unknown and an inferred scar.
 Outcome agreement therefore also needs those scope qualifications.
+
+### Remembered browser access — Q33a
+
+The real isolated API/browser session gate includes first visit, reload, cold
+concurrent tabs, two-workspace isolation and loss of an established cookie.
+Legacy password transport remains API coverage without product credential fields.
+The legacy library, source, explorer and render-history journeys use that retained
+transport fixture; their results do not establish an upload-to-chat journey.
+Test builds use `.next-test` and API port 18000 when explicitly configured,
+leaving the current local app build and services available.

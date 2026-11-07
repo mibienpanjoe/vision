@@ -25,6 +25,21 @@ def load_environment():
             os.environ.setdefault(key.strip(), value.strip())
 
 
+def ensure_workspace_secret(path):
+    lines = path.read_text().splitlines()
+    current = next((line.split("=", 1)[1].strip() for line in lines if line.startswith("VISION_WORKSPACE_SECRET=")), "")
+    if current:
+        if len(current) < 32:
+            raise SystemExit("VISION_WORKSPACE_SECRET must contain at least 32 random characters.")
+        return current
+    value = secrets.token_hex(32)
+    lines = [line for line in lines if not line.startswith("VISION_WORKSPACE_SECRET=")]
+    lines.append("VISION_WORKSPACE_SECRET=" + value)
+    path.write_text("\n".join(lines) + "\n")
+    path.chmod(0o600)
+    return value
+
+
 def setup():
     (ROOT / ".local").mkdir(exist_ok=True)
     required = {
@@ -55,6 +70,7 @@ def setup():
         print("Created private .env with local-only credentials.")
     else:
         print("Preserved existing private .env.")
+    ensure_workspace_secret(path)
     run(["uv", "sync", "--project", "apps/api", "--locked"])
     models = ROOT / ".local/docling-models"
     if not models.is_dir():

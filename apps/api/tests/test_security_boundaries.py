@@ -12,10 +12,11 @@ from tests.test_refinement import ORIGIN, stored
 from tests.test_render_contract import Recording, enable, execute, submit
 
 pytestmark = pytest.mark.integration
-PUBLIC = {("GET", "/health/live"), ("GET", "/health/ready"), ("GET", "/openapi.json"), ("POST", "/v1/auth/login")}
+PUBLIC = {("GET", "/health/live"), ("GET", "/health/ready"), ("GET", "/openapi.json"), ("POST", "/v1/auth/login"),
+          ("POST", "/v1/auth/workspace"), ("POST", "/v1/auth/workspace/recover")}
 # Routes scoped to the caller rather than to an identifier in the path.
 SELF = {("GET", "/v1/auth/me"), ("POST", "/v1/auth/logout"), ("GET", "/v1/works"), ("POST", "/v1/works"),
-        ("POST", "/v1/jobs")}
+        ("POST", "/v1/jobs"), ("GET", "/v1/conversations"), ("POST", "/v1/conversations")}
 
 
 @pytest.fixture
@@ -33,13 +34,28 @@ def world(api, monkeypatch, renders):
     ingestion = story.db.execute(text(
         "SELECT j.id FROM ingestion_jobs j JOIN documents d ON d.id = j.document_id WHERE d.work_id = :w"),
         {"w": work_id}).scalar_one()
+    from app.core.security import ActorScope
+    from app.models.access import Principal
+    from app.services.conversations.store import create, enqueue, publish_card
+    from sqlalchemy import select
+    owner = story.db.scalar(select(Principal).where(Principal.username == "reader"))
+    actor = ActorScope(owner.id, owner.username)
+    thread = create(story.db, actor, uuid.UUID(work_id), "Portrait", "security-thread")
+    turn = enqueue(story.db, actor, thread.id, '"1"', "security-turn", {"text": "Show Arthur"}, "test")
+    publish_card(story.db, turn.id, uuid.UUID(view["id"]), 1, "Ready.")
+    other_thread = create(story.db, actor, uuid.UUID(other), "Other", "security-other-thread")
+    story.db.commit()
     spec = view["result"]["data"]
     span = spec["subject"]["traits"][0]["evidence"][0]
     boundary = {"mode": "through_chapter", "chapter_id": str(story.chapters[3])}
     ids = {"work_id": work_id, "visualization_id": view["id"], "job_id": job["id"],
-           "entity_id": str(story.ids["Arthur"]), "number": "1"}
+           "entity_id": str(story.ids["Arthur"]), "number": "1", "conversation_id": str(thread.id), "turn_id": str(turn.id)}
     bodies = {
         "/v1/jobs": {"value": 2},
+        "/v1/conversations": {"work_id": work_id, "title": "Another portrait"},
+        "/v1/conversations/{conversation_id}/preparation-retries": {},
+        "/v1/conversations/{conversation_id}/turns": {"text": "Arthur"},
+        "/v1/conversations/{conversation_id}/turns/{turn_id}/cancel": {},
         "/v1/works/{work_id}/evidence": {"span": span, "parser_revision": spec["scope"]["parser_revision"],
                                          "reading_boundary": boundary},
         "/v1/works/{work_id}/visualizations/compose": {"query": "Arthur", "through_chapter_id": boundary["chapter_id"]},
@@ -49,7 +65,7 @@ def world(api, monkeypatch, renders):
         "/v1/works/{work_id}/visualizations/{visualization_id}/renders": {"specification_revision": 1},
         "/v1/works/{work_id}/renders/{job_id}/cancel": {},
     }
-    return clients, story, ids, other, bodies, {"probe": probe["id"], "ingestion": str(ingestion)}
+    return clients, story, ids, other, bodies, {"probe": probe["id"], "ingestion": str(ingestion), "conversation": str(other_thread.id)}
 
 
 @contextmanager
@@ -99,7 +115,7 @@ def denial(response):
 
 def test_route_inventory_is_covered_by_this_matrix():
     owned = {r for r in routes() if r not in PUBLIC | SELF}
-    assert all("{work_id}" in path or path.startswith("/v1/jobs/") for _, path in owned), owned
+    assert all("{work_id}" in path or path.startswith(("/v1/jobs/", "/v1/conversations/")) for _, path in owned), owned
     assert PUBLIC | SELF <= routes()
 
 
@@ -141,7 +157,10 @@ def test_foreign_owner_and_cross_work_identifiers_are_indistinguishable_from_unk
             elsewhere = denial(call(clients["reader"], method, template, {**unknown, "work_id": other},
                                     unknown_extra, bodies))
             assert elsewhere[0] in {404, 409}, (template, elsewhere)
-            assert denial(call(clients["reader"], method, template, {**ids, "work_id": other},
+            crossed = {**ids, "work_id": other}
+            if template.startswith("/v1/conversations/"):
+                crossed["conversation_id"] = extra["conversation"]
+            assert denial(call(clients["reader"], method, template, crossed,
                                extra, bodies)) == elsewhere, template
     stranger = clients["stranger"]
     assert stranger.get("/v1/auth/me").json()["username"] == "stranger"

@@ -1,15 +1,10 @@
+import { signIn } from "./fixtures";
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 test.skip(process.env.VISION_TEST_WORKSPACE !== "1", "Requires isolated workspace API/worker fixtures");
 
-test.beforeEach(async ({ page }) => {
-  await page.goto("/");
-  await page.getByLabel("Username").fill("transport_reader");
-  await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByText("Signed in as")).toBeVisible();
-});
+test.beforeEach(async ({ page }) => { await signIn(page); });
 
 test("Unicode source spans stay exact and hostile-looking markup stays text", async ({ page }) => {
   test.setTimeout(60000);

@@ -15,6 +15,75 @@ from tests.narrative_eval import evaluate
 from tests.test_entity_extraction import generation  # noqa: F401
 
 
+@pytest.mark.parametrize("case", json.loads((Path(__file__).parent / "fixtures/narrative/identity_cases.json").read_text())["cases"], ids=lambda case: case["id"])
+def test_identity_diagnostic_baseline_records_known_gaps_without_calling_them_repairs(case):
+    from tests.reconstruction_trace import identity_diagnostic
+
+    trace = identity_diagnostic(case, recognizer(case["spans"]))
+    assert trace["gaps"] == []
+    for item in trace["output"]["mentions"] + trace["output"]["aliases"] + trace["output"]["relations"]:
+        text = trace["sources"][item["ref"]]
+        assert text[item["start"]:item["start"] + len(item["quote"])] == item["quote"]
+
+
+def test_bounded_known_listing_can_drop_a_late_character_before_a_wrong_type_batch():
+    from types import SimpleNamespace
+
+    from app.services.narrative.entities import known_listing
+
+    entries = [SimpleNamespace(kind="character", label=f"Citizen {number:03} of the Northern Valley") for number in range(160)]
+    entries.append(SimpleNamespace(kind="character", label="Sora"))
+    known = json.loads(known_listing([SimpleNamespace(entities=entries)]))
+    assert known and len(known) < len(entries)
+    assert not any(item["label"] == "Sora" for item in known)
+    output = run(["Sora adjusted her blue coat."], [("Sora", "organization")], known=known)
+    assert [(entity["label"], entity["kind"]) for entity in output["entities"]] == [("Sora", "character")]
+    relevant = json.loads(known_listing([SimpleNamespace(entities=entries)], "Sora arrived."))
+    assert relevant[0] == {"key": "k:160", "kind": "character", "label": "Sora"}
+
+
+@pytest.mark.integration
+def test_publication_reproduces_cross_batch_type_fragmentation_with_controlled_outputs(database, generation):  # noqa: F811
+    from app.core.security import ActorScope
+    from app.models.access import Principal
+    from app.models.generations import SourceGeneration
+    from app.models.works import Document
+    from app.providers.deterministic import RuleAdapter
+    from app.providers.extraction import KNOWN_REF
+    from app.schemas.retrieval import VisualizationRequest
+    from app.services.narrative.eligibility import visible_narrative
+    from app.services.retrieval.entity_lookup import SubjectLookup
+    from app.services.retrieval.lexical import entity_linked
+    from app.services.retrieval.query_plan import NeedsContext, plan_query
+
+    def drift(sources):
+        # Simulate redeclaration after bounded earlier-entity context omits a name.
+        source = next(s for s in sources if s["ref"] != KNOWN_REF and "Arthur" in s["text"])
+        kind = "character" if "At ten, Arthur" in source["text"] else "organization"
+        return {"entities": [{"key": "arthur", "kind": kind, "label": "Arthur"}],
+                "mentions": [{"ref": source["ref"], "quote": "Arthur", "entity": "arthur"}]}
+
+    derivation_id = derive_entities(database, generation, RuleAdapter(drift))
+    with Session(database) as db:
+        entities = list(db.scalars(select(Entity).where(Entity.derivation_id == derivation_id)))
+        assert {(e.label, e.kind) for e in entities} == {("Arthur", "character"), ("Arthur", "organization")}
+        owner = db.scalar(select(Principal).where(Principal.username == "entity_owner"))
+        source_generation = db.get(SourceGeneration, generation)
+        document = db.get(Document, source_generation.document_id)
+        outcome = plan_query(db, ActorScope(owner.id, owner.username), document.work_id, VisualizationRequest(query="Arthur"))
+        assert isinstance(outcome, NeedsContext)
+        assert {choice.label for choice in outcome.choices} == {"Arthur (character)", "Arthur (organization)"}
+        view = visible_narrative(db, source_generation, None)
+        lookup = SubjectLookup(view)
+        passages = []
+        for entity in entities:
+            plan = plan_query(db, ActorScope(owner.id, owner.username), document.work_id,
+                              VisualizationRequest(entity_id=entity.id))
+            assert lookup.names(plan.subject) == []  # The same spelling now names both identities.
+            passages.append({candidate.passage_id for candidate in entity_linked(db, plan, view)})
+        assert all(passages) and passages[0].isdisjoint(passages[1])
+
+
 def recognizer(spans):
     """Fake span model: every listed surface wherever it occurs, longest first, without overlaps."""
     def recognize(texts):
@@ -55,17 +124,17 @@ def labels(output):
     return sorted(e["label"] for e in output["entities"])
 
 
-def test_full_names_fold_into_surnames_and_labels_never_split_a_name():
+def test_shared_surnames_do_not_merge_distinct_full_names():
     output = run(["Henry Jekyll met Jekyll's butler. Harry Jekyll smiled. Hyde left; Hyde returned.",
                   "Sir Danvers Carew walked. Danvers Carew fell. Carew died. Danvers was mourned."],
                  [("Henry Jekyll", "character"), ("Jekyll", "character"), ("Harry Jekyll", "character"),
                   ("Hyde", "organization"), ("Danvers Carew", "character"), ("Carew", "place"),
                   ("Danvers", "character")])
     keys = {m["quote"]: m["entity"] for m in output["mentions"]}
-    assert keys["Henry Jekyll"] == keys["Jekyll"] == keys["Harry Jekyll"]
-    assert keys["Danvers Carew"] == keys["Carew"] == keys["Danvers"]
+    assert len({keys["Henry Jekyll"], keys["Jekyll"], keys["Harry Jekyll"]}) == 3
+    assert keys["Danvers Carew"] != keys["Carew"] != keys["Danvers"]
     assert len({m["entity"] for m in output["mentions"] if m["quote"] == "Hyde"}) == 1
-    assert len(output["entities"]) == 3
+    assert len(output["entities"]) == 7
 
 
 def test_titles_alone_stay_ambiguous_and_stop_words_are_dropped():
@@ -113,8 +182,8 @@ def test_later_chapters_reuse_earlier_keys_by_folded_label():
     known = [{"key": "k:0", "kind": "character", "label": "Henry Jekyll"},
              {"key": "k:1", "kind": "place", "label": "the house by the ash tree"}]
     output = run(["Jekyll entered the house."], [("Jekyll", "character"), ("the house", "place")], known=known)
-    assert output["entities"] == []
-    assert [m["entity"] for m in output["mentions"]] == ["k:0", "k:1"]
+    assert [(e["label"], e["kind"]) for e in output["entities"]] == [("Jekyll", "character")]
+    assert [m["entity"] for m in output["mentions"]] == ["e0", "k:1"]
 
 
 def test_appearance_cues_cover_the_annotated_visual_evidence():
@@ -184,3 +253,64 @@ def test_pinned_local_models_on_the_synthetic_fixture(database, generation):  # 
     assert (report["misses"], report["false_merges"], report["splits"], report["ambiguity_violations"]) == (
         [], [], [], [])
     assert any("Wren" in quote and ("I was" in quote or "same person" in quote) for quote in relations)
+
+
+@pytest.mark.integration
+def test_stored_model_spans_rederive_new_rules_without_neural_execution(database, generation, monkeypatch):  # noqa: F811
+    import uuid
+
+    from app.providers.stored_entities import StoredEntities
+    from tests.test_entity_extraction import fixture_adapter
+
+    original = derive_entities(database, generation, fixture_adapter())
+    monkeypatch.setattr("app.providers.local_entities.models", lambda: (_ for _ in ()).throw(AssertionError("No new inference")))
+    adapter = StoredEntities(database, uuid.UUID(generation), original)
+    from app.providers.contracts import ProviderCall, ProviderUnavailable
+    ref = next(iter(adapter.sources))
+    bad = ProviderCall(system="", data=json.dumps({"sources": [{"ref": ref, "text": "Changed source"}]}), output_schema={}, max_output_tokens=100, timeout_seconds=1)
+    with pytest.raises(ProviderUnavailable):
+        adapter.complete(bad)
+    rebuilt = derive_entities(database, generation, adapter, input_id=original)
+    with Session(database) as db:
+        new = db.get(Derivation, rebuilt)
+        assert rebuilt != original and new.status == "succeeded" and new.input_derivation_id == original
+        assert db.get(Derivation, original).status == "succeeded"
+        assert db.scalar(select(EntityMention).where(EntityMention.derivation_id == rebuilt)) is not None
+        assert all(run.provider == "local" for run in db.scalars(select(ModelRun).where(ModelRun.derivation_id == rebuilt)))
+
+
+def test_a_properly_named_object_is_not_promoted_to_a_person():
+    output = run(["Sunblade rested on the table."], [("Sunblade", "object")])
+    assert output["entities"] == [{"key": "e0", "kind": "object", "label": "Sunblade"}]
+
+
+def test_family_name_cannot_link_people_from_separate_extraction_batches():
+    from types import SimpleNamespace
+
+    from app.services.narrative.entities import name_variants
+
+    first = run(["Tessa au Vale met Vale."], [("Tessa au Vale", "character"), ("Vale", "character")])
+    second = run(["Oren au Vale met Vale."], [("Oren au Vale", "character"), ("Vale", "character")])
+    assert not first["relations"] and not second["relations"]
+    rows = [SimpleNamespace(id=index, label=label, kind=kind) for index, (label, kind) in enumerate([
+        ("Tessa au Vale", "character"), ("Oren au Vale", "character"), ("Vale", "character"),
+        ("Tessa", "character"), ("Oren", "character"), ("House Vale", "organization"),
+    ])]
+    assert set(name_variants(rows)) == {(3, 0), (4, 1)}
+
+
+def test_a_quoted_speaker_is_a_character_but_a_named_speaking_device_is_not_assumed():
+    output = run(['“Come here,” Oren says.'], [("Oren", "place")])
+    assert output["entities"][0]["kind"] == "character"
+    output = run(["Atlas says the bridge is closed."], [("Atlas", "object")])
+    assert output["entities"][0]["kind"] == "object"
+
+
+def test_kinship_honorific_does_not_compete_with_a_unique_full_name():
+    from types import SimpleNamespace
+
+    from app.services.narrative.entities import name_variants
+
+    rows = [SimpleNamespace(id=index, label=label, kind="character")
+            for index, label in enumerate(["Oren", "Uncle Oren", "OREN AU VALE"])]
+    assert set(name_variants(rows)) == {(0, 2), (1, 2)}

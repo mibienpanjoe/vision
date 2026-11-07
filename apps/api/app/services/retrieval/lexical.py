@@ -41,7 +41,8 @@ def entity_linked(db, plan, view) -> list[Candidate]:
     group = set(plan.subject.entity_ids)
     anchors: dict = {}
     for mention in view.mentions:
-        if mention.entity_id in group:
+        candidates = set(view.candidates.get(mention.id, ()))
+        if mention.entity_id in group or (candidates and candidates <= group):
             anchors.setdefault(mention.passage_id, set()).add((mention.start, mention.end))
     order = ordinals(db, plan, anchors)
     ranked = sorted(anchors, key=lambda p: (-len(anchors[p]), order[p]))

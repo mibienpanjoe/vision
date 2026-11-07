@@ -12,6 +12,43 @@ from pydantic import ValidationError
 from tests.conftest import visualization_request as request
 
 
+def test_synthetic_reveal_is_not_available_before_its_quoted_chapter():
+    import json
+    from pathlib import Path
+
+    from tests.reconstruction_trace import identity_diagnostic
+    from tests.test_local_entities import recognizer
+
+    cases = json.loads((Path(__file__).parent / "fixtures/narrative/identity_cases.json").read_text())["cases"]
+    case = next(case for case in cases if case["id"] == "cross_chapter_reveal")
+    early = identity_diagnostic(case, recognizer(case["spans"]), through=case["before_reveal"]["through"])
+    late = identity_diagnostic(case, recognizer(case["spans"]))
+    assert early["gaps"] == late["gaps"] == []
+    assert early["observations"][0]["observed"] == "separate"
+    assert late["observations"][0]["observed"] == "same"
+    assert early["output"]["relations"] == []
+    assert late["output"]["relations"][0]["quote"] == "Elian and Fox were the same person"
+
+
+def test_synthetic_shared_titles_remain_ambiguous_and_wrong_kinds_are_not_hidden():
+    import json
+    from pathlib import Path
+
+    from tests.reconstruction_trace import identity_diagnostic
+    from tests.test_local_entities import recognizer
+
+    cases = json.loads((Path(__file__).parent / "fixtures/narrative/identity_cases.json").read_text())["cases"]
+    title = next(case for case in cases if case["id"] == "shared_title_is_not_identity")
+    trace = identity_diagnostic(title, recognizer(title["spans"]))
+    found = {subject for match in trace["lookup"].find(title["ambiguous_query"]) for subject in match.subjects}
+    assert len(found) == title["ambiguous_count"]
+    assert {subject.label for subject in found} == {"Captain Mira", "Captain Brann"}
+    wrong = next(case for case in cases if case["id"] == "wrong_recognizer_type")
+    trace = identity_diagnostic(wrong, recognizer(wrong["spans"]))
+    assert trace["gaps"] == []
+    assert {subject.kind for match in trace["lookup"].find("Sora") for subject in match.subjects} == {"character"}
+
+
 def test_request_shape_requires_a_subject_and_rejects_unknown_fields():
     with pytest.raises(ValidationError):
         request(creative_mode="canon_first")
@@ -119,3 +156,12 @@ def test_other_owners_and_hidden_entities_get_the_safe_not_found(story):
     with pytest.raises(PublicError) as unknown:
         plan(query="Arthur", entity_id=str(uuid.uuid4()))
     assert unknown.value.status == 404
+
+
+def test_consolidated_identity_links_reach_a_fixed_point_independent_of_row_order():
+    from types import SimpleNamespace
+
+    from app.services.reconstruction.context import subject_group
+    a, b, c, other = (uuid.uuid4() for _ in range(4))
+    db = SimpleNamespace(execute=lambda _: [(b, c), (a, b), (other, uuid.uuid4())])
+    assert subject_group(db, uuid.uuid4(), [a]) == {a, b, c}

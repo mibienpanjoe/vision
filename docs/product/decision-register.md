@@ -59,8 +59,16 @@
 | DEC-51 | D5 rendering: OpenAI `gpt-image-2` (default) or `gpt-image-1` via `VISION_RENDER_MODEL`, low quality, 1024×1024 PNG with `OPENAI_API_KEY`; FLUX.1-schnell through the Hugging Face router (`nscale` route) with `HF_TOKEN` remains selectable; explicit opt-in by `VISION_RENDER_PROVIDER`; only the specification's gated `generation.prompt` is sent (derived attributes, locks and style; never source quotes, spans, titles or owner identifiers); negative prompt not sent; at most five reservations per owner; live acceptance (T40, T42) is limited to five requests in total; one charged call per reservation, no automatic retry, unanswered sends recorded as `acceptance_unknown` | Maintainer decision, 2026-10-22; [API](../api/api-contract.md#image-rendering--t40) |
 | DEC-52 | Work deletion: owner-requested, immediate and irreversible; the work and everything derived from it (original, passages, indexes, narrative, specifications, cache, images, model-run records) are absent at once and purged after in-flight jobs stop; only a minimal tombstone (owner, work ID, expected revision, deletion/original-upload idempotency keys, lifecycle times, dispatch/attempt metadata and status; no content or hashes) remains; account deletion is a later CLI follow-up | Maintainer decision, 2026-10-25; [API](../api/api-contract.md#work-deletion--t46) |
 | DEC-53 | Authorize opt-in OpenAI `gpt-6-luna` text integration and a finite synthetic evaluation using the existing project key. Responses API, strict JSON, no extra reasoning by default, no tools or conversation history, `store=false`; local ingestion and all grounding/spoiler gates remain. Groq stays the default; this does not authorize private-book excerpts to OpenAI or assert ZDR | Maintainer instruction, 2026-10-27; [operations](../operations/development-and-operations.md#openai-text-evaluation--q01) |
+| DEC-54 | Request-first reader flow supersedes the always-visible three-column workspace from overview section 10: one request and result, explicit remembered reading scope, necessary clarification one field at a time, supported description plus unknowns/recommendations, JSON and optional image actions; browsing, evidence, history and detailed settings open on demand. Scene changes reconstruct under the same scope; presentation-only edits retain conditional revision semantics | Maintainer accepted flow, 2026-10-29; [workspace](workspace.md) |
+| DEC-55 | Remembered private conversation without sign-in; attach book and ask in one composer, whole-book evidence eligibility by default, grounded copyable prompt first, optional supported moments, contextual refinements and explicit image generation. Supersedes DEC-54's mandatory reading-boundary setup and DEC-26's password-entry UX for this local flow; owner isolation, origin checks, immutable revisions, chronology, selected-excerpt disclosure and paid-call limits remain. Existing books require a trusted upgrade/recovery path | Maintainer accepted direction, 2026-10-30; Q26 contract accepted, implementation pending; [workspace](workspace.md#conversation-experience--q26) |
 
 ## Workspace implementation
+
+DEC-55 supersedes DEC-54 for the normal product flow. It is a product contract
+awaiting implementation and acceptance. Current
+password sessions and scoped library APIs remain implemented; removing their UI
+alone does not implement private persistent workspace access. Session lifetime,
+bootstrap endpoints and conversation schemas are proposals for their owning tasks.
 
 T34 consumes DEC-23/26/27 without changing lifecycle policy: native project forms,
 same-origin session requests, two-second processing polling, server-confirmed
@@ -126,9 +134,10 @@ documents fixed all details.
 | ID | Proposal | Resolve in |
 |---|---|---|
 | PROP-04 | First vertical slice uses a small synthetic TXT/Markdown narrative before format expansion | First implementation increment; [roadmap](implementation-roadmap.md) |
-| PROP-06 | Owner-facing narrative retry route with `If-Match` and `Idempotency-Key`, mirroring ingestion retry | Before real-book narrative use |
+| PROP-06 | Generic narrative-job retry with `If-Match` and `Idempotency-Key`; Q37c supplies the accepted conversation-scoped preparation retry | Outside the conversation context |
 | PROP-07 | Reconstruction acceptance targets on the synthetic corpus: zero blocking failures (incorrect canonical, spoiler leak) as a hard gate; canonical recall and outcome agreement measured per live run, starting from the T33 baseline (14/23, 13/17) and reviewed before Phase 7 limits | Maintainer review before Phase 7 (OPEN-05) |
 | PROP-08 | Measured T44 budgets: keep `VISION_MAX_ACTIVE_WORKS` at 3 (one serial worker, about 16 minutes per novel); lower `VISION_CONTEXT_CHARACTERS` to 12,000 for the free Groq tier (no measured recall loss down to 10,000; 18,500+ characters were refused 4/4, 12,700 and below accepted 3/3) or keep 20,000 on a paid tier; skip the immediate malformed-output retry when the provider is per-minute limited | Maintainer review (OPEN-05); [measured budgets](../operations/development-and-operations.md#measured-budgets--t44) |
+| PROP-09 | Conversational intent: deterministic classifier by default; model proposal opt-in with `VISION_INTENT_MODEL=1` until a bounded named-provider calibration shows it beats the deterministic table | Maintainer review after Q38 calibration |
 
 ## Open decisions
 
@@ -200,3 +209,96 @@ Unexplained inferences cannot remove established facts or establish scene
 membership. Reasoning stage timeouts reserve browser proxy overhead, and a live
 evaluation that blocks a call at its finite allowance is explicitly incomplete.
 These guards do not change the accepted provider defaults or public API.
+
+Q27 supplies a controlled, opt-in conversation preview for DEC-55; it does not
+implement durable anonymous access or live conversation resources. Q28 records
+identity failures under the existing rules without changing identity, grounding,
+provider or disclosure policy. Its known-gap tests reproduce defects; the
+[identity baseline](../narrative/narrative-contract.md#identity-diagnostic-baseline--q28)
+and acceptance strategy govern the distinction from the later repair gates.
+
+Q29 consumes DEC-38/55 with versioned quoted identity links, bounded relevant-name
+continuity and identity-group registry refs. It preserves cutoff and attribution
+gates; synthetic producer/negative-control proof is separate from Q30's private
+book re-derivation and holdout checks. No provider or disclosure policy changes.
+
+Q31 implements DEC-55's backend bootstrap with 90-day renewable HttpOnly local
+workspace sessions, five-minute creation replay and a private server signing
+secret. It never promotes an anonymous visitor to an existing owner; expired
+access requires trusted local recovery. Frontend/session upgrade proof remains
+Q32/Q33, separately from PostgreSQL capability and migration checks.
+
+Q32a adds trusted local recovery for DEC-55: 15-minute hashed codes, single
+redemption request with replay, same durable owner/allowance and no public owner
+lookup. A different valid workspace cannot be overwritten. Recovery is an
+exceptional operator path; normal use still has no credential fields.
+
+Q32b provides the trusted operator snapshot/upgrade tool and stable secret setup.
+Its source-schema override is restricted by the declared forward migration path;
+ordinary backup/restore still require their release's schema. A disposable
+restore of the actual private book preserved 4,661 passages, original hash,
+legacy citation, owner and allowance, with another workspace denied access.
+Primary-runtime migration/cutover is separately recorded when performed.
+
+Q33a consumes the capability directly in the current browser entry, serializes
+bootstrap across tabs and fails closed after established access is lost. The
+legacy explorer defaults to whole-book eligibility. First-visit chat, durable
+conversation state and retirement of the explorer are still separate tasks;
+this increment is session-consumer proof, not conversation delivery.
+
+Q34 implements DEC-55's persistence with work-attached conversations, ordered
+message receipts and immutable card-to-specification pointers. Composite database
+constraints reinforce service ownership/generation checks. Turn submission and
+publication are separate transactions so durable execution can occur outside a
+request; only the current turn can publish a replacement. Endpoint, worker and
+browser evidence remain separate gates.
+
+Q35 exposes bounded conversation/card/message/turn reads under the existing
+Origin and owner boundaries. Conversation creation uses an owner-serialized
+idempotency receipt; history cursors use immutable ordering. Shared contracts
+validate exact card/specification prompt and generation equality. The API
+security inventory now includes these resources and delegates capability
+exchange tests to their dedicated bootstrap/recovery suites.
+
+Q30a tightens Q29 after private-book negative controls: whole-derivation component
+uniqueness, kind-safe endpoints and exact source cues replace per-batch name
+linking. Rules-only replay records its earlier span source and never reuses
+rejected aliases. Quarantined intermediate results stay attributable but are
+ineligible; immutable source and prior citations remain intact. Four missed
+aliases remain in the private comparison, so full Q30 acceptance stays open.
+
+Q30b consumes confirmed identity groups in retrieval using a fixed point and
+admits an ambiguous mention only when its complete candidate set belongs to that
+group. Clarifications are bounded; appearance absence and provider failure keep
+their distinct outcomes. Full private-book alias acceptance remains open.
+
+Q36a adds internal composition-stage notifications without changing the stored
+specification or synchronous API. A replay returns its existing result without
+invented processing stages; durable turn publication remains the next subunit.
+
+Q36b wires committed turn/message intent to the real Redis/Dramatiq path with
+lease-aware recovery, bounded attempts, supersession and conditional cancellation.
+Only an active turn can atomically publish a verified card, assistant receipt and
+terminal state. Initial-query processing reuses existing source/prompt gates;
+structured followups and ingestion-completion wakeup are separate increments.
+No image is implicitly requested by this text execution path.
+
+Q37a ports the reviewed automatic metadata implementation from 1f9d948: file-only
+uploads use bounded local title/format detection, preserve original bytes and
+keep explicit metadata/replay compatibility. This is the upload API prerequisite;
+the new composer and automatic preparation wakeup remain separate subunits.
+
+Q37b wires committed preparation outcomes to waiting conversation intent, with
+work-scoped batches and an after-lease readiness handoff. This keeps parse-only
+readiness distinct from narrative/search completion and preserves failed-book
+questions. Real parser/worker checks use original synthetic sources and controlled
+text inference; they are separate from private-book model-quality acceptance.
+
+Q37c implements the accepted conversation recovery contract: an owned failed-book
+request can retry preparation under its current conversation revision and key,
+retaining original bytes and the question. Parser retry reuses its canonical
+state guard; narrative retry stays within the current owned generation and finite
+attempt/capacity limits. SQL job reset and the new waiting-turn receipt commit
+together, before publication. Unsupported scans and exhausted budgets require
+a replacement rather than another identical send. PROP-06's generic job route
+remains proposed; this does not add account or settings controls.

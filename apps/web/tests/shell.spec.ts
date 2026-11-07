@@ -1,7 +1,13 @@
 import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
-  await page.route("**/api/v1/auth/me", route => route.fulfill({ status: 401, json: { error: { code: "AUTHENTICATION_REQUIRED", message: "Sign in required." } } }));
+  await page.route("**/api/v1/auth/me", route => route.fulfill({ json: { id: "00000000-0000-4000-8000-000000000001", username: "synthetic" } }));
+  await page.route("**/api/v1/auth/workspace", route => route.fulfill({ json: { id: "00000000-0000-4000-8000-000000000001", username: "synthetic" } }));
+  await page.route("**/api/v1/works", route => route.fulfill({ json: { items: [], next_cursor: null } }));
+});
+
+test("controlled conversation preview is unavailable without explicit opt-in", async ({ request }) => {
+  expect((await request.get("/preview/conversation")).status()).toBe(404);
 });
 
 test("library shell opens dark by default and persists an explicit theme", async ({ page }) => {
@@ -16,7 +22,8 @@ test("library shell opens dark by default and persists an explicit theme", async
   await page.reload();
   await expect(theme).toHaveValue("light");
   await expect(page.locator("html")).toHaveClass("light");
-  await expect(page.getByRole("heading", { name: "Sign in to your library" })).toBeVisible();
+  await expect(page.getByLabel("Username")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Sign out" })).toHaveCount(0);
 });
 
 test("shell remains usable at narrow widths and by keyboard", async ({ page }) => {

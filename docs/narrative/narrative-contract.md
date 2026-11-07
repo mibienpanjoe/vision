@@ -47,6 +47,31 @@ unavailable or timeout (a routed gateway can pick a weak or overloaded model);
 every call is recorded. A failed derivation can be retried; a succeeded one is
 returned unchanged.
 
+### Identity diagnostic baseline — Q28
+
+The [synthetic identity cases](../../apps/api/tests/fixtures/narrative/identity_cases.json)
+separate desired identity relationships from the historical `rules-v2` observations.
+Controlled recognizer spans exercise the real local rules and subject lookup;
+they do not measure GLiNER/fastcoref accuracy. Known disagreements are explicit
+diagnostic gaps: an “also known as” nickname remains split, two different people
+with a shared surname can be folded together, and a person tagged organization
+can retain that wrong type. A passing baseline test reproduces these defects;
+it does not accept them as product behavior or establish zero false merges.
+
+The earlier-entity listing has an 8,000-character prefix budget. A later name can
+fall outside it and be redeclared under a different type. Publication's existing
+`(kind, case-folded label)` identity key preserves both rows. The PostgreSQL
+diagnostic reproduces the resulting duplicate choices, loss of unique lookup
+names and disjoint entity-linked passage sets. This is distinct from a genuine
+shared-title ambiguity. The fixtures also retain positive full-name/title/reveal
+cases and negative possessive, similar-name and unsupported-identity controls.
+
+Q28 records a failure baseline only. Repair requires evidence-backed production
+and versioned reprocessing; do not hide a split identity by bypassing attribution
+checks, merging on name similarity or rewriting existing source spans. The
+[acceptance strategy](../testing/acceptance-strategy.md#identity-failure-baseline--q28)
+distinguishes private-book observations from simulated reproduction.
+
 ## Two independent axes of time
 
 Source position identifies where information is revealed. Story time identifies
@@ -321,6 +346,14 @@ reports material. A state with no canonical, disputed or inferred trait is
 claims at more than one event, the state is `needs_context` with those events
 in chronological order instead of a blend.
 
+A character-only request (no moment, scene or participant) first tries a
+moment-free base portrait (`base-v1`, Q39): only identity claims enter; an
+identity value is canonical when untimed or repeated identically at two or more
+distinct events, a single timed mention is an inference, and values that differ
+between events are excluded. Scene, acquired and interval claims (clothing,
+injuries, props) never enter. One absent trait leaves the others. Without a
+canonical stable trait the request keeps the grounded moment choices.
+
 The consolidation names the event matching the requested moment
 (`requested_event`, `consolidation-schema-v2`); `services/reconstruction/context.py`
 reads the stored event id from the derivation scope and never guesses one from
@@ -429,3 +462,53 @@ explicit quoted endpoints against their resolved labels or the registry's
 unique visible name surfaces.
 Stored titles need not appear in a quote naming the same entity by a unique
 visible alias; registry refs themselves are never treated as quoted names.
+
+
+### Grounded identity production — Q29
+
+`entities-v6` / local `rules-v6` keeps distinct full-name declarations instead of
+folding everyone with a shared surname into one entity. Explicit “known as”,
+“called”, “addressed as” and same-person statements retain exact quoted identity
+links. A unique literal first/surname variant can link through the full-name
+citation only at publication, after considering competing full names of every
+kind across the complete derivation. A person epithet cannot link to its place
+qualifier, and action phrases are not treated as full names. Explicit different-
+person wording prevents a link. These links remain separate versioned records, so the source cutoff
+still controls when they are visible. A title alone remains ambiguous.
+
+The bounded earlier-entity listing prioritizes exact names found in the current
+batch without changing their stable k:n keys. Exact known names retain their
+established type; literal human descriptions, body-part possessions and quoted
+speaker cues can correct a wrong local category. Properly named objects are not
+automatically promoted to characters. Coreference adds personal references, not arbitrary unrecognized
+phrases. Registry refs collapse only evidence-linked identity groups and retain
+all uniquely attributable names. Original derivations/passages remain unchanged.
+The Q28 synthetic desired outcomes now pass; this is not universal local-model
+quality or private-book reprocessing acceptance (Q30).
+
+### Rules replay and private-book limits — Q30a
+
+A trusted local operator can use `StoredEntities` to reapply current rules to
+previously grounded spans from the same immutable parser generation. It checks
+source text and bounds exactly, records the source derivation/model version, and
+never reuses prior aliases or same-person links. This is replay of earlier
+grounded proposals, not fresh neural inference; original recognizer categories
+may already reflect the earlier rules. Original passages and prior derivations
+remain available. Failed identity review marks a derivation failed so eligible
+reads do not select it.
+
+The private-book comparison exposed cross-type and shared-family false merges in
+the intermediate rules; those derivations were quarantined. Rules-v6 preserves
+the original bytes and 4,661 passage spans. Ten annotated alias/negative pairs
+show zero false merges but four missed alias links; supported short/full names
+share the admissible entity-reference set. The independent four-case pinned-model
+holdout has zero missed aliases and false merges. These bounded checks do not
+establish universal identity/appearance quality or close the remaining Q30 gate.
+
+Q30b retrieval computes the transitive closure of confirmed consolidation identity
+links independently of row order. An ambiguous mention is entity-linked only
+when all of its candidates lie within that confirmed group. Query planning caps
+clarification choices at five; absence of verified appearance traits remains an
+insufficient-evidence outcome rather than an identity or provider failure.
+This boundary is compatible with the existing scoped reconstruction API and
+does not resolve the private-book aliases still missing from production.

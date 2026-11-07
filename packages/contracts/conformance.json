@@ -434,5 +434,376 @@
     "value": {
       "force": true
     }
+  },
+  {
+    "model": "ConversationCreate",
+    "valid": true,
+    "value": {
+      "work_id": "11111111-1111-4111-8111-111111111111",
+      "title": "Lena portrait"
+    }
+  },
+  {
+    "model": "TurnCreate",
+    "valid": true,
+    "value": {
+      "text": "Show Lena"
+    }
+  },
+  {
+    "model": "TurnView",
+    "valid": true,
+    "value": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "conversation_id": "11111111-1111-4111-8111-111111111111",
+      "status": "queued",
+      "dispatch_pending": true,
+      "error_code": null,
+      "result": null,
+      "card_revision": null,
+      "created_at": "2026-10-31T10:00:00Z",
+      "completed_at": null
+    }
+  },
+  {
+    "model": "PromptCardView",
+    "valid": true,
+    "value": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 2,
+      "generation_id": "11111111-1111-4111-8111-111111111111",
+      "prompt": "Lena wearing a blue coat.",
+      "specification": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "work_id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1,
+        "created_at": "2026-10-31T10:00:00Z",
+        "request": {
+          "query": "Lena"
+        },
+        "result": {
+          "outcome": "resolved",
+          "schema_version": "1.0",
+          "data": {
+            "spec_version": "vision-spec-1.0",
+            "lineage": {
+              "consolidation_id": "11111111-1111-4111-8111-111111111111",
+              "processing": {
+                "consolidation": "synthetic-contract"
+              }
+            },
+            "scope": {
+              "generation_id": "11111111-1111-4111-8111-111111111111",
+              "parser_revision": "synthetic-v1",
+              "through_chapter_id": null,
+              "moment": null,
+              "resolved_moment": null,
+              "context": null,
+              "creative_mode": "canon_first"
+            },
+            "subject": {
+              "entity": {
+                "entity_ids": [
+                  "11111111-1111-4111-8111-111111111111"
+                ],
+                "kind": "character",
+                "label": "Lena"
+              },
+              "role": "subject",
+              "traits": [
+                {
+                  "attribute": "attire",
+                  "status": "canonical",
+                  "values": [
+                    "blue coat"
+                  ],
+                  "evidence": [
+                    {
+                      "document_revision_id": "11111111-1111-4111-8111-111111111111",
+                      "passage_id": "11111111-1111-4111-8111-111111111111",
+                      "start": 0,
+                      "end": 22,
+                      "quote": "Lena wore a blue coat."
+                    }
+                  ]
+                }
+              ],
+              "unknown": [
+                "eyes"
+              ]
+            },
+            "participants": [],
+            "world": [],
+            "excluded": [],
+            "unknown": [
+              "eyes"
+            ],
+            "creative": [],
+            "generation": {
+              "style": null,
+              "prompt": "Lena wearing a blue coat.",
+              "negative_prompt": "",
+              "excluded_values": []
+            },
+            "verification": {
+              "adjudication": "not_requested",
+              "removed": 0,
+              "selection": "complete"
+            }
+          }
+        }
+      },
+      "created_at": "2026-10-31T10:00:00Z"
+    }
+  },
+  {
+    "model": "ConversationView",
+    "valid": true,
+    "value": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "work_id": "11111111-1111-4111-8111-111111111111",
+      "work_title": "Synthetic story",
+      "title": "Lena portrait",
+      "revision": 3,
+      "created_at": "2026-10-31T10:00:00Z",
+      "updated_at": "2026-10-31T10:00:00Z",
+      "last_sequence": 2,
+      "active_turn": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "conversation_id": "11111111-1111-4111-8111-111111111111",
+        "status": "queued",
+        "dispatch_pending": true,
+        "error_code": null,
+        "result": null,
+        "card_revision": null,
+        "created_at": "2026-10-31T10:00:00Z",
+        "completed_at": null
+      },
+      "card": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 2,
+        "generation_id": "11111111-1111-4111-8111-111111111111",
+        "prompt": "Lena wearing a blue coat.",
+        "specification": {
+          "id": "11111111-1111-4111-8111-111111111111",
+          "work_id": "11111111-1111-4111-8111-111111111111",
+          "revision": 1,
+          "created_at": "2026-10-31T10:00:00Z",
+          "request": {
+            "query": "Lena"
+          },
+          "result": {
+            "outcome": "resolved",
+            "schema_version": "1.0",
+            "data": {
+              "spec_version": "vision-spec-1.0",
+              "lineage": {
+                "consolidation_id": "11111111-1111-4111-8111-111111111111",
+                "processing": {
+                  "consolidation": "synthetic-contract"
+                }
+              },
+              "scope": {
+                "generation_id": "11111111-1111-4111-8111-111111111111",
+                "parser_revision": "synthetic-v1",
+                "through_chapter_id": null,
+                "moment": null,
+                "resolved_moment": null,
+                "context": null,
+                "creative_mode": "canon_first"
+              },
+              "subject": {
+                "entity": {
+                  "entity_ids": [
+                    "11111111-1111-4111-8111-111111111111"
+                  ],
+                  "kind": "character",
+                  "label": "Lena"
+                },
+                "role": "subject",
+                "traits": [
+                  {
+                    "attribute": "attire",
+                    "status": "canonical",
+                    "values": [
+                      "blue coat"
+                    ],
+                    "evidence": [
+                      {
+                        "document_revision_id": "11111111-1111-4111-8111-111111111111",
+                        "passage_id": "11111111-1111-4111-8111-111111111111",
+                        "start": 0,
+                        "end": 22,
+                        "quote": "Lena wore a blue coat."
+                      }
+                    ]
+                  }
+                ],
+                "unknown": [
+                  "eyes"
+                ]
+              },
+              "participants": [],
+              "world": [],
+              "excluded": [],
+              "unknown": [
+                "eyes"
+              ],
+              "creative": [],
+              "generation": {
+                "style": null,
+                "prompt": "Lena wearing a blue coat.",
+                "negative_prompt": "",
+                "excluded_values": []
+              },
+              "verification": {
+                "adjudication": "not_requested",
+                "removed": 0,
+                "selection": "complete"
+              }
+            }
+          }
+        },
+        "created_at": "2026-10-31T10:00:00Z"
+      }
+    }
+  },
+  {
+    "model": "PromptCardView",
+    "valid": false,
+    "value": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 2,
+      "generation_id": "11111111-1111-4111-8111-111111111111",
+      "prompt": "Unverified replacement",
+      "specification": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "work_id": "11111111-1111-4111-8111-111111111111",
+        "revision": 1,
+        "created_at": "2026-10-31T10:00:00Z",
+        "request": {
+          "query": "Lena"
+        },
+        "result": {
+          "outcome": "resolved",
+          "schema_version": "1.0",
+          "data": {
+            "spec_version": "vision-spec-1.0",
+            "lineage": {
+              "consolidation_id": "11111111-1111-4111-8111-111111111111",
+              "processing": {
+                "consolidation": "synthetic-contract"
+              }
+            },
+            "scope": {
+              "generation_id": "11111111-1111-4111-8111-111111111111",
+              "parser_revision": "synthetic-v1",
+              "through_chapter_id": null,
+              "moment": null,
+              "resolved_moment": null,
+              "context": null,
+              "creative_mode": "canon_first"
+            },
+            "subject": {
+              "entity": {
+                "entity_ids": [
+                  "11111111-1111-4111-8111-111111111111"
+                ],
+                "kind": "character",
+                "label": "Lena"
+              },
+              "role": "subject",
+              "traits": [
+                {
+                  "attribute": "attire",
+                  "status": "canonical",
+                  "values": [
+                    "blue coat"
+                  ],
+                  "evidence": [
+                    {
+                      "document_revision_id": "11111111-1111-4111-8111-111111111111",
+                      "passage_id": "11111111-1111-4111-8111-111111111111",
+                      "start": 0,
+                      "end": 22,
+                      "quote": "Lena wore a blue coat."
+                    }
+                  ]
+                }
+              ],
+              "unknown": [
+                "eyes"
+              ]
+            },
+            "participants": [],
+            "world": [],
+            "excluded": [],
+            "unknown": [
+              "eyes"
+            ],
+            "creative": [],
+            "generation": {
+              "style": null,
+              "prompt": "Lena wearing a blue coat.",
+              "negative_prompt": "",
+              "excluded_values": []
+            },
+            "verification": {
+              "adjudication": "not_requested",
+              "removed": 0,
+              "selection": "complete"
+            }
+          }
+        }
+      },
+      "created_at": "2026-10-31T10:00:00Z"
+    }
+  },
+  {
+    "model": "TurnView",
+    "valid": false,
+    "value": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "conversation_id": "11111111-1111-4111-8111-111111111111",
+      "status": "pretend_success",
+      "dispatch_pending": true,
+      "error_code": null,
+      "result": null,
+      "card_revision": null,
+      "created_at": "2026-10-31T10:00:00Z",
+      "completed_at": null
+    }
+  },
+  {
+    "model": "ConversationCreate",
+    "valid": false,
+    "value": {
+      "work_id": "11111111-1111-4111-8111-111111111111",
+      "owner_id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "model": "TurnCancel",
+    "valid": true,
+    "value": {}
+  },
+  {
+    "model": "TurnCancel",
+    "valid": false,
+    "value": {
+      "owner_id": "forged"
+    }
+  },
+  {
+    "model": "PreparationRetry",
+    "valid": true,
+    "value": {}
+  },
+  {
+    "model": "PreparationRetry",
+    "valid": false,
+    "value": {
+      "source_job_id": "forged"
+    }
   }
 ]

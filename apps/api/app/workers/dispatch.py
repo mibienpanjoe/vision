@@ -1,5 +1,7 @@
 from app.db.session import configured_engine
+from app.services.conversations.turns import recover_turns
 from app.services.dispatch import (
+    dispatch_conversations,
     dispatch_deletions,
     dispatch_ingestions,
     dispatch_narratives,
@@ -22,6 +24,7 @@ def main() -> None:
         print(f"Reconciled {recover_narratives(engine)} interrupted narrative job(s).")
         print(f"Settled {recover_renders(engine)} interrupted render job(s) as acceptance unknown.")
         print(f"Reconciled {recover_deletions(engine)} unfinished deletion(s).")
+        print(f"Reconciled {recover_turns(engine)} conversation turn(s).")
         total = 0
         while count := dispatch_pending(engine):
             total += count
@@ -30,6 +33,8 @@ def main() -> None:
         while count := dispatch_narratives(engine):
             total += count
         while count := dispatch_renders(engine):
+            total += count
+        while count := dispatch_conversations(engine):
             total += count
         while count := dispatch_deletions(engine):
             total += count

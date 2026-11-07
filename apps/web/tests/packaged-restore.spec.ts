@@ -5,10 +5,10 @@ test.skip(!process.env.VISION_TEST_RESTORE_ORIGIN, "Requires the isolated packag
 test("restored library and entity explorer render surviving data and omit the deleted book", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
+  const login = await page.request.post("/api/v1/auth/login", { headers: { Origin: process.env.VISION_TEST_RESTORE_ORIGIN! },
+    data: { username: "package_reader", password: "synthetic package check passphrase" } });
+  expect(login.status()).toBe(200);
   await page.goto("/");
-  await page.getByLabel("Username").fill("package_reader");
-  await page.getByLabel("Password", { exact: true }).fill("synthetic package check passphrase");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   const book = page.getByRole("article", { name: "Packaged", exact: true });
   await expect(book).toBeVisible();
   // The signed-out session probe intentionally answers 401; inspect console errors after authentication settles.

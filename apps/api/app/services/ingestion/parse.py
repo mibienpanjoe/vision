@@ -40,9 +40,12 @@ def execute_ingestion(job_id: str) -> None:
         raise RuntimeError("Database configuration required")
     try:
         with job_lock(engine, uuid.UUID(job_id)) as acquired:
-            if acquired and (narrative_id := execute_locked(engine, uuid.UUID(job_id))):
-                # Intent is already committed; a failed enqueue stays pending for `make dispatch`.
-                dispatch_narratives(engine, narrative_id)
+            if acquired:
+                if narrative_id := execute_locked(engine, uuid.UUID(job_id)):
+                    # Intent is already committed; a failed enqueue stays pending for `make dispatch`.
+                    dispatch_narratives(engine, narrative_id)
+                from app.services.conversations.attachments import preparation_finished
+                preparation_finished(engine, uuid.UUID(job_id))
     finally:
         engine.dispose()
 

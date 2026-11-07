@@ -4,7 +4,7 @@ import json
 import re
 from collections import Counter, defaultdict
 
-from app.services.retrieval.entity_lookup import PRONOUNS, fold
+from app.services.retrieval.entity_lookup import PRONOUNS, SubjectLookup, fold
 
 
 def registry(view, passage_ids, required, max_characters=4_000):
@@ -22,10 +22,14 @@ def registry(view, passage_ids, required, max_characters=4_000):
         surfaces[fold(label)].add(entity_id)
     for alias in view.aliases:
         surfaces[fold(alias.label)].add(alias.entity_id)
+    lookup = SubjectLookup(view)
+    groups = {lookup.subject(e) for e in selected}
     entries, names, used = [], {}, 2
-    ordered = sorted(selected, key=lambda e: (e not in required, fold(view.labels[e]), str(e)))
-    for i, entity_id in enumerate(ordered):
-        aliases = sorted(name for name, ids in surfaces.items() if ids == {entity_id} and len(name) <= 256)[:8]
+    ordered = sorted(groups, key=lambda group: (not set(group.entity_ids) & required, fold(group.label), str(group.entity_ids[0])))
+    for i, group in enumerate(ordered):
+        entity_id = next(e for e in group.entity_ids if view.labels[e] == group.label)
+        aliases = sorted(name for name, ids in surfaces.items()
+                         if {lookup.subject(e) for e in ids} == {group} and len(name) <= 256)[:8]
         ref = f"entity:{i}"
         entry = {"ref": ref, "label": view.labels[entity_id],
                  "kind": view.entities[entity_id].kind, "aliases": aliases}

@@ -22,7 +22,7 @@ from app.services.narrative.eligibility import visible_narrative
 from app.services.retrieval.entity_lookup import Subject, SubjectLookup, fold
 from sqlalchemy import select
 
-RULES_VERSION = "query-plan-v1"
+RULES_VERSION = "query-plan-v2"
 WORDS = "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen \
 seventeen eighteen nineteen twenty".split()
 TENS = {"thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90}
@@ -175,7 +175,7 @@ def plan_query(db, actor, work_id: uuid.UUID, request: VisualizationRequest):
     elif structured is not None and named and structured not in named:
         choices += [subject_choice(s) for s in [structured, *named]]
     if choices:
-        return NeedsContext(tuple(choices))
+        return NeedsContext(tuple(choices[:5]))
     subject = structured or (named[0] if named else None)
     if subject is None:
         return InsufficientEvidence(("No eligible character, place or object matches the request.",))

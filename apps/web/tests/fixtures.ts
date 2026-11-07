@@ -1,12 +1,14 @@
 import { expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
-export async function signIn(page: Page) {
+export async function signIn(page: Page, username = "transport_reader", password = "synthetic session transport passphrase") {
+  const result = await page.request.post("/api/v1/auth/login", {
+    headers: { Origin: "http://127.0.0.1:13000" },
+    data: { username, password },
+  });
+  expect(result.status()).toBe(200);
   await page.goto("/");
-  await page.getByLabel("Username").fill("transport_reader");
-  await page.getByLabel("Password", { exact: true }).fill("synthetic session transport passphrase");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByText("Signed in as")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your books" })).toBeVisible();
 }
 
 export async function uploadCorpus(page: Page, title: string) {

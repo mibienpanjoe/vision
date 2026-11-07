@@ -7,6 +7,7 @@ if (api.protocol !== "http:" || !["127.0.0.1", "localhost", "api"].includes(api.
 }
 
 const config: NextConfig = {
+  distDir: process.env.VISION_CONVERSATION_PREVIEW === "1" ? ".next-preview" : process.env.VISION_TEST_BUILD === "1" ? ".next-test" : ".next",
   poweredByHeader: false,
   // A cold local embedding query plus bounded consolidation/adjudication exceeds 30 s.
   experimental: { proxyTimeout: 300_000 },

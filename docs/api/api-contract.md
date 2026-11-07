@@ -246,7 +246,7 @@ long-running ingestion stages, failures/cancellation and broader recovery.
 
 | Endpoint | Implemented behavior |
 |---|---|
-| `POST /v1/works` | Authenticated multipart `title`, `format` (`txt`/`md`/`pdf`/`epub`), and one `file`; required `Idempotency-Key`; `202` with work and ingestion reference |
+| `POST /v1/works` | Authenticated multipart with one `file`; optional `title` and `format` (`txt`/`md`/`pdf`/`epub`) override automatic metadata; required `Idempotency-Key`; `202` with work and ingestion reference |
 | `GET /v1/works` | Owner-scoped UUID-ascending keyset page; `limit` 1–100 (default 20), optional UUID `after`; `items` and nullable `next_cursor` |
 | `GET /v1/works/{id}` | Owned work metadata, its first immutable document revision and `current_parser_revision` (null until a generation is published) |
 | `GET /v1/works/{id}/chapters` | Current published source generation's chapter numbers and IDs, without titles; ordinal-ascending page, `after` >= 0 (default 0), `limit` 1–100 (default 100); `next_after` or null; source/generation/parser lineage retained |
@@ -265,8 +265,10 @@ unknown/duplicate fields and extra files fail safely. Errors use the common
 safe envelope: invalid content/metadata `422`, malformed multipart `400`, size
 `413`, media type `415`, transfer timeout `408`, unavailable storage `503`.
 
-Creation keys are scoped to authenticated owner and work creation. Exact title,
-format and original SHA-256 define request identity; replay returns the same
+Creation keys are scoped to authenticated owner and work creation. Supplied
+metadata and original SHA-256 define request identity; automatic-title requests
+also include the cleaned filename used for fallback. Existing explicit title/format
+request identities stay compatible; replay returns the same
 work/document/job, while changed input gives `409`. Keys currently persist with
 the work without expiry. A lost acknowledgement can return `503` after SQL
 committed: replay recovers the persisted reference without deleting its source.
@@ -687,3 +689,148 @@ Q13 selects finite text-provider limits by model, reasoning effort and stage;
 Luna reasoning no longer inherits Groq's output allowance. Runs retain actual
 limits and usage, and budget/timeout outcomes keep their existing safe codes.
 Explicit limits and effort separate reuse. Public schemas are unchanged.
+
+## Private workspace bootstrap — Q31
+
+`POST /v1/auth/workspace` requires an allowed Origin and a fresh random
+`Idempotency-Key` (32–128 URL-safe characters), no owner/account input. A valid
+existing HttpOnly session resumes the same principal, including existing book
+ownership and consumed render allowance. Without a cookie it creates a distinct
+private workspace. An invalid or expired cookie fails with
+`401 WORKSPACE_ACCESS_REQUIRED`; it never claims another workspace or silently
+assigns a replacement owner. Legacy login endpoints remain compatible.
+
+The persistent SameSite=Strict HttpOnly cookie lasts 90 days and successful
+bootstrap renews it. Passwords are disabled for new anonymous principals. First
+creation replays for five minutes using a hashed initialization receipt and a
+server-HMAC capability; only its hash is stored in login_sessions. Concurrent
+requests using the same key create one principal/session. The caller keeps the
+initialization key only in memory; normal access stays exclusively in the cookie.
+A missing `VISION_WORKSPACE_SECRET` (at least 32 random characters, private local
+configuration) yields `503 WORKSPACE_NOT_CONFIGURED`. This remains loopback HTTP
+under DEC-25. Browser tab initialization is serialized by the Q33 consumer;
+request keys alone do not identify two unrelated browser contexts as one owner.
+
+### Trusted local access recovery — Q32a
+
+`POST /v1/auth/workspace/recover` requires Origin, a 43-character `Recovery-Key`
+and an `Idempotency-Key` (32–128 URL-safe characters), with no body or owner input.
+Only the local operator can issue a recovery code for a selected existing owner.
+It expires after 15 minutes; its hash is stored. The first redemption binds its
+request key; the exact same redemption can replay a lost response, while another
+key fails with `401 WORKSPACE_ACCESS_REQUIRED`. Recovery issues the same owner's
+90-day HttpOnly cookie and does not change books, history or render allowance.
+A valid different workspace cookie receives `409 WORKSPACE_CONFLICT` and remains
+untouched. Invalid/expired access can recover; normal visitors cannot claim a
+legacy owner. The operator workflow and private backup proof are Q32b.
+
+### Conversation persistence — Q34
+
+Conversation storage is attached to one owned work. A thread has a stable card
+ID, strong revision and monotonically ordered messages. A turn receipt binds its
+idempotency key, submitted revision and exact request fingerprint; exact replay
+precedes the stale-revision check. New requests supersede unfinished older turns.
+Only the active turn may atomically publish a card revision, assistant receipt
+and terminal outcome. Failed or late work leaves the previous usable card intact.
+
+A card revision points to the exact immutable VisualizationRevision, including
+its source generation. Composite foreign keys reject another owner's work,
+unrelated specifications, mismatched generations and cross-thread turn pointers.
+Cards retain their identity when a later request creates a different verified
+specification. Existing images keep their original specification revision.
+These are storage/service invariants; public conversation endpoints and durable
+worker execution are delivered separately.
+
+### Conversation resources — Q35
+
+`POST /v1/conversations` accepts `work_id` and an optional title (160 characters).
+It requires Origin and Idempotency-Key, creates only under an owned live work,
+and returns 201 with ConversationView and the strong revision ETag. Exact
+creation replay returns the same resource; changed normalized input conflicts.
+No owner identifier is accepted from the client.
+
+`GET /v1/conversations` returns at most 50 summaries (default 30), ordered by
+creation time then ID descending. `after` is the last thread UUID; optional
+`work_id` filters an owned book. Foreign, deleted and mismatched cursors return
+the common safe 404. Ordering is stable while messages are appended.
+
+`GET /v1/conversations/{id}` returns the current strong ETag, active turn and card.
+`GET /v1/conversations/{id}/messages?after=0&limit=30` pages forward by immutable
+message sequence, returning `next_after` only when more rows remain.
+`GET /v1/conversations/{id}/turns/{turn_id}` polls one owned receipt;
+`GET /v1/conversations/{id}/cards/{number}` reads an immutable historical card.
+All reads exclude deleted works. A card's prompt and generation must equal its
+referenced specification, including in shared Python/TypeScript conformance.
+Turn submission/execution and user-facing conversational behavior remain Q36+.
+
+### Composition progress — Q36a
+
+Internal composition callers can observe resolving, retrieving, composing and
+verifying at their actual execution boundaries. Stored-result replay emits no
+new work stages. The existing synchronous visualization API keeps its response
+contract; durable conversation execution consumes these notifications separately.
+
+### Durable conversation turns — Q36b
+
+`POST /v1/conversations/{id}/turns` accepts `text` (1–4,000 characters), Origin,
+Idempotency-Key and the conversation's displayed strong If-Match revision. The
+server records the user message and queued turn before broker publication and
+returns 202 TurnView. Exact key/revision/payload replay returns the same turn;
+a changed request conflicts, and a stale different submission returns 412.
+Broker failure leaves `dispatch_pending` visible for operator dispatch.
+
+The real worker acquires a SQL advisory lease, waits durably for book readiness,
+and reports actual resolving/retrieving/composing/verifying stages. Recoverable
+interruption has at most three execution attempts. Verified output uses the
+existing specification service and a turn-scoped creation receipt; atomic card,
+assistant-message and terminal publication checks the active turn again. Newer
+requests supersede unfinished older turns. The prior usable card stays available
+on cancellation, missing evidence, clarification, failure or late completion.
+
+`POST /v1/conversations/{id}/turns/{turn_id}/cancel` accepts an empty TurnCancel
+body with key and the current conversation revision. Exact cancellation replay
+is allowed; other payloads, foreign turn IDs and stale revisions fail safely.
+No image reservation occurs on turn submission or prompt composition.
+
+### Conversational intent — Q38
+
+TurnCreate also accepts an optional `choice` (`choice:N`), a ref the previous
+needs-context turn issued; UI actions never send resource IDs. The worker
+rebuilds a finite context from durable state (current and up to five earlier
+portrayals, open choices, six recent messages truncated to 500 characters as
+untrusted data) and classifies the turn once into a versioned typed intent
+(`conversation-intent-v1`) stored on the turn, so redelivery never re-classifies:
+
+| Intent | Execution |
+|---|---|
+| `new_portrayal` | Existing specification service with a self-contained query |
+| `moment_edit` | Same subject entity with the new moment/context through full source verification; an earlier-portrayal ref republishes that stored card |
+| `presentation_edit` | Existing refinement under the visualization's strong revision; style/mode only, kept traits become canonical locks |
+| `clarification_answer` | Fills the stored pending request's subject, moment or context from the issued choice |
+| `source_request`, `image_request` | Receipt only; the card is unchanged (Q45/Q46 own the actions) |
+
+A style that describes clothing, body, setting or story facts is routed to
+`moment_edit` and so cannot bypass verification as a presentation edit. The
+deterministic classifier is the default authority; `VISION_INTENT_MODEL=1` lets
+the configured query adapter propose the intent under bounded structured
+inference (PROP-09), and unknown refs or invalid output fall back.
+
+Committed preparation outcomes automatically wake persisted waiting requests
+(Q37b); `make dispatch` recovers missed notifications or broker outages.
+
+### Conversation preparation retry — Q37c
+
+`POST /v1/conversations/{id}/preparation-retries` takes an empty PreparationRetry
+body, Origin, Idempotency-Key and the current conversation If-Match revision.
+It requires an active failed-book request and resolves the parser/narrative job
+through that conversation's owned original generation. The retry keeps the
+original question internally and adds a compact retry receipt; no second upload
+is accepted or required. It resets the eligible preparation job and creates its
+waiting turn in one SQL transaction, then publishes the preparation intent.
+Exact key/revision replay recovers the same turn after a lost response.
+
+Stale conversations, changed source generation and busy preparation fail safely;
+attempt/capacity limits still apply. Unsupported scanned/encrypted sources and
+other immutable-source failures return PREPARATION_NOT_RETRYABLE so the client
+can offer a replacement. Both actual parser and narrative worker failure/retry
+paths retain the original bytes and resume the prior question automatically.
