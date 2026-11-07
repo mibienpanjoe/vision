@@ -18,7 +18,7 @@ for the product contracts; the commands below own the executable setup.
 
 | Component | Selected technology | Current boundary |
 |---|---|---|
-| Web | Next.js, TypeScript, Tailwind, shadcn/ui | Library, scoped explorer, source reader, reconstruction/export, refinement and render history |
+| Web | Next.js, TypeScript, Tailwind, shadcn/ui | Conversation workspace: attach and ask, prompt card, moments, sources, images, resume |
 | API | Python, FastAPI, Pydantic | Authenticated owned resources, revision/idempotency guards and safe outcomes |
 | Database | PostgreSQL, pgvector, SQLAlchemy, Alembic | Versioned sources, narrative/index derivations, specifications, render lineage and deletion tombstones |
 | Jobs | Redis, Dramatiq | Ingestion, narrative, rendering and deletion with durable SQL intent and recovery |
@@ -391,59 +391,45 @@ load; book-length timing is not yet measured. CI allows 25 minutes for the
 larger install. The model files are fetched by Docling's own downloader and not
 redistributed by this repository.
 
-## Library browser harness — T34
+## Browser harness
 
-After `make services` and a current `pnpm --dir apps/web build`, run:
+After `make services` and a current `pnpm --dir apps/web build`, run one of:
 
 ```sh
-VISION_TEST_LIBRARY=1 make browser-session
+make browser-session                              # session transport and workspace capability
+VISION_TEST_CONVERSATION=1 make browser-session   # the conversation product path
+VISION_TEST_WORKSPACE=1 make browser-session      # cross-owner security and framing
 ```
 
 The harness creates a disposable database, private source directory and unique
-Redis namespace, provisions two synthetic accounts, and starts an isolated API
-on port 8000 plus a real ingestion-only Dramatiq worker. Playwright serves the
-built web app on port 13000. These ports must be free. The suite pauses only its
-own worker process group for queued cancellation, then resumes it in cleanup.
-A test-only bootstrap adds a file gate before the real parse call for running
-cancellation; no test hook enters production code.
-The harness removes its database, sources and Redis keys afterward. It does not
-modify the developer's library or run external models. Logs and screenshots stay
-in `.local/`. The standard `make browser-session` retains its session-transport
-check; the library option adds the controls and lifecycle acceptance cases.
+Redis namespace, provisions synthetic accounts, starts an isolated API on port
+8000 and a real Dramatiq worker, and Playwright serves the built web app on port
+13000; these ports must be free. It removes its database, sources and Redis keys
+afterward and never touches the developer's books. Logs and screenshots stay in
+`.local/`.
 
-For scoped exploration and persisted context checks, use
-`VISION_TEST_WORKSPACE=1 make browser-session`. This starts both worker queues
-with deterministic model adapters, and a test-only API bootstrap supplies
-deterministic consolidation/adjudication. Production code has no fixture switch;
-the test modules are selected explicitly by the harness. No live model is called.
+The conversation mode runs ingestion, narrative, render and conversation queues
+with deterministic text adapters and synthetic images. It selects a render
+provider with a fake token only so reservations are accepted; the worker never
+calls the provider. Its specs cover upload, prompt, moments, sources, images,
+resume, recovery and the complete flow; `VISION_TEST_CONVERSATION_SPECS` selects
+specific files and `VISION_TEST_WORKSPACE_SPECS` does the same for the workspace
+mode. Production code has no fixture switch; the harness selects test modules
+explicitly.
 
-The workspace harness includes accessibility, explorer, evidence, reconstruction
-and two-tab refinement/history tests.
-`VISION_TEST_WORKSPACE_SPECS` can select specific Playwright files. If another
-local service uses port 8000, choose a dedicated test API port and build the web
-proxy for that same origin, for example:
+If another local service uses port 8000, build the web proxy for a dedicated
+test origin and use the same port:
 
 ```sh
 VISION_API_ORIGIN=http://127.0.0.1:18000 pnpm --dir apps/web build
-VISION_TEST_API_PORT=18000 VISION_TEST_WORKSPACE=1 make browser-session
+VISION_TEST_API_PORT=18000 VISION_TEST_CONVERSATION=1 make browser-session
 ```
 
-A later normal build uses the default API origin again; never exercise a test
-harness against an unrelated listener or a build with a different proxy target.
-
-For the explicit live product gate, use
-`VISION_TEST_LIVE_WORKSPACE=1 make browser-session` (with the same port override
-when needed). It uses the production API and worker bootstraps, pinned local
-entity/coreference/embedding models and the configured text adapter, never the
-fixture adapters. Only the committed synthetic story is uploaded. This opt-in
-loads provider configuration from the private `.env`; the selected adapter's key
-must be configured (Groq by default), and model snapshots must already be cached.
-`HF_HUB_OFFLINE=1` prevents implicit
-model downloads; set `HF_HOME` if the snapshots use a separate cache directory.
-The test inspects the stored specification, source highlights and identical JSON
-export; the harness additionally asserts successful local/selected-provider run records,
-persisted vectors and revisions before removing its disposable data. CI uses the
-deterministic workspace suite and does not require provider credentials.
+Billed checks are pytest opt-ins rather than browser modes:
+`tests/test_live_reconstruction.py` (`VISION_LIVE_RECONSTRUCTION=1`),
+`tests/test_live_intent.py` (`VISION_LIVE_INTENT=1`) and
+`tests/test_live_render.py` (`VISION_LIVE_RENDER=1`). CI runs only the
+deterministic suites and needs no provider credentials.
 
 ## OpenAI text evaluation — Q01
 

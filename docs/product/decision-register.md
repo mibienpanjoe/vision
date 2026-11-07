@@ -302,3 +302,8 @@ attempt/capacity limits. SQL job reset and the new waiting-turn receipt commit
 together, before publication. Unsupported scans and exhausted budgets require
 a replacement rather than another identical send. PROP-06's generic job route
 remains proposed; this does not add account or settings controls.
+
+Q50 implements DEC-55 as the only browser path: the library, book explorer,
+reading-boundary selector, visualization composer and clickable preview are
+removed. Their APIs, exact-source evidence, structured export and legacy
+password transport remain for compatibility; no accepted decision changes.
