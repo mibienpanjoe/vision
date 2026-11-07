@@ -437,6 +437,58 @@
       "title": "ConversationPage",
       "type": "object"
     },
+    "ConversationRender": {
+      "additionalProperties": false,
+      "properties": {
+        "card_revision": {
+          "description": "The prompt version this image belongs to",
+          "minimum": 1,
+          "title": "Card Revision",
+          "type": "integer"
+        },
+        "render": {
+          "$ref": "#/$defs/RenderView"
+        }
+      },
+      "required": [
+        "card_revision",
+        "render"
+      ],
+      "title": "ConversationRender",
+      "type": "object"
+    },
+    "ConversationRenderPage": {
+      "additionalProperties": false,
+      "properties": {
+        "current_card_revision": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Current Card Revision"
+        },
+        "items": {
+          "description": "Newest first",
+          "items": {
+            "$ref": "#/$defs/ConversationRender"
+          },
+          "maxItems": 20,
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "current_card_revision",
+        "items"
+      ],
+      "title": "ConversationRenderPage",
+      "type": "object"
+    },
     "ConversationSummary": {
       "additionalProperties": false,
       "properties": {
@@ -2119,6 +2171,22 @@
       "title": "RenderPage",
       "type": "object"
     },
+    "RenderRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "card_revision": {
+          "description": "The active card revision to render; older revisions conflict",
+          "minimum": 1,
+          "title": "Card Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "card_revision"
+      ],
+      "title": "RenderRequest",
+      "type": "object"
+    },
     "RenderView": {
       "additionalProperties": false,
       "properties": {
@@ -3516,6 +3584,12 @@
     "conversation_preparation_retry": {
       "$ref": "#/$defs/PreparationRetry"
     },
+    "conversation_render_request": {
+      "$ref": "#/$defs/RenderRequest"
+    },
+    "conversation_renders": {
+      "$ref": "#/$defs/ConversationRenderPage"
+    },
     "conversation_turn": {
       "$ref": "#/$defs/TurnView"
     },
@@ -3661,6 +3735,8 @@
     "prompt_card",
     "conversation_preparation_retry",
     "conversation_card_history",
+    "conversation_renders",
+    "conversation_render_request",
     "conversation_variant_selection",
     "conversation_turn_cancel",
     "conversation_turn_create",

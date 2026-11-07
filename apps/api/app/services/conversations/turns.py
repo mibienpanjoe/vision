@@ -14,7 +14,7 @@ from app.models.works import Document, IngestionJob, Work
 from app.schemas.conversation_intent import INTENT_VERSION, ConversationIntent
 from app.schemas.retrieval import VisualizationRequest
 from app.schemas.visualization import CanonicalLock, RefinementRequest
-from app.services.conversations import context, intent, resources, store
+from app.services.conversations import context, intent, render_actions, resources, store
 from app.services.ingestion.jobs import job_lock
 from app.services.visualization import history, refinement
 from sqlalchemy import and_, or_, select
@@ -159,9 +159,22 @@ RECEIPTS = {"needs_context": "Choose which portrayal you mean.", "insufficient_e
 
 def route(engine, turn_id, actor, work_id, situation, chosen, request, correlation):
     current, key = situation.current, f"turn_{turn_id.hex}"
+    if chosen.kind == "image_request" and current is not None:
+        # The same card-revision key as the Generate image button: one render per prompt version.
+        try:
+            with Session(engine) as db:
+                thread = store.owned(db, actor, situation_thread(db, turn_id), lock=True)
+                made = render_actions.reserve(db, actor, thread, thread.card_revision)
+            receipt, status, code = f"Generating an image from prompt version {made.card_revision}.", "succeeded", None
+        except PublicError as error:
+            receipt, status, code = error.message, "failed", error.code
+        with Session(engine) as db, db.begin():
+            thread, turn = active(db, turn_id)
+            finish(db, thread, turn, status, receipt, {"intent": chosen.kind, "card_revision": thread.card_revision}, code)
+        return
     if chosen.kind in {"source_request", "image_request"}:
-        receipt = ("The cited passages are attached to the prompt card." if chosen.kind == "source_request"
-                   else "Use Generate image on the prompt card to render the active prompt.")
+        receipt = ("Open Sources on the prompt card for the cited passages." if chosen.kind == "source_request"
+                   else "Create a prompt first; then ask for an image.")
         with Session(engine) as db, db.begin():
             thread, turn = active(db, turn_id)
             finish(db, thread, turn, "succeeded", receipt, {"intent": chosen.kind, "card_revision": thread.card_revision})
@@ -198,6 +211,10 @@ def route(engine, turn_id, actor, work_id, situation, chosen, request, correlati
             finish(db, thread, turn, outcome.outcome, RECEIPTS[outcome.outcome],
                    {"result": result.result.model_dump(mode="json"), "visualization_request": pending},
                    outcome.error.code if outcome.outcome == "failed" else None)
+
+
+def situation_thread(db, turn_id):
+    return db.get(ConversationTurn, turn_id).conversation_id
 
 
 def change_receipt(chosen):

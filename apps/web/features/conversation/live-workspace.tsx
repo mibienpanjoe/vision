@@ -81,7 +81,7 @@ export function LiveConversation({ initialId }: { initialId: string | null }) {
             {book.retryable && !composer.preparationBlocked && turn?.error_code === "BOOK_PREPARATION_FAILED" && <button type="button" className="secondary" disabled={composer.busy} onClick={() => void composer.retryPreparation()}>Retry preparation</button>}
             <a className="conversation-link" href="/conversations/new">Replace book</a>
           </div>}
-          {card && thread.view && <ActiveCard card={card} workId={thread.view.work_id} history={history} busy={composer.busy || (!!turn && !!stages[turn.status])}
+          {card && thread.view && <ActiveCard card={card} conversationId={thread.view.id} workId={thread.view.work_id} history={history} busy={composer.busy || (!!turn && !!stages[turn.status])}
             pending={pendingMoment} onCopy={() => void copy()} onVariant={id => void chooseMoment(id, card.revision)} />}
           {(thread.error || composer.error) && <div role="alert" className="conversation-status conversation-error"><p>{composer.error || thread.error}</p>
             {composer.uncertain && <button className="secondary" type="button" onClick={() => void composer.send()}>Retry request</button>}

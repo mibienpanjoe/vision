@@ -116,3 +116,5 @@ button.conversation-link { color: var(--muted-foreground); background: transpare
 .conversation-claims { list-style: none; padding: 0; display: grid; gap: .25rem; font-size: .875rem; }
 .conversation-claims button[aria-pressed="true"] { color: var(--foreground); text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) { .conversation-moment { transition: none; } }
+.conversation-actions .conversation-image, .conversation-actions .conversation-image-state { flex-basis: 100%; margin: .5rem 0 0; }
+.conversation-image-state { font-size: .875rem; color: var(--muted-foreground); }

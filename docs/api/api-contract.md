@@ -852,6 +852,20 @@ the book: <moment>." after a verified moment or scene change, or "Restored the
 earlier version". Two tabs at one revision cannot both apply: the second gets
 412; exact key/payload replay returns the same turn and a changed payload 409.
 
+### Conversation images — Q46
+
+`POST /v1/conversations/{id}/renders` takes RenderRequest (`card_revision`, the
+active card) with Origin and Idempotency-Key and returns 202 ConversationRender.
+It reuses the existing render reservation, cap, worker, cancellation and
+acceptance-unknown behaviour; the reservation key is derived from the card
+revision, so the button, an explicit chat request ("generate an image"),
+duplicate clicks and reloads resolve to one render per prompt version. An
+older card revision returns 409 `CARD_CHANGED`. Upload, composition, moment
+selection, style edits and refresh never reserve.
+`GET /v1/conversations/{id}/renders` lists up to 20 images newest first, each
+with the card revision it belongs to, so earlier images stay labelled after
+edits. Images are served by the existing private render image route.
+
 ### Conversation preparation retry — Q37c
 
 `POST /v1/conversations/{id}/preparation-retries` takes an empty PreparationRetry

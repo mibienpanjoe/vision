@@ -279,6 +279,274 @@ export type WorkTitle1 = string;
 export type Items3 = ConversationSummary[];
 export type NextCursor = string | null;
 /**
+ * The active card revision to render; older revisions conflict
+ */
+export type CardRevision2 = number;
+export type CurrentCardRevision = number | null;
+/**
+ * Newest first
+ *
+ * @maxItems 20
+ */
+export type Items4 =
+  | []
+  | [ConversationRender]
+  | [ConversationRender, ConversationRender]
+  | [ConversationRender, ConversationRender, ConversationRender]
+  | [ConversationRender, ConversationRender, ConversationRender, ConversationRender]
+  | [ConversationRender, ConversationRender, ConversationRender, ConversationRender, ConversationRender]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ]
+  | [
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender,
+      ConversationRender
+    ];
+/**
+ * The prompt version this image belongs to
+ */
+export type CardRevision3 = number;
+/**
+ * A running call is never interrupted; its outcome is still kept
+ */
+export type CancelRequested = boolean;
+export type CompletedAt1 = string | null;
+export type CreatedAt7 = string;
+export type Dispatched = boolean;
+export type ErrorCode1 = string | null;
+export type Id9 = string;
+export type Model = string;
+export type OutputMediaType = string | null;
+/**
+ * Digest of the privately stored image, when one was kept
+ */
+export type OutputSha256 = string | null;
+export type Provider = string;
+export type Revision5 = number;
+export type SpecificationRevision = number;
+export type SpecificationSha256 = string;
+export type Status2 = "queued" | "running" | "succeeded" | "failed" | "cancelled" | "acceptance_unknown";
+export type VisualizationId = string;
+export type WorkId4 = string;
+/**
  * A server-issued ref from the previous turn's open choices
  */
 export type Choice = string | null;
@@ -286,19 +554,19 @@ export type Text1 = string;
 /**
  * The card revision the variant was issued for
  */
-export type CardRevision2 = number;
+export type CardRevision4 = number;
 export type VariantId = string;
 /**
  * @minItems 2
  * @maxItems 2
  */
 export type FactIds = [string, string];
-export type Status2 = "unresolved";
+export type Status3 = "unresolved";
 export type Conflicts = ConflictView[];
 export type Label4 = string;
-export type Status3 = "supported" | "candidate";
+export type Status4 = "supported" | "candidate";
 export type Aliases = AliasView[];
-export type Id9 = string;
+export type Id10 = string;
 export type Kind3 = "character" | "place" | "object" | "organization";
 /**
  * A name used by an eligible mention
@@ -313,7 +581,7 @@ export type Kind4 = "age" | "date" | "relative";
 export type Value2 = string;
 export type Anchors = AnchorView[];
 export type Evidence2 = SourceSpan[];
-export type Id10 = string;
+export type Id11 = string;
 export type Label6 = string;
 export type Modality = string;
 export type ParticipantIds = string[];
@@ -323,7 +591,7 @@ export type Attribute4 = string;
 export type Canonical = boolean;
 export type EventIds = string[];
 export type Evidence3 = SourceSpan[];
-export type Id11 = string;
+export type Id12 = string;
 export type Kind5 = "identity" | "acquired" | "interval" | "scene";
 export type Modality1 = string;
 export type Perspective = string | null;
@@ -351,7 +619,7 @@ export type ParserRevision2 = string;
  * Reading cutoff; null means the whole book
  */
 export type ThroughChapterId2 = string | null;
-export type Items4 = EntitySummary[];
+export type Items5 = EntitySummary[];
 export type ChapterId = string | null;
 export type Excerpt = string;
 export type ExcerptStart = number;
@@ -376,7 +644,7 @@ export type Mode = "whole_book";
 export type ChapterId1 = string;
 export type Mode1 = "through_chapter";
 export type Current1 = boolean;
-export type Id12 = string;
+export type Id13 = string;
 export type JobId = string;
 /**
  * Safe error code of the last narrative attempt
@@ -388,40 +656,40 @@ export type Ordinal1 = number;
 export type Parsed = boolean;
 export type ParserRevision5 = string;
 export type SearchReady = boolean;
-export type Status4 = "building" | "available" | "failed" | "cancelled";
+export type Status5 = "building" | "available" | "failed" | "cancelled";
 export type Warnings = string[];
-export type Items5 = GenerationView[];
+export type Items6 = GenerationView[];
 export type Attempts = number;
-export type CancelRequested = boolean;
+export type CancelRequested1 = boolean;
 export type CorrelationId1 = string;
 export type DispatchPending1 = boolean;
 export type DocumentId = string;
-export type ErrorCode1 = string | null;
-export type Id13 = string;
-export type Revision5 = number;
+export type ErrorCode2 = string | null;
+export type Id14 = string;
+export type Revision6 = number;
 export type Stage = "awaiting_parser" | "parse" | "parsed" | "failed" | "cancelled";
-export type Status5 = "queued" | "running" | "succeeded" | "failed" | "cancelled";
+export type Status6 = "queued" | "running" | "succeeded" | "failed" | "cancelled";
 export type Warnings1 = string[];
 export type Attempts1 = number;
 export type CorrelationId2 = string;
 export type DispatchPending2 = boolean;
-export type Id14 = string;
+export type Id15 = string;
 export type Result = number | null;
 export type Stage1 = "queued" | "complete";
-export type Status6 = "queued" | "succeeded";
+export type Status7 = "queued" | "succeeded";
 export type ByteCount = number;
 export type CurrentParserRevision = string | null;
 export type DocumentId1 = string;
 export type Format = "txt" | "md" | "pdf" | "epub";
-export type Id15 = string;
-export type Revision6 = number;
+export type Id16 = string;
+export type Revision7 = number;
 export type Sha256 = string;
 export type Title3 = string;
-export type Items6 = WorkView[];
+export type Items7 = WorkView[];
 export type NextCursor1 = string | null;
 export type Password = string;
 export type Username = string;
-export type Id16 = string;
+export type Id17 = string;
 export type Username1 = string;
 export type Kind6 = "probe";
 export type Value4 = number;
@@ -431,28 +699,6 @@ export type CreativeMode2 = "canon_first" | "interpretation";
  */
 export type Locks1 = CanonicalLock[];
 export type Style3 = string | null;
-/**
- * A running call is never interrupted; its outcome is still kept
- */
-export type CancelRequested1 = boolean;
-export type CompletedAt1 = string | null;
-export type CreatedAt7 = string;
-export type Dispatched = boolean;
-export type ErrorCode2 = string | null;
-export type Id17 = string;
-export type Model = string;
-export type OutputMediaType = string | null;
-/**
- * Digest of the privately stored image, when one was kept
- */
-export type OutputSha256 = string | null;
-export type Provider = string;
-export type Revision7 = number;
-export type SpecificationRevision = number;
-export type SpecificationSha256 = string;
-export type Status7 = "queued" | "running" | "succeeded" | "failed" | "cancelled" | "acceptance_unknown";
-export type VisualizationId = string;
-export type WorkId4 = string;
 export type SpecificationRevision1 = number;
 /**
  * The visualization's current revision; older renders show an earlier specification
@@ -461,13 +707,13 @@ export type CurrentRevision = number;
 /**
  * Newest first
  */
-export type Items7 = RenderView[];
+export type Items8 = RenderView[];
 export type ConsolidationId1 = string;
 export type CreatedAt8 = string;
 export type GenerationId5 = string;
 export type Number = number;
 export type ParserRevision6 = string;
-export type Items8 = RevisionSummary[];
+export type Items9 = RevisionSummary[];
 export type CreativeMode3 = "canon_first" | "interpretation";
 export type DocumentRevisionId3 = string;
 export type GenerationId6 = string;
@@ -483,7 +729,7 @@ export type CreatedAt9 = string;
 export type Id18 = string;
 export type Revision8 = number;
 export type Subject = string;
-export type Items9 = VisualizationSummary[];
+export type Items10 = VisualizationSummary[];
 export type CompletedAt2 = string | null;
 export type RequestedAt = string;
 export type Status8 = "pending" | "purging" | "completed";
@@ -500,6 +746,8 @@ export interface SchemaCatalog {
   conversation_messages: ConversationMessagePage;
   conversation_page: ConversationPage;
   conversation_preparation_retry: PreparationRetry;
+  conversation_render_request: RenderRequest;
+  conversation_renders: ConversationRenderPage;
   conversation_turn: TurnView;
   conversation_turn_cancel: TurnCancel;
   conversation_turn_create: TurnCreate;
@@ -794,13 +1042,42 @@ export interface ConversationSummary {
   work_title: WorkTitle1;
 }
 export interface PreparationRetry {}
+export interface RenderRequest {
+  card_revision: CardRevision2;
+}
+export interface ConversationRenderPage {
+  current_card_revision: CurrentCardRevision;
+  items: Items4;
+}
+export interface ConversationRender {
+  card_revision: CardRevision3;
+  render: RenderView;
+}
+export interface RenderView {
+  cancel_requested: CancelRequested;
+  completed_at: CompletedAt1;
+  created_at: CreatedAt7;
+  dispatched: Dispatched;
+  error_code: ErrorCode1;
+  id: Id9;
+  model: Model;
+  output_media_type: OutputMediaType;
+  output_sha256: OutputSha256;
+  provider: Provider;
+  revision: Revision5;
+  specification_revision: SpecificationRevision;
+  specification_sha256: SpecificationSha256;
+  status: Status2;
+  visualization_id: VisualizationId;
+  work_id: WorkId4;
+}
 export interface TurnCancel {}
 export interface TurnCreate {
   choice?: Choice;
   text: Text1;
 }
 export interface VariantSelection {
-  card_revision: CardRevision2;
+  card_revision: CardRevision4;
   variant_id: VariantId;
 }
 export interface EntityDetail {
@@ -816,11 +1093,11 @@ export interface EntityDetail {
 }
 export interface ConflictView {
   fact_ids: FactIds;
-  status: Status2;
+  status: Status3;
 }
 export interface EntitySummary {
   aliases: Aliases;
-  id: Id9;
+  id: Id10;
   kind: Kind3;
   label: Label5;
   mention_count: MentionCount;
@@ -828,7 +1105,7 @@ export interface EntitySummary {
 export interface AliasView {
   label: Label4;
   span: SourceSpan;
-  status: Status3;
+  status: Status4;
 }
 export interface EventRelationView {
   relation: Relation;
@@ -839,7 +1116,7 @@ export interface EventRelationView {
 export interface EventView {
   anchors: Anchors;
   evidence: Evidence2;
-  id: Id10;
+  id: Id11;
   label: Label6;
   modality: Modality;
   participant_ids: ParticipantIds;
@@ -855,7 +1132,7 @@ export interface FactView {
   canonical: Canonical;
   event_ids: EventIds;
   evidence: Evidence3;
-  id: Id11;
+  id: Id12;
   kind: Kind5;
   modality: Modality1;
   perspective: Perspective;
@@ -880,7 +1157,7 @@ export interface NarrativeScope {
   through_chapter_id: ThroughChapterId2;
 }
 export interface EntityPage {
-  items: Items4;
+  items: Items5;
   scope: NarrativeScope;
 }
 export interface ErrorEnvelope {
@@ -914,11 +1191,11 @@ export interface ThroughChapter {
   mode: Mode1;
 }
 export interface GenerationPage {
-  items: Items5;
+  items: Items6;
 }
 export interface GenerationView {
   current: Current1;
-  id: Id12;
+  id: Id13;
   job_id: JobId;
   narrative_error: NarrativeError;
   narrative_ready: NarrativeReady;
@@ -927,33 +1204,33 @@ export interface GenerationView {
   parsed: Parsed;
   parser_revision: ParserRevision5;
   search_ready: SearchReady;
-  status: Status4;
+  status: Status5;
   warnings: Warnings;
 }
 export interface IngestionView {
   attempts: Attempts;
-  cancel_requested: CancelRequested;
+  cancel_requested: CancelRequested1;
   correlation_id: CorrelationId1;
   dispatch_pending: DispatchPending1;
   document_id: DocumentId;
-  error_code: ErrorCode1;
-  id: Id13;
-  revision: Revision5;
+  error_code: ErrorCode2;
+  id: Id14;
+  revision: Revision6;
   stage: Stage;
-  status: Status5;
+  status: Status6;
   warnings: Warnings1;
 }
 export interface JobView {
   attempts: Attempts1;
   correlation_id: CorrelationId2;
   dispatch_pending: DispatchPending2;
-  id: Id14;
+  id: Id15;
   result: Result;
   stage: Stage1;
-  status: Status6;
+  status: Status7;
 }
 export interface LibraryPage {
-  items: Items6;
+  items: Items7;
   next_cursor: NextCursor1;
 }
 export interface WorkView {
@@ -961,8 +1238,8 @@ export interface WorkView {
   current_parser_revision: CurrentParserRevision;
   document_id: DocumentId1;
   format: Format;
-  id: Id15;
-  revision: Revision6;
+  id: Id16;
+  revision: Revision7;
   sha256: Sha256;
   title: Title3;
 }
@@ -971,7 +1248,7 @@ export interface LoginRequest {
   username: Username;
 }
 export interface PrincipalView {
-  id: Id16;
+  id: Id17;
   username: Username1;
 }
 export interface ProbeRequest {
@@ -983,34 +1260,16 @@ export interface RefinementRequest {
   locks?: Locks1;
   style: Style3;
 }
-export interface RenderView {
-  cancel_requested: CancelRequested1;
-  completed_at: CompletedAt1;
-  created_at: CreatedAt7;
-  dispatched: Dispatched;
-  error_code: ErrorCode2;
-  id: Id17;
-  model: Model;
-  output_media_type: OutputMediaType;
-  output_sha256: OutputSha256;
-  provider: Provider;
-  revision: Revision7;
-  specification_revision: SpecificationRevision;
-  specification_sha256: SpecificationSha256;
-  status: Status7;
-  visualization_id: VisualizationId;
-  work_id: WorkId4;
-}
 export interface RenderCancel {}
 export interface RenderCreate {
   specification_revision: SpecificationRevision1;
 }
 export interface RenderPage {
   current_revision: CurrentRevision;
-  items: Items7;
+  items: Items8;
 }
 export interface RevisionPage {
-  items: Items8;
+  items: Items9;
 }
 export interface RevisionSummary {
   consolidation_id: ConsolidationId1;
@@ -1048,7 +1307,7 @@ export interface VisualizationCreated {
   visualization: VisualizationView | null;
 }
 export interface VisualizationPage {
-  items: Items9;
+  items: Items10;
 }
 export interface VisualizationSummary {
   created_at: CreatedAt9;

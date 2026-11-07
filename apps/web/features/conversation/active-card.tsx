@@ -1,12 +1,13 @@
 "use client";
 
 import type { PromptCardHistory, PromptCardView } from "@/lib/api";
+import { ImageResult } from "./image-result";
 import { MomentOptions } from "./moment-options";
 import { SourceDrawer } from "./source-drawer";
 
 /** The active image prompt: the exact stored prompt is primary; variants, export and history stay secondary. */
-export function ActiveCard({ card, workId, history, busy, pending, onCopy, onVariant }: {
-  card: PromptCardView; workId: string; history: PromptCardHistory["items"]; busy: boolean; pending: string | null;
+export function ActiveCard({ card, conversationId, workId, history, busy, pending, onCopy, onVariant }: {
+  card: PromptCardView; conversationId: string; workId: string; history: PromptCardHistory["items"]; busy: boolean; pending: string | null;
   onCopy: () => void; onVariant: (id: string) => void;
 }) {
   function exportJson() {
@@ -20,6 +21,7 @@ export function ActiveCard({ card, workId, history, busy, pending, onCopy, onVar
     <p className="conversation-prompt" data-testid="active-prompt">{card.prompt}</p>
     <div className="conversation-actions">
       <button type="button" className="secondary" onClick={onCopy}>Copy prompt</button>
+      <ImageResult conversationId={conversationId} workId={workId} cardRevision={card.revision} />
       <SourceDrawer card={card} workId={workId} />
       <button type="button" className="conversation-link" onClick={exportJson}>Export JSON</button>
     </div>
