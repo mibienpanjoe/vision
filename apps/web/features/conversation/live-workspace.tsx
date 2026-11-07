@@ -31,6 +31,21 @@ export function LiveConversation({ initialId }: { initialId: string | null }) {
   }, [thread.id, card?.revision]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { void api<ConversationPage>("/conversations").then(page => setRecent(page.items)).catch(() => {}); }, [thread.id]);
   useEffect(() => { if (following.current) scroll.current?.scrollTo({ top: scroll.current.scrollHeight }); }, [thread.messages.length, card?.revision]);
+  const [pendingMoment, setPendingMoment] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const shownBefore = useRef<number | null>(null);
+  async function chooseMoment(id: string, revision: number) {
+    setPendingMoment(id); setAnnouncement(""); shownBefore.current = revision;
+    await composer.selectVariant(id, revision);
+  }
+  useEffect(() => {
+    if (!pendingMoment || !turn) return;
+    if (turn.status === "succeeded" && card && card.revision !== shownBefore.current) {
+      setAnnouncement(`Now showing ${card.specification.result.data.scope.resolved_moment ?? "the selected moment"}.`); setPendingMoment(null);
+    } else if (["failed", "insufficient_evidence", "needs_context", "cancelled", "superseded"].includes(turn.status) || composer.error) {
+      setAnnouncement("That moment could not be shown. Your previous prompt is unchanged."); setPendingMoment(null);
+    }
+  }, [turn?.status, card?.revision, composer.error]); // eslint-disable-line react-hooks/exhaustive-deps
   async function copy() {
     if (!card) return;
     try { await navigator.clipboard.writeText(card.prompt); setNotice("Copied"); }
@@ -66,8 +81,8 @@ export function LiveConversation({ initialId }: { initialId: string | null }) {
             {book.retryable && !composer.preparationBlocked && turn?.error_code === "BOOK_PREPARATION_FAILED" && <button type="button" className="secondary" disabled={composer.busy} onClick={() => void composer.retryPreparation()}>Retry preparation</button>}
             <a className="conversation-link" href="/conversations/new">Replace book</a>
           </div>}
-          {card && <ActiveCard card={card} history={history} busy={composer.busy || (!!turn && !!stages[turn.status])}
-            onCopy={() => void copy()} onVariant={id => void composer.selectVariant(id, card.revision)} />}
+          {card && thread.view && <ActiveCard card={card} workId={thread.view.work_id} history={history} busy={composer.busy || (!!turn && !!stages[turn.status])}
+            pending={pendingMoment} onCopy={() => void copy()} onVariant={id => void chooseMoment(id, card.revision)} />}
           {(thread.error || composer.error) && <div role="alert" className="conversation-status conversation-error"><p>{composer.error || thread.error}</p>
             {composer.uncertain && <button className="secondary" type="button" onClick={() => void composer.send()}>Retry request</button>}
             {(composer.stale || thread.error) && <button className="secondary" type="button" onClick={() => void composer.reload()}>Refresh conversation</button>}
@@ -76,6 +91,7 @@ export function LiveConversation({ initialId }: { initialId: string | null }) {
         <ConversationComposer draft={composer.draft} onDraft={composer.setDraft} file={composer.file} onFile={composer.setFile}
           title={thread.view?.work_title} canAttach={!thread.id} sending={composer.busy} blocked={composer.stale || composer.uncertain || (!!thread.id && !thread.view)} onSend={() => void composer.send()} />
         {notice && <p className="conversation-notice" role="status">{notice}</p>}
+        <p className="sr-only" role="status" aria-live="polite">{announcement}</p>
       </main>
     </div>
   </div>;
