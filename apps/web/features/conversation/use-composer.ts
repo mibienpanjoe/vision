@@ -27,6 +27,7 @@ export function useComposer({ current, open, refresh }: {
     }
     const snapshot = pending.current;
     setBusy(true); setError(""); setUncertain(false);
+    setDraft(previous => previous === snapshot.text ? "" : previous);
     try {
       if (!snapshot.thread) {
         if (!snapshot.workId) {
@@ -43,10 +44,11 @@ export function useComposer({ current, open, refresh }: {
         await api<TurnView>(`/conversations/${snapshot.thread.id}/turns`, { ...request,
           headers: { ...request.headers, "If-Match": `"${snapshot.thread.revision}"` } });
       }
-      pending.current = null; setFile(null); setDraft(previous => previous === snapshot.text ? "" : previous);
+      pending.current = null; setFile(null);
       await refresh(snapshot.thread.id).catch(() => {});
     } catch (error) {
       setError(message(error));
+      setDraft(previous => previous || snapshot.text);  // never lose an unsent request
       if (error instanceof ApiError && error.status === 412) { pending.current = null; setStale(true); }
       else if (error instanceof ApiError && error.status > 0 && error.status < 500) pending.current = null;
       else setUncertain(true);

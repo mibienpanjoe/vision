@@ -4,6 +4,7 @@ import { BookOpen, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 import { api, type ConversationPage, type ConversationSummary, type PromptCardHistory } from "@/lib/api";
+import { ActiveCard } from "./active-card";
 import { ConversationComposer } from "./composer";
 import { useConversation } from "./use-conversation";
 import { useComposer } from "./use-composer";
@@ -65,20 +66,8 @@ export function LiveConversation({ initialId }: { initialId: string | null }) {
             {book.retryable && !composer.preparationBlocked && turn?.error_code === "BOOK_PREPARATION_FAILED" && <button type="button" className="secondary" disabled={composer.busy} onClick={() => void composer.retryPreparation()}>Retry preparation</button>}
             <a className="conversation-link" href="/conversations/new">Replace book</a>
           </div>}
-          {card && <section className="conversation-card" aria-labelledby="prompt-heading"><h2 id="prompt-heading" className="sr-only">Image prompt</h2>
-            <p className="conversation-prompt" data-testid="active-prompt">{card.prompt}</p><button type="button" className="secondary" onClick={() => void copy()}>Copy prompt</button>
-            {!!card.variants?.length && <div className="conversation-variants" role="group" aria-label="Other moments">
-              {(card.variants ?? []).map(variant => <button type="button" className="conversation-link" key={variant.id} disabled={composer.busy || (!!turn && !!stages[turn.status])}
-                onClick={() => void composer.selectVariant(variant.id, card.revision)}>
-                {variant.label}<span> · {variant.changes.map(change => change.after.join(", ")).join("; ")}</span>
-              </button>)}
-            </div>}
-            {history.length > 0 && <details className="conversation-history-versions"><summary>Earlier versions</summary>
-              <ol>{history.map(item => <li key={item.revision} aria-label={`Earlier version ${item.revision}`}>
-                <small>Version {item.revision}{item.resolved_moment ? ` · ${item.resolved_moment}` : ""}{item.style ? ` · ${item.style}` : ""}</small>
-                <p>{item.prompt}</p></li>)}</ol>
-            </details>}
-          </section>}
+          {card && <ActiveCard card={card} history={history} busy={composer.busy || (!!turn && !!stages[turn.status])}
+            onCopy={() => void copy()} onVariant={id => void composer.selectVariant(id, card.revision)} />}
           {(thread.error || composer.error) && <div role="alert" className="conversation-status conversation-error"><p>{composer.error || thread.error}</p>
             {composer.uncertain && <button className="secondary" type="button" onClick={() => void composer.send()}>Retry request</button>}
             {(composer.stale || thread.error) && <button className="secondary" type="button" onClick={() => void composer.reload()}>Refresh conversation</button>}
