@@ -122,7 +122,7 @@ try:
     elif live_render:
         specs = ["tests/render-flow.spec.ts"]
     elif conversation:
-        specs = os.environ.get("VISION_TEST_CONVERSATION_SPECS", "tests/conversation-upload.spec.ts tests/conversation-prompt.spec.ts tests/conversation-moments.spec.ts tests/conversation-sources.spec.ts tests/conversation-images.spec.ts").split()
+        specs = os.environ.get("VISION_TEST_CONVERSATION_SPECS", "tests/conversation-upload.spec.ts tests/conversation-prompt.spec.ts tests/conversation-moments.spec.ts tests/conversation-sources.spec.ts tests/conversation-images.spec.ts tests/conversation-resume.spec.ts").split()
     elif workspace:
         specs = os.environ.get(
             "VISION_TEST_WORKSPACE_SPECS",

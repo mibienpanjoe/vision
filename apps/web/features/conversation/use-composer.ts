@@ -5,8 +5,9 @@ import { api, ApiError, json, message, type ConversationView, type TurnView, typ
 
 type Pending = { text: string; file: File | null; uploadKey: string; threadKey: string; turnKey: string; thread: ConversationView | null; workId?: string };
 
-export function useComposer({ current, open, refresh }: {
+export function useComposer({ current, open, refresh, initialWork = null }: {
   current: { current: ConversationView | null }; open: (view: ConversationView) => void; refresh: (id?: string | null) => Promise<void>;
+  initialWork?: string | null;
 }) {
   const [draft, setDraft] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -21,9 +22,9 @@ export function useComposer({ current, open, refresh }: {
   async function send() {
     if (busy || stale) return;
     if (!pending.current) {
-      if (!current.current && !file) { setError("Attach a book to start."); return; }
+      if (!current.current && !file && !initialWork) { setError("Attach a book to start."); return; }
       if (!draft.trim() && !file) return;
-      pending.current = { text: draft, file, uploadKey: crypto.randomUUID(), threadKey: crypto.randomUUID(), turnKey: crypto.randomUUID(), thread: current.current };
+      pending.current = { text: draft, file, uploadKey: crypto.randomUUID(), threadKey: crypto.randomUUID(), turnKey: crypto.randomUUID(), thread: current.current, workId: current.current || file ? undefined : initialWork ?? undefined };
     }
     const snapshot = pending.current;
     setBusy(true); setError(""); setUncertain(false);
