@@ -246,7 +246,7 @@ The ingestion-only worker intentionally leaves narrative work queued; this is
 not proof of extraction quality or the G5 reconstruction/export path. The suite
 also checks both themes and horizontal overflow at 320, 768, 1024 and 1440 pixels.
 Screenshots remain local. Run the isolated harness as described in
-[operations](../operations/development-and-operations.md#library-browser-harness--t34).
+[operations](../operations/development-and-operations.md#browser-harness).
 
 ## Scoped explorer browser checks — T35
 
@@ -323,7 +323,7 @@ as well as avoid horizontal scrolling. These are targeted Chromium checks, not a
 complete WCAG audit, screen-reader assessment or physical-device certification.
 
 `tests/product-flow.spec.ts` is the separate opt-in live browser gate described
-in [operations](../operations/development-and-operations.md#library-browser-harness--t34).
+in [operations](../operations/development-and-operations.md#browser-harness).
 It uploads the synthetic story through production bootstraps and requires a
 resolved, persisted specification from local extraction/embeddings and Groq.
 The browser opens exact evidence and downloads JSON equal to the stored result;
@@ -499,17 +499,14 @@ come from the named commit, lockfiles, image revision labels and stored lineage.
 | REQ-20 | Optional specification-only rendering, immutable lineage and private history; live pixels are the T42 evidence, with current synthetic worker/storage/recovery regression |
 | REQ-22 | Hostile input, instruction/data separation, literal browser rendering and safe log/error checks (T43) |
 
-The closing local run comprises `make check integration`, the session, library
-and workspace browser harnesses, and `make images package-check`. The opt-in
-`VISION_TEST_LIVE_WORKSPACE=1` browser gate additionally uses the actual local
-models and configured Groq consolidation/adjudication on the synthetic narrative:
-upload → processing → stored specification → selected exact source highlight →
-JSON download equal to the stored revision. It checks persisted local/Groq model
-records, vectors and revisions. It does not request a new paid image.
+The closing local run comprises `make check integration`, the session,
+conversation and workspace browser harnesses, and `make images package-check`.
+Billed provider checks are the opt-in pytest gates listed under the
+[browser harness](../operations/development-and-operations.md#browser-harness).
 
 The final pushed commit must also pass the actual `foundation` CI job before G7
 is closed. That job covers static/contracts/build, real database/broker/worker,
-session/library/workspace browser and dependency-advisory checks. Packaged images,
+session/conversation/workspace browser and dependency-advisory checks. Packaged images,
 real local models and live remote providers retain separate local/opt-in proof;
 CI does not silently stand in for those runs. A verified phase and a merged PR
 remain separate facts.
@@ -766,3 +763,41 @@ The legacy library, source, explorer and render-history journeys use that retain
 transport fixture; their results do not establish an upload-to-chat journey.
 Test builds use `.next-test` and API port 18000 when explicitly configured,
 leaving the current local app build and services available.
+
+## Conversation acceptance and retirement — Q49/Q50
+
+`VISION_TEST_CONVERSATION=1 make browser-session` runs the conversation product
+path against the isolated API, PostgreSQL, Redis and a real Dramatiq worker with
+deterministic text adapters and synthetic images (no provider call):
+`conversation-flow.spec.ts` opens `/` without login, attaches the book and asks,
+receives the prompt, selects a moment, refines, copies the exact prompt,
+generates one image, inspects sources, closes the page and resumes in a fresh
+page; it checks light and dark at 1440/390/320px with reduced motion and 200%
+text without horizontal overflow. Companion specs cover upload formats and
+retries, copy/export equality and keyboard use, moment cards by keyboard and
+touch with a stale tab, the source sheet with owner denial, image reservation
+and version labels, grouped resume with paging and two books, and recovery
+from ambiguity and missing evidence.
+
+Q50 removed the library, book explorer, reading-boundary selector, visualization
+composer, clickable preview and their browser specs (`library`, `explorer`,
+`evidence`, `visualization`, `refinement`, `render-history`, `accessibility`,
+`product-flow`, `render-flow`, `conversation-prototype`). Earlier sections in this
+document record what those journeys proved at the time. Exact-source spans,
+structured export and the visualization/render APIs remain and are covered by
+the integration suite and the conversation specs. `security.spec.ts`,
+`workspace-session.spec.ts`, `session.spec.ts`, `shell.spec.ts` and
+`packaged-restore.spec.ts` now enter through the conversation workspace.
+
+Remaining limits are recorded rather than hidden: the deterministic fixtures do
+not establish extraction quality on private books; the reported private-book
+identity re-test was skipped by maintainer decision on 2026-11-07; the live
+render gate was not rerun for the conversation path.
+
+The bounded live reconstruction on the synthetic story (2026-11-07, Groq
+default adapter, `annotation-match-v4`, one run of 17 cases, about 96k tokens,
+19 minutes paced) matched 13/17 outcomes and 10/23 expected canonical traits
+with 0 incorrect canonical values, 0 spoiler leaks and no blocking failures;
+13 traits were missed, 10 extra, 1 inference and 2 disputes missed. Canonical
+recall is below the T33 baseline (14/23) while outcome agreement is unchanged
+(13/17), so recall on the live provider remains a recorded limit (PROP-07).

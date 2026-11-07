@@ -19,12 +19,9 @@ values = dict(
     for line in (root / ".env").read_text().splitlines()
     if line and not line.startswith("#")
 )
-library = os.environ.get("VISION_TEST_LIBRARY") == "1"
 # Billed: the workspace harness with the configured image provider instead of the synthetic one.
-live_render = os.environ.get("VISION_TEST_LIVE_RENDER") == "1"
-live = os.environ.get("VISION_TEST_LIVE_WORKSPACE") == "1"
 conversation = os.environ.get("VISION_TEST_CONVERSATION") == "1"
-workspace = os.environ.get("VISION_TEST_WORKSPACE") == "1" or live or live_render or conversation
+workspace = os.environ.get("VISION_TEST_WORKSPACE") == "1" or conversation
 api_port = int(os.environ.get("VISION_TEST_API_PORT", "8000"))
 url = make_url(os.environ.get("DATABASE_URL", values["DATABASE_URL"]))
 name = "vision_test_" + uuid.uuid4().hex
@@ -42,7 +39,6 @@ log = None
 source_directory = tempfile.TemporaryDirectory(prefix="vision-session-")
 try:
     env = {
-        **(values if live else {}),
         **os.environ,
         "DATABASE_URL": test_url,
         "VISION_WORKSPACE_SECRET": "synthetic-workspace-signing-secret-for-isolated-tests-only",
@@ -55,21 +51,19 @@ try:
         "VISION_TEST_WORKSPACE": "1" if workspace else "0",
         "VISION_TEST_PARSE_GATE": str(Path(source_directory.name) / "parse-gate"),
     }
-    if live:
-        env["HF_HUB_OFFLINE"] = "1"
-    if conversation and not live_render:
+    if conversation:
         # Reservations need a selected provider; the worker swaps in synthetic images, and the token is fake.
         env.update(VISION_RENDER_PROVIDER="huggingface", HF_TOKEN="synthetic-unused-token", VISION_RENDER_MODEL="")
     os.environ["DATABASE_URL"] = test_url
     command.upgrade(Config(str(root / "apps/api/alembic.ini")), "head")
-    if library or workspace:
+    if workspace:
         subprocess.run(
             [str(root / "apps/api/.venv/bin/python"), "-m", "app.cli", "create-user", "other_reader", "--password-stdin"],
             input="synthetic session transport passphrase\n", text=True, cwd=root / "apps/api", env=env, check=True,
         )
-        worker_log = (root / ".local/library-worker.log").open("w")
+        worker_log = (root / ".local/session-worker.log").open("w")
         worker = subprocess.Popen(
-            [str(root / "apps/api/.venv/bin/dramatiq"), "app.workers.bootstrap" if live else "tests.conversation_upload_worker" if conversation else "tests.browser_worker", "--processes", "1", "--threads", "2" if conversation else "1", "--queues", "ingestion", "retention", *( ["narrative", "render"] if workspace else [] ), *( ["conversation"] if conversation else [] )],
+            [str(root / "apps/api/.venv/bin/dramatiq"), "tests.conversation_upload_worker" if conversation else "tests.browser_worker", "--processes", "1", "--threads", "2" if conversation else "1", "--queues", "ingestion", "retention", *( ["narrative", "render"] if workspace else [] ), *( ["conversation"] if conversation else [] )],
             cwd=root / "apps/api", env=env, stdout=worker_log, stderr=worker_log, start_new_session=True,
         )
         env["VISION_TEST_WORKER_PID"] = str(worker.pid)
@@ -95,7 +89,7 @@ try:
             "run",
             "--locked",
             "uvicorn",
-            "tests.browser_app:app" if workspace and not live else "app.main:app",
+            "tests.browser_app:app" if workspace else "app.main:app",
             "--host",
             "127.0.0.1",
             "--port",
@@ -117,55 +111,20 @@ try:
             time.sleep(0.1)
     else:
         raise RuntimeError("Isolated API did not become ready")
-    if live:
-        specs = ["tests/product-flow.spec.ts"]
-    elif live_render:
-        specs = ["tests/render-flow.spec.ts"]
-    elif conversation:
-        specs = os.environ.get("VISION_TEST_CONVERSATION_SPECS", "tests/conversation-upload.spec.ts tests/conversation-prompt.spec.ts tests/conversation-moments.spec.ts tests/conversation-sources.spec.ts tests/conversation-images.spec.ts tests/conversation-resume.spec.ts tests/conversation-recovery.spec.ts").split()
+    if conversation:
+        specs = os.environ.get("VISION_TEST_CONVERSATION_SPECS", "tests/conversation-upload.spec.ts tests/conversation-prompt.spec.ts tests/conversation-moments.spec.ts tests/conversation-sources.spec.ts tests/conversation-images.spec.ts tests/conversation-resume.spec.ts tests/conversation-recovery.spec.ts tests/conversation-flow.spec.ts").split()
     elif workspace:
         specs = os.environ.get(
             "VISION_TEST_WORKSPACE_SPECS",
-            "tests/accessibility.spec.ts tests/explorer.spec.ts tests/evidence.spec.ts "
-            "tests/visualization.spec.ts tests/refinement.spec.ts tests/render-history.spec.ts tests/security.spec.ts",
+            "tests/security.spec.ts",
         ).split()
     else:
-        specs = os.environ.get("VISION_TEST_SESSION_SPECS", "tests/library.spec.ts" if library else "tests/session.spec.ts tests/workspace-session.spec.ts").split()
+        specs = os.environ.get("VISION_TEST_SESSION_SPECS", "tests/session.spec.ts tests/workspace-session.spec.ts").split()
     subprocess.run(
         ["pnpm", "--dir", "apps/web", "test", *specs, "--workers=1"],
         env={**env, "VISION_TEST_WEB_SESSION": "1"},
         check=True,
     )
-    if library:
-        fixture_db = create_engine(test_url)
-        try:
-            with fixture_db.connect() as db:
-                status, passages = db.execute(text(
-                    "SELECT j.status, (SELECT count(*) FROM passages p WHERE p.document_id = d.id) "
-                    "FROM works w JOIN documents d ON d.work_id = w.id "
-                    "JOIN ingestion_jobs j ON j.document_id = d.id WHERE w.title = :title"
-                ), {"title": "Slow parsing"}).one()
-                assert (status, passages) == ("cancelled", 0)
-                print("Running cancellation persisted: cancelled, zero published passages.")
-        finally:
-            fixture_db.dispose()
-    if live:
-        fixture_db = create_engine(test_url)
-        try:
-            with fixture_db.connect() as db:
-                providers = set(db.scalars(text("SELECT DISTINCT provider FROM model_runs WHERE outcome = 'succeeded'")))
-                vectors = db.scalar(text("SELECT count(*) FROM passage_embeddings"))
-                revisions = db.scalar(text("SELECT count(*) FROM visualization_revisions"))
-                query_provider = env.get("VISION_QUERY_PROVIDER", "groq")
-                assert {"local", query_provider} <= providers, providers
-                assert vectors > 0 and revisions > 0
-                print(f"Live gate persisted: providers={sorted(providers)}, vectors={vectors}, revisions={revisions}.")
-                usage = db.execute(text("SELECT coalesce(sum(input_tokens), 0), coalesce(sum(output_tokens), 0) "
-                                        "FROM model_runs WHERE provider = :provider"),
-                                   {"provider": query_provider}).one()
-                print(f"Live query usage: provider={query_provider}, input_tokens={usage[0]}, output_tokens={usage[1]}.")
-        finally:
-            fixture_db.dispose()
 finally:
     if worker is not None:
         os.killpg(worker.pid, signal.SIGCONT)
@@ -196,7 +155,7 @@ finally:
     broker.close()
     source_directory.cleanup()
 # Telemetry names IDs, codes and durations, never private text or credentials (SECURITY.md).
-for path in (root / ".local/session-api.log", root / ".local/library-worker.log"):
+for path in (root / ".local/session-api.log", root / ".local/session-worker.log"):
     if path.exists():
         logged = path.read_text(errors="replace")
         for private in ("synthetic session transport passphrase", "Before dinner, Arthur removed", "SYSTEM OVERRIDE"):

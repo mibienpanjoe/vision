@@ -122,3 +122,4 @@ button.conversation-link { color: var(--muted-foreground); background: transpare
 .conversation-books h2 { font-size: .75rem; font-weight: 500; color: var(--muted-foreground); margin: 0 .5rem .25rem; overflow-wrap: anywhere; }
 .conversation-books ul { list-style: none; margin: 0; padding: 0; }
 .conversation-book-actions { display: flex; gap: .75rem; margin: .25rem .5rem 0; font-size: .8125rem; }
+.conversation-actions .conversation-image, .conversation-actions .conversation-image-state { order: 10; }
