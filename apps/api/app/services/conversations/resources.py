@@ -49,6 +49,12 @@ def card(db, actor, thread, number):
 
 def view(db, actor, thread):
     turn = db.get(ConversationTurn, thread.active_turn_id) if thread.active_turn_id else None
+    if turn is not None:
+        # Read committed: reload the thread after its turn so a terminal turn never pairs with a pre-publication card.
+        db.refresh(turn)
+        db.refresh(thread)
+        if thread.active_turn_id != turn.id:
+            return view(db, actor, thread)
     return ConversationView(**summary(db, thread), last_sequence=thread.next_sequence - 1,
                             active_turn=turn_view(turn) if turn else None,
                             card=card(db, actor, thread, thread.card_revision) if thread.card_revision else None)
