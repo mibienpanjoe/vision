@@ -100,3 +100,6 @@ button.conversation-link { color: var(--muted-foreground); background: transpare
 .conversation-workspace .conversation-history small { display: none; }
 .conversation-workspace .conversation-new { border: 0; text-align: left; padding-inline: .75rem; color: var(--muted-foreground); }
 .conversation-workspace .conversation-theme { border-color: transparent; background: transparent; }
+.conversation-variants { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin-top: 1.25rem; }
+.conversation-variants button { padding: 0; text-align: left; overflow-wrap: anywhere; }
+.conversation-variants span { color: var(--muted-foreground); }

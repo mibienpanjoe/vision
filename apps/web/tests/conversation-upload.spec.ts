@@ -135,3 +135,19 @@ test("a scanned PDF keeps the question and explains what to attach instead", asy
   await expect(page.getByText("This PDF has no extractable text. Attach a text PDF, EPUB or text file.")).toBeVisible({ timeout: 60000 });
   await expect(page.getByRole("list", { name: "Conversation messages" }).getByText("Arthur after the war at home", { exact: true })).toBeVisible();
 });
+
+test("one click on another moment replaces the prompt with a verified portrayal", async ({ page }) => {
+  test.setTimeout(90000);
+  let renders = 0;
+  page.on("request", request => { if (request.method() === "POST" && /renders|images/.test(request.url())) renders += 1; });
+  await page.goto("/conversations/new");
+  await page.getByLabel("Book file").setInputFiles("../api/tests/fixtures/narrative/story.md");
+  await page.getByRole("textbox", { name: "Message" }).fill("Arthur after the war at home");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  const prompt = page.getByTestId("active-prompt");
+  await expect(prompt).toContainText("plain linen shirt", { timeout: 60000 });
+  await page.getByRole("group", { name: "Other moments" }).getByRole("button", { name: /^war/ }).click();
+  await expect(prompt).toContainText("steel armor", { timeout: 60000 });
+  await expect(page.getByRole("list", { name: "Conversation messages" }).getByText("Show war", { exact: true })).toBeVisible();
+  expect(renders).toBe(0);
+});

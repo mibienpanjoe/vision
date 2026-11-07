@@ -62,6 +62,12 @@ export function LiveConversation({ initialId }: { initialId: string | null }) {
           </div>}
           {card && <section className="conversation-card" aria-labelledby="prompt-heading"><h2 id="prompt-heading" className="sr-only">Image prompt</h2>
             <p className="conversation-prompt" data-testid="active-prompt">{card.prompt}</p><button type="button" className="secondary" onClick={() => void copy()}>Copy prompt</button>
+            {!!card.variants?.length && <div className="conversation-variants" role="group" aria-label="Other moments">
+              {(card.variants ?? []).map(variant => <button type="button" className="conversation-link" key={variant.id} disabled={composer.busy || (!!turn && !!stages[turn.status])}
+                onClick={() => void composer.selectVariant(variant.id, card.revision)}>
+                {variant.label}<span> · {variant.changes.map(change => change.after.join(", ")).join("; ")}</span>
+              </button>)}
+            </div>}
           </section>}
           {(thread.error || composer.error) && <div role="alert" className="conversation-status conversation-error"><p>{composer.error || thread.error}</p>
             {composer.uncertain && <button className="secondary" type="button" onClick={() => void composer.send()}>Retry request</button>}

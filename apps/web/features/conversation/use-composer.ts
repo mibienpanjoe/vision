@@ -73,5 +73,23 @@ export function useComposer({ current, open, refresh }: {
       if (error instanceof ApiError && ["ATTEMPTS_EXHAUSTED", "PREPARATION_NOT_RETRYABLE"].includes(error.code)) setPreparationBlocked(true);
     } finally { setBusy(false); }
   }
-  return { draft, setDraft, file, setFile, busy, error, uncertain, stale, preparationBlocked, send, reload, retryPreparation };
+  const variantKey = useRef<{ key: string; id: string } | null>(null);
+  async function selectVariant(variantId: string, cardRevision: number) {
+    const view = current.current;
+    if (!view || busy || stale) return;
+    if (variantKey.current?.id !== variantId) variantKey.current = { key: crypto.randomUUID(), id: variantId };
+    setBusy(true); setError("");
+    try {
+      const request = json({ variant_id: variantId, card_revision: cardRevision }, variantKey.current.key);
+      await api<TurnView>(`/conversations/${view.id}/variant-selections`, { ...request,
+        headers: { ...request.headers, "If-Match": `"${view.revision}"` } });
+      variantKey.current = null;
+      await refresh(view.id).catch(() => {});
+    } catch (error) {
+      setError(message(error));
+      if (error instanceof ApiError && error.status === 412) { variantKey.current = null; setStale(true); }
+      else if (error instanceof ApiError && error.status > 0 && error.status < 500) variantKey.current = null;
+    } finally { setBusy(false); }
+  }
+  return { draft, setDraft, file, setFile, busy, error, uncertain, stale, preparationBlocked, send, reload, retryPreparation, selectVariant };
 }
