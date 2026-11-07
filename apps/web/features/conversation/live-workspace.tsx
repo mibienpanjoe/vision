@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 import { api, type PromptCardHistory } from "@/lib/api";
 import { ConversationSidebar } from "./sidebar";
+import { TurnRecovery } from "./turn-recovery";
 import { ActiveCard } from "./active-card";
 import { ConversationComposer } from "./composer";
 import { useConversation } from "./use-conversation";
@@ -74,6 +75,7 @@ export function LiveConversation({ initialId, initialWork = null }: { initialId:
               : turn && stages[turn.status] ? stages[turn.status] : book.text && !(book.ready && card) ? book.text : "";
               return line && <p>{line}</p>; })()}
           </div>
+          {turn && <TurnRecovery turn={turn} messages={thread.messages} busy={composer.busy} onAsk={(text, choice) => void composer.ask(text, choice)} />}
           {book.failed && <div className="conversation-actions">
             {book.retryable && !composer.preparationBlocked && turn?.error_code === "BOOK_PREPARATION_FAILED" && <button type="button" className="secondary" disabled={composer.busy} onClick={() => void composer.retryPreparation()}>Retry preparation</button>}
             <a className="conversation-link" href="/conversations/new">Replace book</a>

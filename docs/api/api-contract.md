@@ -866,6 +866,20 @@ selection, style edits and refresh never reserve.
 with the card revision it belongs to, so earlier images stay labelled after
 edits. Images are served by the existing private render image route.
 
+### Conversation lifecycle and recovery — Q47/Q48
+
+`GET /v1/conversations?limit=&after=` pages conversations newest first; the
+workspace groups them by book and asks a new question on a saved book without
+uploading again. Book deletion cancels its queued and waiting turns
+(`WORK_DELETED`), counts running turns as active work so the purge waits for
+them, and the foreign-key purge removes conversations, turns, messages and card
+pointers with the rest of the work. Backups dump the whole database, so the new
+tables are included. Settled turns recover by kind: identity ambiguity offers
+the returned choices as `choice` refs, missing evidence names what is absent,
+retryable provider or turn failures offer "Try again", preparation failure
+offers retry or replacement, stale revisions offer refresh, and an
+acceptance-unknown image is reported and never retried automatically.
+
 ### Conversation preparation retry — Q37c
 
 `POST /v1/conversations/{id}/preparation-retries` takes an empty PreparationRetry
