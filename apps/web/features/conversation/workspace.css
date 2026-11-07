@@ -93,3 +93,10 @@ button.conversation-link { color: var(--muted-foreground); background: transpare
 }
 
 .conversation-workspace .conversation-header > span { min-width: 0; overflow-wrap: anywhere; }
+
+/* Minimal: whitespace over chrome. */
+.conversation-workspace .conversation-sidebar { background: transparent; }
+.conversation-workspace .conversation-card { border-top: 0; }
+.conversation-workspace .conversation-history small { display: none; }
+.conversation-workspace .conversation-new { border: 0; text-align: left; padding-inline: .75rem; color: var(--muted-foreground); }
+.conversation-workspace .conversation-theme { border-color: transparent; background: transparent; }

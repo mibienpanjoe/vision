@@ -27,7 +27,7 @@ export function useBookPreparation(workId: string | undefined) {
           timer = setTimeout(load, 2000); return;
         }
         const ready = generation.narrative_ready && generation.search_ready;
-        setStatus({ ready, failed: false, retryable: false, text: ready ? "Book ready" : !generation.parsed ? "Reading your book…" : "Finding the details in your book…" });
+        setStatus({ ready, failed: false, retryable: false, text: ready ? "Book ready" : !generation.parsed ? "Reading your book…" : "Preparing your book…" });
         if (!ready) timer = setTimeout(load, 2000);
       } catch (error) {
         if (active) { setStatus(previous => ({ ...previous, text: message(error) })); timer = setTimeout(load, 2000); }

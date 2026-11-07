@@ -9,8 +9,8 @@ import { useConversation } from "./use-conversation";
 import { useComposer } from "./use-composer";
 import { useBookPreparation } from "./book-attachment";
 
-const stages: Record<string, string> = { queued: "Your request is saved.", waiting_for_book: "Your question is saved while the book is prepared.",
-  resolving: "Finding the subject…", retrieving: "Finding supporting passages…", composing: "Preparing your prompt…", verifying: "Checking the source details…" };
+const stages: Record<string, string> = { queued: "Saved", waiting_for_book: "Saved — waiting for the book",
+  resolving: "Reading…", retrieving: "Reading…", composing: "Writing the prompt…", verifying: "Checking the source…" };
 
 export function LiveConversation({ initialId }: { initialId: string | null }) {
   const thread = useConversation(initialId);
@@ -27,8 +27,8 @@ export function LiveConversation({ initialId }: { initialId: string | null }) {
   useEffect(() => { if (following.current) scroll.current?.scrollTo({ top: scroll.current.scrollHeight }); }, [thread.messages.length, card?.revision]);
   async function copy() {
     if (!card) return;
-    try { await navigator.clipboard.writeText(card.prompt); setNotice(`Prompt version ${card.revision} copied.`); }
-    catch { setNotice("Copy was unavailable. Select the prompt text to copy it."); }
+    try { await navigator.clipboard.writeText(card.prompt); setNotice("Copied"); }
+    catch { setNotice("Copy unavailable — select the text instead."); }
   }
   return <div className="conversation-workspace">
     <a className="skip-link" href="#conversation-main">Skip to conversation</a>
@@ -47,24 +47,21 @@ export function LiveConversation({ initialId }: { initialId: string | null }) {
       </header>
       <main id="conversation-main" tabIndex={-1} className="conversation-main">
         <div className="conversation-thread" ref={scroll} onScroll={() => { const node = scroll.current; if (node) following.current = node.scrollHeight - node.scrollTop - node.clientHeight < 100; }}>
-          <div className="conversation-intro"><p className="eyebrow">Your book, brought into view</p><h1>What would you like to see?</h1>
-            {!thread.view && <p>Attach a book and ask in your own words.</p>}
-          </div>
+          {!thread.messages.length && <div className="conversation-intro"><h1>What would you like to see?</h1></div>}
           <ol className="conversation-messages" aria-label="Conversation messages">{thread.messages.map(item => <li key={item.id} className={`conversation-message ${item.role}`}>
-            <span className="conversation-speaker">{item.role === "user" ? "You" : "Vision"}</span><p>{item.content}</p>
+            <span className="sr-only">{item.role === "user" ? "You" : "Vision"}</span><p>{item.content}</p>
           </li>)}</ol>
           <div className="conversation-status" role="status" aria-live="polite">
-            {composer.busy && <p>{thread.id ? "Saving your request…" : "Attaching your book…"}</p>}
-            {book.text && <p>{book.text}</p>}{turn && stages[turn.status] && <p>{stages[turn.status]}</p>}
-            {turn?.status === "insufficient_evidence" && <p>The book does not establish enough detail for this portrayal. Try another moment or subject.</p>}
-            {turn?.status === "needs_context" && <p>More context is needed to choose a supported portrayal.</p>}
+            {(() => { const line = composer.busy ? (thread.id ? "Saving…" : "Attaching your book…")
+              : turn && stages[turn.status] ? stages[turn.status] : book.text && !(book.ready && card) ? book.text : "";
+              return line && <p>{line}</p>; })()}
           </div>
           {book.failed && <div className="conversation-actions">
             {book.retryable && !composer.preparationBlocked && turn?.error_code === "BOOK_PREPARATION_FAILED" && <button type="button" className="secondary" disabled={composer.busy} onClick={() => void composer.retryPreparation()}>Retry preparation</button>}
             <a className="conversation-link" href="/conversations/new">Replace book</a>
           </div>}
-          {card && <section className="conversation-card" aria-labelledby="prompt-heading"><div className="conversation-card-heading"><h2 id="prompt-heading">Your image prompt</h2><span>Version {card.revision}</span></div>
-            <p className="conversation-prompt" data-testid="active-prompt">{card.prompt}</p><button type="button" onClick={() => void copy()}>Copy prompt</button>
+          {card && <section className="conversation-card" aria-labelledby="prompt-heading"><h2 id="prompt-heading" className="sr-only">Image prompt</h2>
+            <p className="conversation-prompt" data-testid="active-prompt">{card.prompt}</p><button type="button" className="secondary" onClick={() => void copy()}>Copy prompt</button>
           </section>}
           {(thread.error || composer.error) && <div role="alert" className="conversation-status conversation-error"><p>{composer.error || thread.error}</p>
             {composer.uncertain && <button className="secondary" type="button" onClick={() => void composer.send()}>Retry request</button>}
