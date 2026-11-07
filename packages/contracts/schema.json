@@ -80,6 +80,66 @@
       "title": "AnchorView",
       "type": "object"
     },
+    "AppearanceVariant": {
+      "additionalProperties": false,
+      "properties": {
+        "card_revision": {
+          "minimum": 1,
+          "title": "Card Revision",
+          "type": "integer"
+        },
+        "changes": {
+          "items": {
+            "$ref": "#/$defs/TraitChange"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Changes",
+          "type": "array"
+        },
+        "event_id": {
+          "format": "uuid",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceSpan"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "generation_id": {
+          "format": "uuid",
+          "title": "Generation Id",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^variant:[0-9a-f]{16}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "event_id",
+        "changes",
+        "evidence",
+        "card_revision",
+        "generation_id"
+      ],
+      "title": "AppearanceVariant",
+      "type": "object"
+    },
     "CanonicalLock": {
       "additionalProperties": false,
       "properties": {
@@ -1848,6 +1908,14 @@
         },
         "specification": {
           "$ref": "#/$defs/VisualizationView"
+        },
+        "variants": {
+          "items": {
+            "$ref": "#/$defs/AppearanceVariant"
+          },
+          "maxItems": 3,
+          "title": "Variants",
+          "type": "array"
         }
       },
       "required": [
@@ -2521,6 +2589,46 @@
         "chapter_id"
       ],
       "title": "ThroughChapter",
+      "type": "object"
+    },
+    "TraitChange": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "After",
+          "type": "array"
+        },
+        "attribute": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Attribute",
+          "type": "string"
+        },
+        "before": {
+          "description": "Canonical values on the active card; empty when unknown there",
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Before",
+          "type": "array"
+        }
+      },
+      "required": [
+        "attribute",
+        "before",
+        "after"
+      ],
+      "title": "TraitChange",
       "type": "object"
     },
     "TraitView": {

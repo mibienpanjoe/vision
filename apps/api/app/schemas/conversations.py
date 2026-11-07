@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
+from app.schemas.appearance_variants import AppearanceVariant
 from app.schemas.base import ContractModel
 from app.schemas.retrieval import Id
 from app.schemas.visualization import VisualizationResult, VisualizationView
@@ -62,6 +63,7 @@ class PromptCardView(ContractModel):
     generation_id: uuid.UUID
     prompt: str
     specification: VisualizationView
+    variants: list[AppearanceVariant] = Field(default_factory=list, max_length=3)
     created_at: datetime
 
     @model_validator(mode="after")

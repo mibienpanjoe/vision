@@ -20,7 +20,7 @@ from app.schemas.conversations import (
     TurnView,
 )
 from app.schemas.visualization import VisualizationResult
-from app.services.conversations import store
+from app.services.conversations import store, variants
 from app.services.visualization import history
 from sqlalchemy import select, tuple_
 
@@ -44,7 +44,8 @@ def card(db, actor, thread, number):
         raise PublicError(404, "RESOURCE_NOT_FOUND", "Resource not found.")
     specification = history.view(db, history.owned(db, actor, thread.work_id, revision.visualization_id), revision.visualization_revision)
     return PromptCardView(id=revision.card_id, revision=revision.number, generation_id=revision.generation_id,
-                          prompt=specification.result.data.generation.prompt, specification=specification, created_at=revision.created_at)
+                          prompt=specification.result.data.generation.prompt, specification=specification,
+                          variants=variants.variants(db, revision, specification.result.data), created_at=revision.created_at)
 
 
 def view(db, actor, thread):

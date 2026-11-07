@@ -818,6 +818,17 @@ inference (PROP-09), and unknown refs or invalid output fall back.
 Committed preparation outcomes automatically wake persisted waiting requests
 (Q37b); `make dispatch` recovers missed notifications or broker outages.
 
+### Appearance variants — Q40
+
+PromptCardView carries up to three `variants`: other moments in the card's own
+query-scoped consolidation where the same resolved subject (its confirmed
+identity group only) has explicit canonical traits that differ from the card.
+Each lists the changed traits (`before` empty when unknown on the card), exact
+evidence spans, the event label and ID, and the card revision and generation it
+was issued for. IDs are deterministic per card revision, generation and event.
+No timeline beyond that consolidation is claimed; variants are computed on read
+and verified again only when selected (Q41).
+
 ### Conversation preparation retry — Q37c
 
 `POST /v1/conversations/{id}/preparation-retries` takes an empty PreparationRetry

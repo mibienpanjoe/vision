@@ -159,8 +159,82 @@ export type ThroughChapterId1 = string | null;
  */
 export type Revision1 = number;
 export type WorkId = string;
-export type CreatedAt3 = string;
+/**
+ * @maxItems 3
+ */
+export type Variants =
+  | []
+  | [AppearanceVariant]
+  | [AppearanceVariant, AppearanceVariant]
+  | [AppearanceVariant, AppearanceVariant, AppearanceVariant];
+export type CardRevision1 = number;
+/**
+ * @minItems 1
+ * @maxItems 8
+ */
+export type Changes =
+  | [TraitChange]
+  | [TraitChange, TraitChange]
+  | [TraitChange, TraitChange, TraitChange]
+  | [TraitChange, TraitChange, TraitChange, TraitChange]
+  | [TraitChange, TraitChange, TraitChange, TraitChange, TraitChange]
+  | [TraitChange, TraitChange, TraitChange, TraitChange, TraitChange, TraitChange]
+  | [TraitChange, TraitChange, TraitChange, TraitChange, TraitChange, TraitChange, TraitChange]
+  | [TraitChange, TraitChange, TraitChange, TraitChange, TraitChange, TraitChange, TraitChange, TraitChange];
+/**
+ * @minItems 1
+ * @maxItems 8
+ */
+export type After =
+  | [string]
+  | [string, string]
+  | [string, string, string]
+  | [string, string, string, string]
+  | [string, string, string, string, string]
+  | [string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string];
+export type Attribute3 = string;
+/**
+ * Canonical values on the active card; empty when unknown there
+ *
+ * @maxItems 8
+ */
+export type Before =
+  | []
+  | [string]
+  | [string, string]
+  | [string, string, string]
+  | [string, string, string, string]
+  | [string, string, string, string, string]
+  | [string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string];
+export type EventId = string;
+/**
+ * @minItems 1
+ * @maxItems 8
+ */
+export type Evidence1 =
+  | [EvidenceSpan]
+  | [EvidenceSpan, EvidenceSpan]
+  | [EvidenceSpan, EvidenceSpan, EvidenceSpan]
+  | [EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan]
+  | [EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan]
+  | [EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan]
+  | [EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan]
+  | [EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan, EvidenceSpan];
+export type DocumentRevisionId2 = string;
+export type End1 = number;
+export type OffsetUnit1 = "unicode_code_point";
+export type PassageId1 = string;
+export type Quote1 = string;
+export type Start1 = number;
+export type GenerationId3 = string;
 export type Id5 = string;
+export type Label3 = string;
+export type CreatedAt3 = string;
+export type Id6 = string;
 export type LastSequence = number;
 export type Revision2 = number;
 export type Title = string;
@@ -171,7 +245,7 @@ export type Title1 = string;
 export type WorkId2 = string;
 export type Content = string;
 export type CreatedAt4 = string;
-export type Id6 = string;
+export type Id7 = string;
 export type Role1 = "user" | "assistant";
 export type Sequence = number;
 export type TurnId = string;
@@ -181,7 +255,7 @@ export type TurnId = string;
 export type Items1 = ConversationMessageView[];
 export type NextAfter1 = number | null;
 export type CreatedAt5 = string;
-export type Id7 = string;
+export type Id8 = string;
 export type Revision3 = number;
 export type Title2 = string;
 export type UpdatedAt1 = string;
@@ -204,15 +278,15 @@ export type Text1 = string;
 export type FactIds = [string, string];
 export type Status2 = "unresolved";
 export type Conflicts = ConflictView[];
-export type Label3 = string;
+export type Label4 = string;
 export type Status3 = "supported" | "candidate";
 export type Aliases = AliasView[];
-export type Id8 = string;
+export type Id9 = string;
 export type Kind3 = "character" | "place" | "object" | "organization";
 /**
  * A name used by an eligible mention
  */
-export type Label4 = string;
+export type Label5 = string;
 export type MentionCount = number;
 export type Relation = "before" | "after" | "during" | "overlaps" | "unknown";
 export type SourceId = string;
@@ -221,18 +295,18 @@ export type EventRelations = EventRelationView[];
 export type Kind4 = "age" | "date" | "relative";
 export type Value2 = string;
 export type Anchors = AnchorView[];
-export type Evidence1 = SourceSpan[];
-export type Id9 = string;
-export type Label5 = string;
+export type Evidence2 = SourceSpan[];
+export type Id10 = string;
+export type Label6 = string;
 export type Modality = string;
 export type ParticipantIds = string[];
 export type Events = EventView[];
 export type Assumption = string | null;
-export type Attribute3 = string;
+export type Attribute4 = string;
 export type Canonical = boolean;
 export type EventIds = string[];
-export type Evidence2 = SourceSpan[];
-export type Id10 = string;
+export type Evidence3 = SourceSpan[];
+export type Id11 = string;
 export type Kind5 = "identity" | "acquired" | "interval" | "scene";
 export type Modality1 = string;
 export type Perspective = string | null;
@@ -254,7 +328,7 @@ export type ObjectId = string;
 export type Relation1 = string;
 export type SubjectId = string;
 export type Relations = RelationView[];
-export type GenerationId3 = string;
+export type GenerationId4 = string;
 export type ParserRevision2 = string;
 /**
  * Reading cutoff; null means the whole book
@@ -284,14 +358,8 @@ export type ReadingBoundary = WholeBook | ThroughChapter;
 export type Mode = "whole_book";
 export type ChapterId1 = string;
 export type Mode1 = "through_chapter";
-export type DocumentRevisionId2 = string;
-export type End1 = number;
-export type OffsetUnit1 = "unicode_code_point";
-export type PassageId1 = string;
-export type Quote1 = string;
-export type Start1 = number;
 export type Current = boolean;
-export type Id11 = string;
+export type Id12 = string;
 export type JobId = string;
 /**
  * Safe error code of the last narrative attempt
@@ -312,7 +380,7 @@ export type CorrelationId1 = string;
 export type DispatchPending1 = boolean;
 export type DocumentId = string;
 export type ErrorCode1 = string | null;
-export type Id12 = string;
+export type Id13 = string;
 export type Revision4 = number;
 export type Stage = "awaiting_parser" | "parse" | "parsed" | "failed" | "cancelled";
 export type Status5 = "queued" | "running" | "succeeded" | "failed" | "cancelled";
@@ -320,7 +388,7 @@ export type Warnings1 = string[];
 export type Attempts1 = number;
 export type CorrelationId2 = string;
 export type DispatchPending2 = boolean;
-export type Id13 = string;
+export type Id14 = string;
 export type Result = number | null;
 export type Stage1 = "queued" | "complete";
 export type Status6 = "queued" | "succeeded";
@@ -328,7 +396,7 @@ export type ByteCount = number;
 export type CurrentParserRevision = string | null;
 export type DocumentId1 = string;
 export type Format = "txt" | "md" | "pdf" | "epub";
-export type Id14 = string;
+export type Id15 = string;
 export type Revision5 = number;
 export type Sha256 = string;
 export type Title3 = string;
@@ -336,7 +404,7 @@ export type Items5 = WorkView[];
 export type NextCursor1 = string | null;
 export type Password = string;
 export type Username = string;
-export type Id15 = string;
+export type Id16 = string;
 export type Username1 = string;
 export type Kind6 = "probe";
 export type Value4 = number;
@@ -354,7 +422,7 @@ export type CompletedAt1 = string | null;
 export type CreatedAt6 = string;
 export type Dispatched = boolean;
 export type ErrorCode2 = string | null;
-export type Id16 = string;
+export type Id17 = string;
 export type Model = string;
 export type OutputMediaType = string | null;
 /**
@@ -379,13 +447,13 @@ export type CurrentRevision = number;
 export type Items6 = RenderView[];
 export type ConsolidationId1 = string;
 export type CreatedAt7 = string;
-export type GenerationId4 = string;
+export type GenerationId5 = string;
 export type Number = number;
 export type ParserRevision6 = string;
 export type Items7 = RevisionSummary[];
 export type CreativeMode3 = "canon_first" | "interpretation";
 export type DocumentRevisionId3 = string;
-export type GenerationId5 = string;
+export type GenerationId6 = string;
 export type ReadingBoundary1 = WholeBook | ThroughChapter;
 export type StoryEventId = string | null;
 export type WorkId5 = string;
@@ -395,7 +463,7 @@ export type SchemaVersion4 = "1.0";
 export type Format1 = ("txt" | "md" | "pdf" | "epub") | null;
 export type Title4 = string | null;
 export type CreatedAt8 = string;
-export type Id17 = string;
+export type Id18 = string;
 export type Revision7 = number;
 export type Subject = string;
 export type Items8 = VisualizationSummary[];
@@ -464,7 +532,7 @@ export interface ConversationView {
   active_turn: TurnView | null;
   card: PromptCardView | null;
   created_at: CreatedAt3;
-  id: Id5;
+  id: Id6;
   last_sequence: LastSequence;
   revision: Revision2;
   title: Title;
@@ -625,6 +693,7 @@ export interface PromptCardView {
   prompt: Prompt1;
   revision: Revision;
   specification: VisualizationView;
+  variants?: Variants;
 }
 export interface VisualizationView {
   created_at: CreatedAt2;
@@ -643,6 +712,28 @@ export interface VisualizationRequest {
   style?: Style1;
   through_chapter_id?: ThroughChapterId1;
 }
+export interface AppearanceVariant {
+  card_revision: CardRevision1;
+  changes: Changes;
+  event_id: EventId;
+  evidence: Evidence1;
+  generation_id: GenerationId3;
+  id: Id5;
+  label: Label3;
+}
+export interface TraitChange {
+  after: After;
+  attribute: Attribute3;
+  before: Before;
+}
+export interface EvidenceSpan {
+  document_revision_id: DocumentRevisionId2;
+  end: End1;
+  offset_unit?: OffsetUnit1;
+  passage_id: PassageId1;
+  quote: Quote1;
+  start: Start1;
+}
 export interface ConversationCreate {
   title?: Title1;
   work_id: WorkId2;
@@ -654,7 +745,7 @@ export interface ConversationMessagePage {
 export interface ConversationMessageView {
   content: Content;
   created_at: CreatedAt4;
-  id: Id6;
+  id: Id7;
   role: Role1;
   sequence: Sequence;
   turn_id: TurnId;
@@ -665,7 +756,7 @@ export interface ConversationPage {
 }
 export interface ConversationSummary {
   created_at: CreatedAt5;
-  id: Id7;
+  id: Id8;
   revision: Revision3;
   title: Title2;
   updated_at: UpdatedAt1;
@@ -695,13 +786,13 @@ export interface ConflictView {
 }
 export interface EntitySummary {
   aliases: Aliases;
-  id: Id8;
+  id: Id9;
   kind: Kind3;
-  label: Label4;
+  label: Label5;
   mention_count: MentionCount;
 }
 export interface AliasView {
-  label: Label3;
+  label: Label4;
   span: SourceSpan;
   status: Status3;
 }
@@ -713,9 +804,9 @@ export interface EventRelationView {
 }
 export interface EventView {
   anchors: Anchors;
-  evidence: Evidence1;
-  id: Id9;
-  label: Label5;
+  evidence: Evidence2;
+  id: Id10;
+  label: Label6;
   modality: Modality;
   participant_ids: ParticipantIds;
 }
@@ -726,11 +817,11 @@ export interface AnchorView {
 }
 export interface FactView {
   assumption: Assumption;
-  attribute: Attribute3;
+  attribute: Attribute4;
   canonical: Canonical;
   event_ids: EventIds;
-  evidence: Evidence2;
-  id: Id10;
+  evidence: Evidence3;
+  id: Id11;
   kind: Kind5;
   modality: Modality1;
   perspective: Perspective;
@@ -750,7 +841,7 @@ export interface RelationView {
   subject_id: SubjectId;
 }
 export interface NarrativeScope {
-  generation_id: GenerationId3;
+  generation_id: GenerationId4;
   parser_revision: ParserRevision2;
   through_chapter_id: ThroughChapterId2;
 }
@@ -788,20 +879,12 @@ export interface ThroughChapter {
   chapter_id: ChapterId1;
   mode: Mode1;
 }
-export interface EvidenceSpan {
-  document_revision_id: DocumentRevisionId2;
-  end: End1;
-  offset_unit?: OffsetUnit1;
-  passage_id: PassageId1;
-  quote: Quote1;
-  start: Start1;
-}
 export interface GenerationPage {
   items: Items4;
 }
 export interface GenerationView {
   current: Current;
-  id: Id11;
+  id: Id12;
   job_id: JobId;
   narrative_error: NarrativeError;
   narrative_ready: NarrativeReady;
@@ -820,7 +903,7 @@ export interface IngestionView {
   dispatch_pending: DispatchPending1;
   document_id: DocumentId;
   error_code: ErrorCode1;
-  id: Id12;
+  id: Id13;
   revision: Revision4;
   stage: Stage;
   status: Status5;
@@ -830,7 +913,7 @@ export interface JobView {
   attempts: Attempts1;
   correlation_id: CorrelationId2;
   dispatch_pending: DispatchPending2;
-  id: Id13;
+  id: Id14;
   result: Result;
   stage: Stage1;
   status: Status6;
@@ -844,7 +927,7 @@ export interface WorkView {
   current_parser_revision: CurrentParserRevision;
   document_id: DocumentId1;
   format: Format;
-  id: Id14;
+  id: Id15;
   revision: Revision5;
   sha256: Sha256;
   title: Title3;
@@ -854,7 +937,7 @@ export interface LoginRequest {
   username: Username;
 }
 export interface PrincipalView {
-  id: Id15;
+  id: Id16;
   username: Username1;
 }
 export interface ProbeRequest {
@@ -872,7 +955,7 @@ export interface RenderView {
   created_at: CreatedAt6;
   dispatched: Dispatched;
   error_code: ErrorCode2;
-  id: Id16;
+  id: Id17;
   model: Model;
   output_media_type: OutputMediaType;
   output_sha256: OutputSha256;
@@ -898,14 +981,14 @@ export interface RevisionPage {
 export interface RevisionSummary {
   consolidation_id: ConsolidationId1;
   created_at: CreatedAt7;
-  generation_id: GenerationId4;
+  generation_id: GenerationId5;
   number: Number;
   parser_revision: ParserRevision6;
 }
 export interface RequestScope {
   creative_mode: CreativeMode3;
   document_revision_id: DocumentRevisionId3;
-  generation_id: GenerationId5;
+  generation_id: GenerationId6;
   reading_boundary: ReadingBoundary1;
   story_event_id?: StoryEventId;
   work_id: WorkId5;
@@ -935,7 +1018,7 @@ export interface VisualizationPage {
 }
 export interface VisualizationSummary {
   created_at: CreatedAt8;
-  id: Id17;
+  id: Id18;
   revision: Revision7;
   subject: Subject;
 }
