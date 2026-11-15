@@ -1,0 +1,29 @@
+{
+ "version": 1,
+ "checks": [
+  {
+   "name": "lint",
+   "command": "make -s lint"
+  },
+  {
+   "name": "unit",
+   "command": "make -s unit"
+  },
+  {
+   "name": "contracts",
+   "command": "make -s contracts"
+  },
+  {
+   "name": "web-check",
+   "command": "make -s web-check"
+  },
+  {
+   "name": "docs",
+   "command": "make -s docs"
+  },
+  {
+   "name": "forge-check",
+   "command": "forge check"
+  }
+ ]
+}

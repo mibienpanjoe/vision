@@ -264,13 +264,15 @@ Q30a tightens Q29 after private-book negative controls: whole-derivation compone
 uniqueness, kind-safe endpoints and exact source cues replace per-batch name
 linking. Rules-only replay records its earlier span source and never reuses
 rejected aliases. Quarantined intermediate results stay attributable but are
-ineligible; immutable source and prior citations remain intact. Four missed
-aliases remain in the private comparison, so full Q30 acceptance stays open.
+ineligible; immutable source and prior citations remain intact. Rules-v9 closes
+the annotated private alias set (slash nicknames, nested-surname skipping,
+compact full-name components) with zero false merges on replay.
 
 Q30b consumes confirmed identity groups in retrieval using a fixed point and
 admits an ambiguous mention only when its complete candidate set belongs to that
 group. Clarifications are bounded; appearance absence and provider failure keep
-their distinct outcomes. Full private-book alias acceptance remains open.
+their distinct outcomes. Private-book alias acceptance for the annotated pairs
+is closed under rules-v9 replay without new provider calls.
 
 Q36a adds internal composition-stage notifications without changing the stored
 specification or synchronous API. A replay returns its existing result without

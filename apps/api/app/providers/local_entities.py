@@ -16,7 +16,7 @@ from functools import cache
 from app.providers.contracts import ProviderCall, ProviderResult, Usage
 from app.providers.extraction import KNOWN_REF
 
-RULES_VERSION = "rules-v6"
+RULES_VERSION = "rules-v9"
 GLINER = ("fastino/gliner2-base-v1", "f9634218e53580c56edf0de97ca1a7d3f1c2354e")
 COREF = ("biu-nlp/f-coref", "e91dfff12879495d882ba9460d0c5d5dd44ade59")
 LABELS = {"character": "a person or creature in the story, named or described",
@@ -26,12 +26,23 @@ LABELS = {"character": "a person or creature in the story, named or described",
 TITLES = {"captain", "mr", "mr.", "mrs", "mrs.", "dr", "dr.", "miss", "sir", "lady", "lord", "master", "inspector", "uncle", "aunt"}
 DETERMINERS = {"the", "a", "an", "his", "her", "their", "its", "my", "our", "your"}
 PREPOSITIONS = {"by", "of", "with", "in", "on", "at", "near", "from", "under"}
+PARTICLES = PREPOSITIONS | {"au", "de", "du", "di", "van", "von"}
 # Pronouns and function words a span model sometimes tags as names.
 STOP = {"i", "me", "my", "he", "him", "his", "she", "her", "hers", "they", "them", "their", "it", "its",
         "you", "your", "yours", "we", "us", "our", "will", "shall", "one", "street"}
 # Text between two resolved identities that states they are the same.
-REVEAL_BETWEEN = re.compile(r"^(?:,?\s*who\s+(?:was|is)\s+(?:really|actually)|\s+(?:was|is|had been)"
-                            r"(?:\s+(?:really|actually|in fact))?|\s+turned\s+out\s+to\s+be|,?\s+(?:also\s+)?(?:known|called|named)(?:\s+as)?|\s+was\s+addressed\s+as)\s+$", re.I)
+# Optional determiner before the second name covers "called the Reaper".
+REVEAL_BETWEEN = re.compile(
+    r"^(?:,?\s*who\s+(?:was|is)\s+(?:really|actually)|\s+(?:was|is|had been)"
+    r"(?:\s+(?:really|actually|in fact))?|\s+turned\s+out\s+to\s+be|,?\s+(?:also\s+)?"
+    r"(?:known|called|named)(?:\s+as)?|\s+was\s+addressed\s+as)"
+    r"(?:\s+(?:the|a|an))?\s+$",
+    re.I,
+)
+# Dramatis-personae slash between two already-separated name spans.
+SLASH_BETWEEN = re.compile(r"^\s*/\s*$")
+# One span that itself holds "Full Name/Nickname".
+CATALOGUE_PAIR = re.compile(r"^(?P<left>.+?)\s*/\s*(?P<right>.+)$")
 # Resolved references that may stand for a person in a reveal; "this" or "it" may point at anything.
 PERSONAL = {"i", "he", "she", "me", "him", "her"}
 SAME_AFTER = re.compile(r"^\s+(?:were|are)\s+the\s+same\s+(?:person|man|woman|figure)\b", re.I)
@@ -64,7 +75,7 @@ def full_name(surface: str) -> bool:
     words = surface.split()
     while words and words[0].casefold() in DETERMINERS | TITLES:
         words.pop(0)
-    return len(words) > 1 and all(word[:1].isupper() or word.casefold() in PREPOSITIONS | {"au", "de", "du", "di", "van", "von"} for word in words)
+    return len(words) > 1 and all(word[:1].isupper() or word.casefold() in PARTICLES for word in words)
 
 
 def name_key(surface: str) -> str:
@@ -83,12 +94,49 @@ def person_evidence(text: str, start: int, end: int) -> bool:
                 or re.match(r"\s+adjusted\s+(?:his|her)\s+[^.!?]{0,40}\b(?:coat|shirt|hat)\b", tail, re.I))
 
 
+def catalogue_side(side: str) -> str | None:
+    """One side of a dramatis `Full Name/Nickname` pair; refuse clauses and paths."""
+    side = side.strip()
+    if not side or "," in side or "/" in side or not is_name(side):
+        return None
+    words = name_key(side).split()
+    if not words or len(words) > 6:
+        return None
+    return side
+
+
+def catalogue_parts(text: str, start: int, end: int) -> tuple[tuple[int, int, str], tuple[int, int, str]] | None:
+    """Split a single span that itself holds `Full Name/Nickname` into exact child spans."""
+    surface = text[start:end]
+    match = CATALOGUE_PAIR.match(surface.strip())
+    if not match:
+        return None
+    left, right = catalogue_side(match.group("left")), catalogue_side(match.group("right"))
+    if left is None or right is None:
+        return None
+    # Require a real full name on one side so surname fragments (LYKOS/REAPER) stay inert.
+    if not (full_name(left) or full_name(right)):
+        return None
+    left_start = start + surface.find(left)
+    right_start = start + surface.rfind(right)
+    if left_start < start or right_start <= left_start:
+        return None
+    return ((left_start, left_start + len(left), left), (right_start, right_start + len(right), right))
+
+
 def extract(sources: list[dict], known: list[dict], recognize: Recognize, corefer: Corefer) -> dict:
     texts = [s["text"] for s in sources]
     raw = []  # (source index, start, end, label, surface, key)
     for index, spans in enumerate(recognize(texts)):
         for start, end, label in spans:
             surface = texts[index][start:end]
+            parts = catalogue_parts(texts[index], start, end)
+            if parts is not None:
+                for part_start, part_end, part_surface in parts:
+                    key = normalize(part_surface)
+                    if key and key not in STOP and label in LABELS:
+                        raw.append((index, part_start, part_end, label, part_surface, key))
+                continue
             key = normalize(surface)
             if key and key not in STOP and label in LABELS:
                 raw.append((index, start, end, label, surface, key))
@@ -181,20 +229,31 @@ def extract(sources: list[dict], known: list[dict], recognize: Recognize, corefe
         if identity[0] == "name" and named:
             by_source[index].append((start, end, identity))
     count = Counter(resolved.values())  # the alias goes on the identity the text mentions most
+    labels_by_key = {e["key"]: e["label"] for e in [*entities, *known]}
     for index, spans in by_source.items():
         text = texts[index]
         spans.sort()
-        for (a_start, a_end, a), (b_start, b_end, b) in zip(spans, spans[1:]):
+        for i, (a_start, a_end, a) in enumerate(spans):
+            # Skip nested/overlapping mentions (e.g. LYKOS inside DARROW OF LYKOS) so a
+            # cast line "FULL/NICK" still pairs the full name with the nickname.
+            neighbor = next(((b_start, b_end, b) for b_start, b_end, b in spans[i + 1:] if b_start >= a_end), None)
+            if neighbor is None:
+                continue
+            b_start, b_end, b = neighbor
             if a == b or re.match(r"[’']s\b", text[b_end:b_end + 2]):
                 continue
             between, tail = text[a_end:b_start], SAME_AFTER.match(text[b_end:])
-            if REVEAL_BETWEEN.match(between) or (between.strip().casefold() == "and" and tail):
+            left_label, right_label = labels_by_key.get(key_of[a], ""), labels_by_key.get(key_of[b], "")
+            # Slash nicknames need a real full name on one side; surname fragments
+            # like LYKOS/REAPER from "DARROW OF LYKOS/REAPER" must not merge alone.
+            slash = SLASH_BETWEEN.match(between) and (full_name(left_label) or full_name(right_label))
+            if REVEAL_BETWEEN.match(between) or slash or (between.strip().casefold() == "and" and tail):
                 end = b_end + (tail.end() if tail and between.strip().casefold() == "and" else 0)
                 quote = text[a_start:end]
                 relations.append({"subject": key_of[a], "relation": "same_as", "object": key_of[b],
                                   "ref": sources[index]["ref"], "quote": quote, "start": a_start})
                 main, other = sorted((a, b), key=lambda i: -count[i])
-                label = next((e["label"] for e in [*entities, *known] if e["key"] == key_of[other]), None)
+                label = labels_by_key.get(key_of[other])
                 if label and label.casefold() in quote.casefold():
                     aliases.append({"entity": key_of[main], "label": label, "status": "supported",
                                     "ref": sources[index]["ref"], "quote": quote, "start": a_start})

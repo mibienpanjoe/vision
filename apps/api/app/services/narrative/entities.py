@@ -174,14 +174,19 @@ def link_name_variants(db, derivation_id, entities, staged):
 
 
 def name_variants(entities):
-    """Decide component uniqueness over the complete derivation, including competing kinds."""
+    """Decide component uniqueness over the complete derivation, including competing kinds.
+
+    Only compact full names (two or three name tokens) contribute components, so a
+    noisy cast span like "RAGNAR VOLARUS New Howler" cannot block "Ragnar" →
+    "Ragnar Volarus".
+    """
     from app.providers.local_entities import PREPOSITIONS, name_key
 
     named = [entity for entity in entities if is_name(entity.label)]
     components = {}
     for entity in named:
         words = name_key(entity.label).split()
-        if full_name(entity.label):
+        if full_name(entity.label) and 2 <= len(words) <= 3:
             components.setdefault(words[0], set()).add(entity.id)
             if not set(words) & PREPOSITIONS:
                 components.setdefault(words[-1], set()).add(entity.id)
