@@ -498,12 +498,16 @@ remain available. Failed identity review marks a derivation failed so eligible
 reads do not select it.
 
 The private-book comparison exposed cross-type and shared-family false merges in
-the intermediate rules; those derivations were quarantined. Rules-v6 preserves
-the original bytes and 4,661 passage spans. Ten annotated alias/negative pairs
-show zero false merges but four missed alias links; supported short/full names
-share the admissible entity-reference set. The independent four-case pinned-model
-holdout has zero missed aliases and false merges. These bounded checks do not
-establish universal identity/appearance quality or close the remaining Q30 gate.
+the intermediate rules; those derivations were quarantined. Rules-v9 preserves
+the original bytes and 4,661 passage spans. Dramatis `Full Name/Nickname` slash
+pairs, `called the …` reveals, nested-surname skipping and compact full-name
+components close the earlier missed private aliases without fresh neural
+inference. Ten annotated alias/negative pairs show zero false merges and zero
+missed alias links; supported short/full names and nicknames share the
+admissible entity-reference set. Prior successful derivations and exact citations
+remain readable. The independent four-case pinned-model holdout keeps zero missed
+aliases and false merges. These bounded checks do not claim universal
+identity/appearance quality beyond the annotated set and holdout.
 
 Q30b retrieval computes the transitive closure of confirmed consolidation identity
 links independently of row order. An ambiguous mention is entity-linked only
@@ -511,4 +515,4 @@ when all of its candidates lie within that confirmed group. Query planning caps
 clarification choices at five; absence of verified appearance traits remains an
 insufficient-evidence outcome rather than an identity or provider failure.
 This boundary is compatible with the existing scoped reconstruction API and
-does not resolve the private-book aliases still missing from production.
+consumes the rules-v9 private identity groups above.

@@ -170,6 +170,48 @@ def test_explicit_reveals_link_named_identities_but_possessives_do_not():
     assert {(a["label"], a["status"]) for a in output["aliases"]} == {("Wren", "supported")}
 
 
+def test_catalogue_slash_and_called_the_nickname_link_aliases():
+    cast = run(["SEVRO AU BARCA/GOBLIN Howler, a Gold"],
+               [("SEVRO AU BARCA/GOBLIN", "character")])
+    quotes = {m["quote"] for m in cast["mentions"]}
+    assert {"SEVRO AU BARCA", "GOBLIN"} <= quotes
+    assert cast["relations"] and all(r["relation"] == "same_as" for r in cast["relations"])
+    linked = {cast["relations"][0]["subject"], cast["relations"][0]["object"]}
+    assert {m["entity"] for m in cast["mentions"] if m["quote"] in {"SEVRO AU BARCA", "GOBLIN"}} == linked
+
+    adjacent = run(["VIRGINIA AU AUGUSTUS/MUSTANG, a Gold"],
+                   [("VIRGINIA AU AUGUSTUS", "character"), ("MUSTANG", "character")])
+    assert any(r["relation"] == "same_as" for r in adjacent["relations"])
+    assert adjacent["relations"][0]["quote"] == "VIRGINIA AU AUGUSTUS/MUSTANG"
+
+    darrow = run(["DARROW OF LYKOS/REAPER Former lancer of House Augustus, a Red"],
+                 [("DARROW OF LYKOS", "character"), ("REAPER", "character")])
+    assert any(r["quote"] == "DARROW OF LYKOS/REAPER" for r in darrow["relations"])
+    # Nested surname mention must not block FULL/NICK pairing.
+    nested = run(["DARROW OF LYKOS/REAPER Former lancer of House Augustus, a Red"],
+                 [("DARROW OF LYKOS", "character"), ("LYKOS", "place"), ("REAPER", "character")])
+    assert any(r["quote"] == "DARROW OF LYKOS/REAPER" for r in nested["relations"])
+    # A surname fragment alone must not absorb the nickname.
+    assert run(["LYKOS/REAPER Former lancer"], [("LYKOS", "character"), ("REAPER", "character")])["relations"] == []
+
+    called = run(["Darrow, called the Reaper, entered."],
+                 [("Darrow", "character"), ("Reaper", "character")])
+    assert [r["quote"] for r in called["relations"]] == ["Darrow, called the Reaper"]
+    assert ("Reaper", "supported") in {(a["label"], a["status"]) for a in called["aliases"]}
+
+
+def test_noisy_cast_span_does_not_block_compact_full_name_variants():
+    from types import SimpleNamespace
+
+    from app.services.narrative.entities import name_variants
+
+    rows = [SimpleNamespace(id=index, label=label, kind="character")
+            for index, label in enumerate([
+                "Ragnar", "Ragnar Volarus", "RAGNAR VOLARUS New Howler", "Alia Volarus", "Volarus",
+            ])]
+    assert set(name_variants(rows)) == {(0, 1)}
+
+
 def test_reveals_ignore_non_personal_references():
     def this_is_newcomen(text):
         return [[(text.index("Carew"), text.index("Carew") + 5), (text.index("This"), text.index("This") + 4)]]

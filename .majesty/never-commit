@@ -1,0 +1,13 @@
+# Files never to commit (majesty warden). One pattern per line.
+# A pattern ending in / matches a folder at any depth. Others match the path or the file name.
+max-size 10MB
+*.mp4
+*.mov
+*.webm
+*.mkv
+*.avi
+screenshots/
+screen-recordings/
+Screenshot*
+Screen Shot*
+Capture d'écran*
